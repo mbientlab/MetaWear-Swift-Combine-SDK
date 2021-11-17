@@ -1,0 +1,43 @@
+@Tutorial(time: 10) {
+    @Intro(title: "Connecting To A MetaWear") {
+        This tutorial guides you through building _Streamy_, an app to stream and log accelerometer data. You'll start by building a list of nearby devices.
+        
+        @Image(source: streamyIcon.png, alt: ".")
+    }
+    
+    @Section(title: "Title goes here") {
+        @ContentAndMedia {
+            Create and configure an Xcode project that uses SlothCreator.
+            
+            @Image(source: streamyIcon.png, alt: "An arrow pointing from the SlothCreator framework icon to the Xcode app project icon.")
+        }
+        
+        @Steps {
+            @Step {
+                Create a new project using the macOS SwiftUI App template.
+            }
+            
+            @Step {
+                In the File menu, choose Add Package... and enter MetawearCombineURL.git. 
+            }
+        }
+    }
+    
+    @Section(title: "Title 2 goes here") {
+        @ContentAndMedia {
+            Add the ability for users to customize sloths and select their powers.
+            
+            @Image(source: streamyIcon.png, alt: ".")
+        }
+        
+        @Steps {
+            @Step {
+                Create a new SwiftUI View file named `CustomizedSlothView.swift`.
+                
+                @Code(name: "CustomizedSlothView.swift", file: 01-creating-code-02-01.swift) {
+                    @Image(source: preview-01-creating-code-02-01.png, alt: ".")
+                }
+            }    
+        }
+    }
+}

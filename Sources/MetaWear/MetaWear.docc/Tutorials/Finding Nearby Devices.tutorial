@@ -1,0 +1,101 @@
+@Tutorial(time: 10, projectFiles: "Streamy.zip") {
+    @Intro(title: "Finding Nearby Devices") {
+        Learn how _Streamy_ offers users a list of nearby MetaWears.
+        
+        We start with the macOS SwiftUI app template. You can download project files above, both as a template and the finished product.
+        
+        @Image(source: streamyIcon.png, alt: ".")
+    }
+    
+    @XcodeRequirement(title: "Xcode 13", destination: "https://developer.apple.com/download/")
+    
+    @Section(title: "Create the list view") {
+        @ContentAndMedia {
+            Display all discovered MetaWear devices using their unique `CBPeripheral` identifiers. 
+            
+            @Image(source: list.png, alt: ".")
+        }
+        
+        @Steps {
+            @Step {
+                Create a new file named `DiscoveredDevicesList.swift`. Add a shell for a `List` view and its view model.
+                
+                @Code(name: "DiscoveredDevicesList.swift", file: 01-connecting-code-01-01.swift) {}
+            }    
+            
+            @Step {
+                Let's have the list iterate the `UUID` identifiers that `CoreBluetooth` provides.
+                
+                @Code(name: "DiscoveredDevicesList.swift", file: 01-connecting-code-01-02.swift) 
+            }    
+            
+            @Step {
+                The `Combine` framework helps reason about asynchronous streams of values. To monitor and react to a stream of discovered MetaWears over time, we'll store a reference to those events. The framework calls this an `AnyCancellable`, which is basically a token that you store to keep the pipeline in memory. You can deallocate it or call `.cancel()` to stop the pipeline. 
+                
+                @Code(name: "DiscoveredDevicesList.swift", file: 01-connecting-code-01-03.swift) 
+            }    
+            
+            @Step {
+                The ``MetaWear/MetaWearScanner`` offers a stream of only newly discovered devices via ``MetaWear/MetaWearScanner/didDiscoverUniqued``. Since we just want to use a device's ``MetaWear/MetaWear/peripheral/`` `UUID`, we can use the `.map` operator to publish just a keypath on `MetaWear`.
+                
+                @Code(name: "DiscoveredDevicesList.swift", file: 01-connecting-code-01-04.swift) 
+            }    
+            
+            @Step {
+                This SDK's objects and publishers work on the ``MetaWear/MetaWearScanner/bleQueue``. To update UI, we need to jump back to the main queue with `.receive(on:)`. The `sink` operator is the final command to drain the pipeline, returning that `AnyCancellable` token. To avoid retain cycles, weakify your capture list in `sink` or any operators.
+                
+                @Code(name: "DiscoveredDevicesList.swift", file: 01-connecting-code-01-05.swift) 
+            }    
+            
+            @Step {
+                Add methods to start and stop the scanner to the view model. Have the list view call them when it appears and disappears. Running the scanner consumes energy, so it's best to run it only when you need to.
+                
+                @Code(name: "DiscoveredDevicesList.swift", file: 01-connecting-code-01-06.swift) 
+            }    
+            
+            @Step {
+                In the view model, add a factory method to make a view model for the `MetaWear` in each `List` row. We'll make that row next.
+                
+                @Code(name: "DiscoveredDevicesList.swift", file: 01-connecting-code-01-07.swift) 
+            }    
+        }
+    }
+    
+    
+    @Section(title: "Create the list row") {
+        @ContentAndMedia {
+            Display information about a discovered MetaWear and add a navigation action. 
+            
+            @Image(source: list.png, alt: ".")
+        }
+        
+        @Steps {
+            @Step {
+                Create a new file named `DiscoveredDeviceRow.swift`. Add a shell for the row view model, will offer the device's name.
+                
+                @Code(name: "DiscoveredDeviceRow.swift", file: 01-connecting-code-02-08.swift)
+            }    
+            
+            @Step {
+                Create a view that offers a `NavigationLink` to a placeholder view and uses the name, confined to a single line, as the row's visible content. 
+                
+                @Code(name: "DiscoveredDeviceRow.swift", file: 01-connecting-code-02-09.swift)
+            }    
+            
+            @Step {
+                Create a pipeline to convert the devices latest signal strength indicator, an `Int`, into a string. 
+                
+                A device's RSSI is updated three ways. (1) By a ``MetaWear/MetaWearScanner`` that is actively scanning. (2) By explicit requests to ``MetaWear/MetaWear/updateRSSI()``. (3) Implicitly by subscribing to ``MetaWear/MetaWear/rssiPublisher``, which starts a watchdog that fires if an update hasn't been received in the last 5 seconds.
+                
+                @Code(name: "DiscoveredDeviceRow.swift", file: 01-connecting-code-02-10.swift)
+            } 
+            
+            @Step {
+                Simply start that Combine pipeline when the row appears and add signal strength to the label. That's all it takes to show a list of nearby MetaWears.
+                
+                @Code(name: "DiscoveredDeviceRow.swift", file: 01-connecting-code-02-11.swift)
+            } 
+        }
+        
+    }
+}

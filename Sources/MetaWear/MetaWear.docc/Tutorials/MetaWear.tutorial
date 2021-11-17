@@ -1,0 +1,38 @@
+@Tutorials(name: "MetaWear") {
+    @Intro(title: "Learn the MetaWear Combine SDK") {
+        
+        Stream, log, configure, and connect to MetaWear wearable sensors with or without C++ expertise. Get started by building the demo app _Streamy_.
+        
+        @Image(source: streamyIcon.png, alt: "Icon for the demo app Streamy with a MetaWear sensor on top of binary code.")
+    }
+    
+    @Chapter(name: "Discover & Connect") {
+        @Image(source: streamyIcon.png, alt: ".")
+        
+        Find, connect, and manage nearby devices.
+        
+        @TutorialReference(tutorial: "doc:Finding-Nearby-Devices")
+        @TutorialReference(tutorial: "doc:Connecting-To-A-MetaWear")
+        @TutorialReference(tutorial: "doc:Renaming-Devices")
+    }
+    
+    @Chapter(name: "Read the Accelerometer") {
+        @Image(source: streamyIcon.png, alt: ".")
+        
+        Configure and read the accelerometer.
+        
+        @TutorialReference(tutorial: "doc:Finding-Nearby-Devices")
+        @TutorialReference(tutorial: "doc:Connecting-To-A-MetaWear")
+        @TutorialReference(tutorial: "doc:Renaming-Devices")
+    }
+
+    @Chapter(name: "Understanding Combine") {
+        @Image(source: streamyIcon.png, alt: ".")
+        
+        Explore Combine operators and resources.
+        
+        @TutorialReference(tutorial: "doc:Finding-Nearby-Devices")
+        @TutorialReference(tutorial: "doc:Connecting-To-A-MetaWear")
+        @TutorialReference(tutorial: "doc:Renaming-Devices")
+    }
+}
