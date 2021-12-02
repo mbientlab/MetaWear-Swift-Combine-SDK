@@ -2,7 +2,7 @@
 
 import CoreBluetooth
 import Combine
-import iOSDFULibrary
+import NordicDFU
 import MetaWearCpp
 
 /// Interface with the MbientLab firmware server
@@ -389,7 +389,7 @@ extension MetaWear: LoggerDelegate {
 
     /// Converts log level for iOS DFU Library.
     ///
-    public func logWith(_ level: iOSDFULibrary.LogLevel, message: String) {
+    public func logWith(_ level: NordicDFU.LogLevel, message: String) {
         let newLevel: MWConsoleLogger.LogLevel = {
             switch level {
                 case .debug:        return .debug
