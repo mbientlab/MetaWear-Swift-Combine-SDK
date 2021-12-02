@@ -244,11 +244,12 @@ extension MWFirmwareServer {
 
     fileprivate static func validateJSON(data: Data, response: URLResponse) throws -> JSON {
         try validateResponse(data: data, response: response)
-
-        guard let info = try? JSONSerialization.jsonObject(with: data) as? JSON
-        else { throw MWFirmwareServer.Error.badServerResponse }
-
-        return info
+        do {
+            guard let info = try JSONSerialization.jsonObject(with: data) as? JSON else {
+                throw MWFirmwareServer.Error.invalidServerResponse(message: "Unknown")
+            }
+            return info
+        } catch { throw MWFirmwareServer.Error.invalidServerResponse(message: error.localizedDescription) }
     }
 
     fileprivate static func _parseFirmwaresFromValidJSON(
