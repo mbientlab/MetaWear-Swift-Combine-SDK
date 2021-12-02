@@ -1,8 +1,9 @@
-////Copyright
+// Copyright 2021 MbientLab Inc. All rights reserved. See LICENSE.MD.
 
 import Foundation
 
-public enum MetaWearError: Error {
+/// MetaWear Error
+public enum MWError: Error {
 
     /// Operation failed. Generic failure, see message for details
     case operationFailed(_ message: String)
@@ -17,7 +18,7 @@ public enum MetaWearError: Error {
     case bluetoothPoweredOff
 }
 
-extension MetaWearError: LocalizedError {
+extension MWError: LocalizedError {
 
     public var errorDescription: String? {
         switch self {

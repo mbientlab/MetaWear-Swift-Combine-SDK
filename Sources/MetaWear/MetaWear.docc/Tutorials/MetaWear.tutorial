@@ -1,7 +1,7 @@
 @Tutorials(name: "MetaWear") {
-    @Intro(title: "Learn the MetaWear Combine SDK") {
+    @Intro(title: "From Zero to Machine Learning") {
         
-        Stream, log, configure, and connect to MetaWear wearable sensors with or without C++ expertise. Get started by building the demo app _Streamy_.
+        Stream, log, configure, and connect to MetaWear wearable sensors with or without C++ expertise. Get started by building the demo app _Streamy_ with only basic `Swift` and `SwiftUI` experience.
         
         @Image(source: streamyIcon.png, alt: "Icon for the demo app Streamy with a MetaWear sensor on top of binary code.")
     }

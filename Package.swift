@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "MetaWear",
-    platforms: [.macOS(.v10_11), .iOS(.v13), .watchOS(.v6), .tvOS(.v13)],
+    platforms: [.macOS(.v10_14), .iOS(.v13), .watchOS(.v6), .tvOS(.v13)],
     products: [
         .library(
             name: "MetaWear",

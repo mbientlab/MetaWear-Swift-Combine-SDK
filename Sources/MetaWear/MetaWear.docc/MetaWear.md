@@ -1,14 +1,49 @@
 # ``MetaWear``
 
-Do BLE stuff. Lots of 1010101 flying around you.
+Develop Bluetooth Low Energy apps using our sensors and `Combine`
 
-More information goes here.
+This SDK makes configuring and retrieving data streams from MetaWear devices easy, flexible, and concise by leveraging Apple's `Combine` framework across iOS, macOS, watchOS, and tvOS.
 
-```
-metawear.militaryMode().kabooom()
-```
+If you're new to Bluetooth and MetaWear, this SDK offers SwiftUI-like presets that entirely abstract any interactions with the C++ library. You can try the <doc:/tutorials/MetaWear> tutorial and examine the source of our MetaBase app for example SDK usage.
+
+For those who want more control, this SDK also exposes publishers convenient for working with `OpaquePointer` chains and your own C++ commands. See <doc:Migrating-From-Bolts>.
 
 ![MetaMotion S.](metamotion.png)
+
+## Basics
+
+You can build an asynchronous `Combine` pipeline by combining:
+1. a start condition — e.g., upon disconnection (to perhaps auto-reconnect)
+2. an action — e.g., `read`, `stream`, `log`, `downloadLog`, `command`
+3. a sensor configuration suggested by code completion
+4. any of the many `Combine` operators for manipulating streams of data or events
+
+###### Example 1: Wait until first connection, stream accelerometer vectors, process, update UI on main ######
+```swift
+metawear
+   .publishWhenConnected()
+   .first()
+   .stream(.accelerometer(rate: .hz100, range: .g2)
+   .map { myProcessingFunction($0) }
+   .receive(on: DispatchQueue.main)
+```
+
+If you're unfamiliar with `Combine`, see <doc:/tutorials/MetaWear/Renaming-Devices>. The above block is a "recipe" that you can pass around for further specialization. Execution begins only when you subscribe, which the tutorial explains.
+
+To discover nearby MetaWears, use ``MetaWearScanner``.
+
+###### Example 2: Scan for nearby devices, add only unique discoveries to table view ######
+```swift
+let scanner = MetaWearScanner.sharedRestore()
+scanner.didDiscoverDeviceUniqued
+       .recieve(on: DispatchQueue.main)
+       .sink { [weak self] device in 
+           self?.devices.append(device)
+       }
+       .store(in: &subs)
+scanner.startScan(allowDuplicates: true)
+```
+
 
 ## Topics
 
@@ -19,157 +54,89 @@ metawear.militaryMode().kabooom()
 
 ### Essentials
 
-Ensure all reads of MetaWear properties and calls into the C++ library use the ``MetaWear/apiAccessQueue``. That's handled for you by any ``MetaPublisher``.
+Using any ``MWPublisher`` ensures calls into the C++ library and reads of any properties occur on the ``MetaWear/apiAccessQueue``.
 
 - ``MetaWear/MetaWearScanner``
 - ``MetaWear/MetaWear``
-- ``MetaWear/MetaPublisher``
+- ``MWError``
+- ``MetaWear/MWPublisher``
 
-### Identification
+### Interact
 
-- ``DeviceInformation``
-- ``MetaWear/MetaWear/readCharacteristic(_:)``
-- ``MWServiceCharacteristic``
+- <doc:Interacting-with-MetaWears>
+- ``MWCommand``
+- ``MWLoggable``
+- ``MWReadable``
+- ``MWPollable``
+- ``MWStreamable``
+- ``MWFrequency``
+- ``MWLogger``
 
-### Connecting
-- ``MetaWearScanner``
-- ``MetaWearScanner/startScan(allowDuplicates:)``
-- ``MetaWearScanner/didDiscoverUniqued``
-- ``MetaWear/MetaWear/connectPublisher()``
+### Data Output
 
-### Stream & Log Sensors
+Streaming data arrives in Swift formats. Logged data downloads in a string-based `MWDataTable` that can output a .csv file.
 
-- ``MWSignal``
-- ``MetaWearData``
-- ``MetaWear/MetaWear/publishIfConnected()``
-- ``MetaWear/MetaWear/publishWhenConnected()``
-- ``MetaWear/MetaWear/publishWhenDisconnected()``
-- ``MetaWear/MetaWear/publish()``
-- ``MWDataSignal``
-- ``MWLoggerKey``
-- ``MWReadableOnce``
-- ``MWLoggableStreamable``
+- ``MWDataTable``
+- ``MWData``
+- ``MWDataConvertible``
+- ``Download``
 - ``Timestamped``
-- ``MetaWearBoard``
-- <doc:/tutorials/MetaWear/Connecting-To-A-MetaWear>
 
-### Firmware
+### Modules
 
-- ``MetaWearFirmwareServer``
-- ``FirmwareBuild``
-- ``MetaWearFirmwareServer/fetchRelevantFirmwareUpdate(for:)``
-- ``MetaWearFirmwareServer/updateFirmware(on:delegate:build:)``
+- ``MWModules``
+- ``MWAccelerometer``
+- ``MWAmbientLight``
+- ``MWBarometer``
+- ``MWGyroscope``
+- ``MWHumidity``
+- ``MWThermometer``
+- ``MWColorDetector``
+- ``MWLED``
+- ``MWMagnetometer``
+- ``MWOrientationSensor``
+- ``MWProximity``
+- ``MWSensorFusion``
+- ``MWStepCounter``
+- ``MWStepDetector``
 
-### Console Logging
+### Misc Signals
 
-- ``ConsoleLogger``
-- ``LogLevel``
-- ``LogDelegate``
+- ``MWBatteryLevel``
+- ``MWLogLength``
+- ``MWMACAddress``
+- ``MWLastResetTime``
 
-### Errors
-
-- ``MetaWearError``
-- ``FirmwareError``
+### Utilities
+- ``MWFirmwareServer``
+- ``MWConsoleLogger``
+- ``MWConsoleLoggerDelegate``
 
 ### C++ Bridging
 
-You can use the bridge functions. These enums provide an easy reference to C++ constants. You can use functions too.
+When interacting with the C++ library, use these functions to reference Swift objects.
+
 + ``bridge(obj:)``
 + ``bridge(ptr:)``
 + ``bridgeRetained(obj:)``
 + ``bridgeTransfer(ptr:)``
 
-### Accelerometer
+### Opaque Pointer & C++ Aliases
 
-- ``MWAccelerometerGravityRange``
-- ``MWAccelerometerSampleFrequency``
-- ``MWAccelerometerModel``
-- ``MODULE_ACC_TYPE_BMI270``
-- ``MODULE_ACC_TYPE_BMI160``
-- ``MODULE_ACC_TYPE_BMA255``
-- ``MODULE_ACC_TYPE_MMA8452Q``
-- ``ACC_ACCEL_X_AXIS_INDEX``
-- ``ACC_ACCEL_Y_AXIS_INDEX``
-- ``ACC_ACCEL_Z_AXIS_INDEX``
+When interacting with the C++ library or forming your own publishers, these type aliases hint at the identity of an `OpaquePointer` or an integer identifier.
 
-### Ambient Light
+- ``MWBoard``
+- ``MWDataSignal``
+- ``MWDataSignalOrBoard``
+- ``MWDataProcessorSignal``
+- ``MWLoggerSignal``
+- ``MWMacroIdentifier``
 
-- ``MWAmbientLightGain``
-- ``MWAmbientLightTR329IntegrationTime``
-- ``MWAmbientLightTR329MeasurementRate``
+### C++ Library Status Code
 
-### Battery
+Useful only when interacting with the C++ library.
 
-- ``SETTINGS_BATTERY_CHARGE_INDEX``
-- ``SETTINGS_BATTERY_VOLTAGE_INDEX``
-- ``SETTINGS_CHARGE_STATUS_UNSUPPORTED``
-- ``SETTINGS_POWER_STATUS_UNSUPPORTED``
-
-### Barometer
-
-- ``MWBarometerIIRFilter``
-- ``MWBarometerModel``
-- ``MWBarometerOversampling``
-- ``MWBarometerStandbyTime``
-- ``MODULE_BARO_TYPE_BME280``
-- ``MODULE_BARO_TYPE_BMP280``
-
-### GPIO
-
-- ``MWGPIOChangeType``
-- ``MWGPIOMode``
-- ``MWGPIOPin``
-- ``MWGPIOPullMode``
-- ``GPIO_UNUSED_PIN``
-
-### Gyroscope
-
-- ``MWGyroscopeFrequency``
-- ``MWGyroscopeGraphRange``
-- ``MODULE_GYRO_TYPE_BMI160``
-- ``MODULE_GYRO_TYPE_BMI270``
-- ``GYRO_ROTATION_X_AXIS_INDEX``
-- ``GYRO_ROTATION_Y_AXIS_INDEX``
-- ``GYRO_ROTATION_Z_AXIS_INDEX``
-
-### Hygrometer
-
-- ``MWHumidityOversampling``
-
-### I2C
-
-- ``MWI2CSize``
-
-### LED
-
-- ``MBLColor``
-- ``LED_REPEAT_INDEFINITELY``
-- ``CD_TCS34725_ADC_RED_INDEX``
-- ``CD_TCS34725_ADC_GREEN_INDEX``
-- ``CD_TCS34725_ADC_BLUE_INDEX``
-- ``CD_TCS34725_ADC_CLEAR_INDEX``
-
-### Magnetometer
-
-- ``MAG_BFIELD_X_AXIS_INDEX``
-- ``MAG_BFIELD_Y_AXIS_INDEX``
-- ``MAG_BFIELD_Z_AXIS_INDEX``
-
-### Sensor Fusion
-
-- ``MWSensorFusionMode``
-- ``MWSensorFusionOutputType``
-- ``SENSOR_FUSION_CALIBRATION_ACCURACY_HIGH``
-- ``SENSOR_FUSION_CALIBRATION_ACCURACY_LOW``
-- ``SENSOR_FUSION_CALIBRATION_ACCURACY_MEDIUM``
-- ``SENSOR_FUSION_CALIBRATION_ACCURACY_UNRELIABLE``
-
-### Thermometer
-
-- ``MWTemperatureSource``
-
-### Status
-
+- ``MWStatusCode``
 - ``STATUS_OK``
 - ``STATUS_ERROR_UNSUPPORTED_PROCESSOR``
 - ``STATUS_ERROR_TIMEOUT``
@@ -179,11 +146,43 @@ You can use the bridge functions. These enums provide an easy reference to C++ c
 - ``STATUS_WARNING_INVALID_RESPONSE``
 - ``STATUS_WARNING_UNEXPECTED_SENSOR_DATA``
 
-### Module Detection
-- ``MODULE_TYPE_NA``
+### C++ Constants
 
-### Etc
+Useful only when interacting with the C++ library.
+
+- ``MODULE_ACC_TYPE_BMI270``
+- ``MODULE_ACC_TYPE_BMI160``
+- ``MODULE_ACC_TYPE_BMA255``
+- ``MODULE_ACC_TYPE_MMA8452Q``
+- ``MODULE_BARO_TYPE_BME280``
+- ``MODULE_BARO_TYPE_BMP280``
+- ``MODULE_GYRO_TYPE_BMI160``
+- ``MODULE_GYRO_TYPE_BMI270``
+- ``MODULE_TYPE_NA``
+- ``LED_REPEAT_INDEFINITELY``
+- ``GPIO_UNUSED_PIN``
+- ``SETTINGS_BATTERY_CHARGE_INDEX``
+- ``SETTINGS_BATTERY_VOLTAGE_INDEX``
+- ``SETTINGS_CHARGE_STATUS_UNSUPPORTED``
+- ``SETTINGS_POWER_STATUS_UNSUPPORTED``
+- ``SENSOR_FUSION_CALIBRATION_ACCURACY_HIGH``
+- ``SENSOR_FUSION_CALIBRATION_ACCURACY_LOW``
+- ``SENSOR_FUSION_CALIBRATION_ACCURACY_MEDIUM``
+- ``SENSOR_FUSION_CALIBRATION_ACCURACY_UNRELIABLE``
 - ``ADDRESS_TYPE_RANDOM_STATIC``
 - ``ADDRESS_TYPE_PUBLIC``
 - ``ADDRESS_TYPE_PRIVATE_RESOLVABLE``
 - ``ADDRESS_TYPE_PRIVATE_NON_RESOLVABLE``
+- ``ACC_ACCEL_X_AXIS_INDEX``
+- ``ACC_ACCEL_Y_AXIS_INDEX``
+- ``ACC_ACCEL_Z_AXIS_INDEX``
+- ``CD_TCS34725_ADC_RED_INDEX``
+- ``CD_TCS34725_ADC_GREEN_INDEX``
+- ``CD_TCS34725_ADC_BLUE_INDEX``
+- ``CD_TCS34725_ADC_CLEAR_INDEX``
+- ``GYRO_ROTATION_X_AXIS_INDEX``
+- ``GYRO_ROTATION_Y_AXIS_INDEX``
+- ``GYRO_ROTATION_Z_AXIS_INDEX``
+- ``MAG_BFIELD_X_AXIS_INDEX``
+- ``MAG_BFIELD_Y_AXIS_INDEX``
+- ``MAG_BFIELD_Z_AXIS_INDEX``
