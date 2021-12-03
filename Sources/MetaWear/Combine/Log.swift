@@ -327,10 +327,6 @@ public extension MWDataSignal {
         makeLoggerSignal()
             .map { (MWLogger(identifier: $0), $1) }
             .handleEvents(receiveOutput: { id, signal in
-                let resetID = mbl_mw_logging_get_latest_reset_uid(board)
-                let epoch = Int64(Date().timeIntervalSinceReferenceDate * 1000)
-                #warning("Had expected this to change the reset time for this ID.")
-                mbl_mw_logging_set_reference_time(board, resetID, epoch)
                 mbl_mw_logging_start(board, overwriting ? 1 : 0)
                 start?()
             })
@@ -347,8 +343,6 @@ public extension MWDataSignal {
             if let logger = logger {
                 let cString = mbl_mw_logger_generate_identifier(logger)!
                 let identifier = String(cString: cString)
-//                mbl_mw_memory_free(UnsafeMutableRawPointer(mutating: cString)) pointer being freed was not allocated
-                #warning("Memory")
                 _subject.send((identifier, logger))
             } else {
                 _subject.send(completion: .failure(.operationFailed("Could not create logger")))

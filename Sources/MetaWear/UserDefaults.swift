@@ -4,10 +4,13 @@ import Foundation
 import CoreBluetooth
 
 public extension UserDefaults {
-    struct MetaWearCore { public struct Keys {} }
+    struct MetaWear { public struct Keys {
+        public static let localPeripheralIDs = "MetaWearLocalPeripherals"
+        public static let syncedMetadata = "MetaWearSyncedMetadata"
+    } }
 }
 
-public extension UserDefaults.MetaWearCore {
+public extension UserDefaults.MetaWear {
 
     static func getMac(for metawear: MetaWear) -> String? {
         getMac(for: metawear.peripheral)
@@ -19,7 +22,7 @@ public extension UserDefaults.MetaWearCore {
 
 }
 
-public extension UserDefaults.MetaWearCore {
+public extension UserDefaults.MetaWear {
 
     static func getMac(for peripheral: CBPeripheral) -> String? {
         let key = Keys.macStorage(for: peripheral)
@@ -34,7 +37,7 @@ public extension UserDefaults.MetaWearCore {
 
 // MARK: - MAC Address Storage
 
-public extension UserDefaults.MetaWearCore.Keys {
+public extension UserDefaults.MetaWear.Keys {
 
     static func macStorage(for metawear: MetaWear) -> String {
         macStorage(for: metawear.peripheral)

@@ -337,7 +337,7 @@ extension MetaWearTestCase {
         let didConnect = XCTestExpectation(description: "Connecting")
         self.disconnectExpectation = XCTestExpectation(description: "Disconnecting")
 
-        scanner.startScan(allowDuplicates: true)
+        scanner.startScan(higherPerformanceMode: true)
         try test(_makeDiscoveryPipeline(didConnect: didConnect), &subs)
         wait(for: [didConnect] + exps, timeout: timeout, enforceOrder: enforceOrder)
         device?.disconnect()
@@ -364,7 +364,7 @@ extension MetaWearTestCase {
             }
             .store(in: &subs)
 
-        scanner.startScan(allowDuplicates: true)
+        scanner.startScan(higherPerformanceMode: true)
         wait(for: [didConnect] + exps, timeout: timeout, enforceOrder: enforceOrder)
         device?.disconnect()
     }
@@ -426,7 +426,7 @@ extension MetaWearTestCase {
         self.discovery = _makeDiscoveryPipeline(didConnect: didConnect)
             .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
 
-        scanner.startScan(allowDuplicates: true)
+        scanner.startScan(higherPerformanceMode: true)
         wait(for: [didConnect], timeout: 20)
     }
 

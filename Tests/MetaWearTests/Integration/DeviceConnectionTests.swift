@@ -161,7 +161,7 @@ class DeviceConnectionTests: XCTestCase {
                     exps.unconnected.fulfill()
 
                     // Act: Use scanner to force a connection, then cancel it contemporaneously
-                    metawear.scanner?.startScan(allowDuplicates: false)
+                    metawear.scanner?.startScan(higherPerformanceMode: false)
                     DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.05) {
                         metawear.disconnect()
                     }

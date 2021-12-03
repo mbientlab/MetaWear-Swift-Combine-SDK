@@ -8,43 +8,63 @@ public extension MetaWearScanner {
     static let sharedRestore = MetaWearScanner(restoreIdentifier: "MetaWearScanner.shared")
 }
 
+public typealias CBPeripheralIdentifier = UUID
+
 /// Start scanning for MetaWear devices without having to understand all of CoreBluetooth. Pipelines return on the scanner's unique `bleQueue`.
 ///
 public class MetaWearScanner: NSObject {
 
     // MARK: - Discovered Devices
 
-    /// All MetaWears discovered by the `CBCentralManager`. Read only on the `bleQueue`.
-    public private(set) var deviceMap: [UUID: MetaWear] = [:]
+    /// All MetaWears discovered by the `CBCentralManager`,
+    ///  including those nearby but never connected to or those
+    ///  not nearby but remembered by CoreBluetooth from a prior
+    ///  session. Read only on the `bleQueue`.
+    public private(set) var deviceMap: [CBPeripheralIdentifier: MetaWear] = [:]
 
     /// Publishes the `deviceMap` after adding a new member.
-    public private(set) lazy var discoveredDevices: AnyPublisher<[UUID: MetaWear], Never> = _makeDiscoveredDevicesPublisher()
+    public private(set) lazy var discoveredDevices: AnyPublisher<[CBPeripheralIdentifier: MetaWear], Never> = _makeDiscoveredDevicesPublisher()
 
-    /// Publishes only newly discovered `MetaWear` (from `centralManager(:didDiscover:advertisementData:rssi:)`)
+    /// Publishes only newly discovered `MetaWear`
+    /// (from `centralManager(:didDiscover:advertisementData:rssi:)`)
     public private(set) lazy var didDiscoverUniqued: AnyPublisher<MetaWear, Never> = _makeDidDiscoverUniquedPublisher()
 
-    /// Publishes any `MetaWear` discovery (from `centralManager(:didDiscover:advertisementData:rssi:)`)
+    /// Publishes any `MetaWear` discovery
+    /// (from `centralManager(:didDiscover:advertisementData:rssi:)`)
     public private(set) lazy var didDiscover: AnyPublisher<MetaWear, Never> = _makeDidDiscoverPublisher()
 
     // MARK: - Scanning State
 
-    /// Stream of `CBCentralManager.state` updates, such as for authorization or power status. (from `centralManagerDidUpdateState`)
+    /// Stream of `CBCentralManager.state` updates, 
+    /// such as for authorization or power status.
+    /// (from `centralManagerDidUpdateState`)
     public private(set) lazy var centralManagerDidUpdateState: AnyPublisher<CBManagerState, Never> = _makeCentralDidUpdatePublisher()
 
-    /// Filtered and failing stream of `CBCentralManager.state` updates. Skips unknown and resetting states changes, but publishes powerOn and fails on power off, unsupported, and unauthorized.
+    /// Filtered and failing stream of `CBCentralManager.state`
+    /// updates. Skips unknown and resetting states changes,
+    /// but publishes powerOn and fails on power off, unsupported,
+    /// and unauthorized.
     public private(set) lazy var centralManagerFilteredDidUpdateState: AnyPublisher<CBManagerState, MWError> = _makeFilteredCentralDidUpdatePublisher()
 
     /// Whether or not the scanner's CBCentralManager is scanning.
     public var isScanning: Bool { self.central.isScanning }
 
+    /// Updates for the scanner's CBCentralManager activity state.
+    public lazy private(set) var isScanningPublisher = self.central.publisher(for: \.isScanning).eraseToAnyPublisher()
+
 
     // MARK: - Bluetooth API Queue and CBCentralManager
 
-    /// Queue used by the `CBCentralManager` for all BLE operations and reads. All pipelines return on this queue.
+    /// Queue used by the `CBCentralManager` for all
+    /// BLE operations and reads. All pipelines return
+    /// on this queue.
     public let bleQueue: DispatchQueue
     public private(set) var central: CBCentralManager! = nil
 
-    /// Provide a restore identifier if desired. Call `retrieveSavedMetaWears` and then `startScan` to gather remembered MetaWears and newly discovered nearby MetaWears (once Bluetooth is powered on).
+    /// Provide a restore identifier if desired. Call
+    /// `retrieveSavedMetaWears` and then `startScan`
+    /// to gather remembered MetaWears and newly discovered
+    /// nearby MetaWears (once Bluetooth is powered on).
     ///
     public init(restoreIdentifier: String? = nil) {
         self.bleQueue = .makeScannerQueue()
@@ -64,19 +84,23 @@ public class MetaWearScanner: NSObject {
 
 public extension MetaWearScanner {
 
-    /// Start the scanning process for MetaWear or MetaBoot devices. Discovered devices are delivered by the `didDiscover` publisher.
-    /// - Parameter allowDuplicates: An Apple API that increases performance at expense of battery life
+    /// Start the scanning process for MetaWear or MetaBoot
+    /// devices. Discovered devices are delivered by the
+    /// `didDiscover` publisher.
+    /// - Parameter higherPerformanceMode: An Apple API that
+    /// increases performance at expense of battery life
+    /// (called `allowDuplicates`)
     ///
-    func startScan(allowDuplicates: Bool) {
+    func startScan(higherPerformanceMode: Bool) {
         runWhenPoweredOn {
             self.central.scanForPeripherals(
                 withServices: [.metaWearService, .metaWearDfuService],
-                options: [CBCentralManagerScanOptionAllowDuplicatesKey: allowDuplicates]
+                options: [CBCentralManagerScanOptionAllowDuplicatesKey: higherPerformanceMode]
             )
 
             // Restart scanning if BLE state toggles off then on
             self.runOnPowerOff.append { [unowned self] in
-                self.startScan(allowDuplicates: allowDuplicates)
+                self.startScan(higherPerformanceMode: higherPerformanceMode)
             }
         }
     }
@@ -89,15 +113,15 @@ public extension MetaWearScanner {
         }
     }
 
-    /// Unsorted list of devices stored via `MetaWear.remember()`.
-    /// - Returns: Publisher that completes only when `CBCentralManager` is `.poweredOn`.
+    /// Unsorted list of devices stored via `MetaWear.remember()` or the identifiers you provide.
+    /// - Returns: Publisher that completes only when
+    /// `CBCentralManager` is `.poweredOn`.
     ///
-    func retrieveSavedMetaWears() -> AnyPublisher<[MetaWear],Never> {
+    func retrieveSavedMetaWears(withIdentifiers: [CBPeripheralIdentifier] = UserDefaults._rememberedUUIDs) -> AnyPublisher<[MetaWear],Never> {
         runWhenPoweredOn { [weak self] promise in
             guard let self = self else { return }
-
             let devices = self.central
-                .retrievePeripherals(withIdentifiers: UserDefaults._getRememberedUUIDs())
+                .retrievePeripherals(withIdentifiers: withIdentifiers)
                 .map { peripheral -> MetaWear in
                     let device = self.deviceMap[peripheral.identifier] ?? MetaWear(peripheral: peripheral, scanner: self)
                     self.deviceMap[peripheral.identifier] = device
@@ -108,8 +132,26 @@ public extension MetaWearScanner {
         }
     }
 
-    /// Unsorted list of devices that are already connected, which is useful to check after state was restored.
-    /// - Returns: Publisher that completes only when `CBCentralManager` is `.poweredOn`.
+    /// Populates the scanner's device map with MetaWears
+    /// stored via `MetaWear.remember()` or the identifiers
+    /// you provide. Runs after `CBCentralManager` is `.poweredOn`.
+    ///
+    func retrieveSavedMetaWearsAsync(withIdentifiers: [CBPeripheralIdentifier] = UserDefaults._rememberedUUIDs) {
+        runWhenPoweredOn { [weak self] in
+            guard let self = self else { return }
+            self.central
+                .retrievePeripherals(withIdentifiers: withIdentifiers)
+                .forEach { peripheral in
+                    let device = self.deviceMap[peripheral.identifier] ?? MetaWear(peripheral: peripheral, scanner: self)
+                    self.deviceMap[peripheral.identifier] = device
+                }
+        }
+    }
+
+    /// Unsorted list of devices that are already connected,
+    /// which is useful to check after state was restored.
+    /// - Returns: Publisher that completes only when
+    ///  `CBCentralManager` is `.poweredOn`.
     ///
     func retrieveConnectedMetaWears() -> AnyPublisher<[MetaWear],Never> {
         runWhenPoweredOn { [weak self] promise in
@@ -134,11 +176,10 @@ public extension MetaWearScanner {
     /// - Parameter id: `CBPeripheral.identifier`
     /// - Returns: MetaWear device
     ///
-    func getMetaWear(id: UUID) -> MetaWear {
-        var metawear: MetaWear!
+    func getMetaWear(id: UUID) -> MetaWear? {
+        var metawear: MetaWear? = nil
         bleQueue.sync {
-            guard let device = deviceMap[id]
-            else { fatalError("Requested a device that does not exist.") }
+            guard let device = deviceMap[id] else { return }
             metawear = device
         }
         return metawear
@@ -220,16 +261,16 @@ extension MetaWearScanner: CBCentralManagerDelegate {
 
 // MARK: - Internal — Connection
 
-internal extension MetaWearScanner {
+extension MetaWearScanner {
 
-    func connect(_ device: MetaWear?) {
+    internal func connect(_ device: MetaWear?) {
         runWhenPoweredOn { [weak device] in
             guard let device = device else { return }
             self.central.connect(device.peripheral)
         }
     }
 
-    func cancelConnection(_ device: MetaWear) {
+    internal func cancelConnection(_ device: MetaWear) {
         runWhenPoweredOn {
             self.central.cancelPeripheralConnection(device.peripheral)
         }
@@ -237,9 +278,9 @@ internal extension MetaWearScanner {
 
     /// Add this device to a persistent list loaded by `.retrieveSavedMetaWears()`
     ///
-    func remember(_ device: MetaWear) {
+    public func remember(_ device: MetaWear) {
         let idString = device.peripheral.identifier.uuidString
-        var devices = UserDefaults._getRememberedUUIDStrings()
+        var devices = UserDefaults._rememberedUUIDStrings
         if !devices.contains(idString) {
             devices.append(idString)
         }
@@ -248,8 +289,8 @@ internal extension MetaWearScanner {
 
     /// Remove this device from the persistent list loaded by `.retrieveSavedMetaWears()`
     ///
-    func forget(_ device: MetaWear) {
-        var devices = UserDefaults._getRememberedUUIDStrings()
+    public func forget(_ device: MetaWear) {
+        var devices = UserDefaults._rememberedUUIDStrings
         if let idx = devices.firstIndex(of: device.peripheral.identifier.uuidString) {
             devices.remove(at: idx)
             UserDefaults._save(uuidStrings: devices)
@@ -346,18 +387,18 @@ internal extension DispatchQueue {
     }
 }
 
-// MARK: - Persistence
+// MARK: - Optional Persistence
 
-fileprivate extension UserDefaults {
+extension UserDefaults {
 
     static private let _rememberedDevicesKey = "com.mbientlab.rememberedDevices"
 
-    static func _getRememberedUUIDStrings() -> [String] {
+    fileprivate static var _rememberedUUIDStrings: [String] {
         UserDefaults.standard.stringArray(forKey: UserDefaults._rememberedDevicesKey) ?? []
     }
 
-    static func _getRememberedUUIDs() -> [UUID] {
-        _getRememberedUUIDStrings().compactMap(UUID.init(uuidString:))
+    public static var _rememberedUUIDs: [UUID] {
+        _rememberedUUIDStrings.compactMap(UUID.init(uuidString:))
     }
 
     static func _save(uuidStrings: [String]) {

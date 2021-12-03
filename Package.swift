@@ -6,9 +6,9 @@ let package = Package(
     name: "MetaWear",
     platforms: [.macOS(.v11), .iOS(.v14), .watchOS(.v6), .tvOS(.v13)],
     products: [
-        .library(
-            name: "MetaWear",
-            targets: ["MetaWear"]),
+        .library(name: "MetaWear", targets: ["MetaWear"]),
+        .library(name: "MetaWearCpp", targets: ["MetaWearCpp"]),
+        .library(name: "MetaWearMetadata", targets: ["Metadata"])
     ],
     dependencies: [
         .package(
@@ -31,8 +31,12 @@ let package = Package(
                 .headerSearchPath("./src")
             ]
         ),
-        .testTarget(name: "MetaWearTests",
-                    dependencies: ["MetaWear", "MetaWearCpp"])
+        .target(name: "Metadata",
+                dependencies: ["MetaWear"],
+                path: "Sources/Metadata"
+               ),
+        //        .executableTarget(name: "TestHost", dependencies: ["MetaWear"]),
+        .testTarget(name: "MetaWearTests", dependencies: ["MetaWear", "MetaWearCpp"])
     ],
     cxxLanguageStandard: .cxx11
 )

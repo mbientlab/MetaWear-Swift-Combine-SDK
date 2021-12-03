@@ -90,6 +90,9 @@ public class MetaWear: NSObject {
     /// Stream of connecting, connected (and with C++ library setup), disconnecting, and disconnected events.
     public let connectionState: AnyPublisher<CBPeripheralState, Never>
 
+    /// Current connection state
+    public var connectionStateCurrent: CBPeripheralState { _connectionStateSubject.value }
+
 
     // MARK: - Signal (refreshed by `MetaWearScanner` activity)
 
@@ -122,16 +125,37 @@ public class MetaWear: NSObject {
     /// Model, serial, firmware, hardware, and manufacturer details (available after first connection)
     public internal(set) var info: MetaWear.DeviceInformation?
 
+    /// Builds a table of the board's modules
+    public func detectModules() -> MWPublisher<Set<MWModules>> {
+        self.publishWhenConnected()
+            .first()
+            .map { MWModules.detect(in: $0.board) }
+            .mapToMetaWearError()
+            .erase(subscribeOn: self.apiAccessQueue)
+    }
+
     /// Latest advertised name. Note: The CBPeripheral.name property might be cached.
     public var name: String {
         return Self._adQueue.sync {
             let adName = _adData[CBAdvertisementDataLocalNameKey] as? String
-            return adName ?? peripheral.name ?? "MetaWear"
+            return adName ?? peripheral.name ?? Self.defaultName
         }
     }
+    public static let defaultName = "MetaWear"
 
-    /// Lazily builds a table of the board's modules (sync)
-    public lazy private(set) var modules: Set<MWModules> = MWModules.detect(in: board)
+    /// Validate a candidate rename of this MetaWear device
+    /// - Parameter proposed: desired new name
+    /// - Returns: Validity of the new name
+    ///
+    public static func isNameValid(_ proposed: String) -> Bool {
+        if proposed.isEmpty { return false }
+        guard proposed.unicodeScalars.allSatisfy({ Self._validNameCharacters.contains($0) }),
+              let encoded = proposed.data(using: .ascii)
+        else { return false }
+        return encoded.count <= Self._maxNameLength
+    }
+    public static let _maxNameLength = 26
+    public static let _validNameCharacters = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_- ")
 
     // MARK: - Internal Properties
     /// When executing a test suite serially using a shared scanner against the same device, beware that MetaWear device instances are shared between your tests. You may need to set this to zero for certain tests where you are evaluating connection and disconnection behavior from a disconnected starting state. This is incremented by disconnect calls to interrupt an ongoing or the next scheduled connect request.
@@ -197,7 +221,7 @@ public class MetaWear: NSObject {
                                              on_disconnect: _onDisconnect)
         self.board = mbl_mw_metawearboard_create(&connection)
         mbl_mw_metawearboard_set_time_for_response(self.board, 0)
-        self.mac = UserDefaults.MetaWearCore.getMac(for: self)
+        self.mac = UserDefaults.MetaWear.getMac(for: self)
     }
 }
 
@@ -682,7 +706,7 @@ private extension MetaWear {
             } receiveValue: { [weak self] macString in
                 guard let self = self else { return }
                 self.mac = macString
-                UserDefaults.MetaWearCore.setMac(macString, for: self)
+                UserDefaults.MetaWear.setMac(macString, for: self)
                 self._setupCppSDK_didSucceed()
             }
     }

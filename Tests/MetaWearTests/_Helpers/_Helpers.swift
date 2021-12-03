@@ -143,7 +143,7 @@ extension XCTestCase {
             }
             .store(in: &_connection)
 
-        scanner.startScan(allowDuplicates: true)
+        scanner.startScan(higherPerformanceMode: true)
         wait(for: [didConnect] + exps + [final], timeout: timeout, enforceOrder: enforceOrder)
         _disconnectAfterDelay(metawear)
     }
@@ -230,7 +230,7 @@ extension XCTestCase {
                 _device = $0
                 expFindsDevice.fulfill()
             })
-        scanner.startScan(allowDuplicates: true)
+        scanner.startScan(higherPerformanceMode: true)
         wait(for: [expFindsDevice], timeout: 30)
         let metawear = try XCTUnwrap(_device, file: file, line: line)
         return (subs, metawear)
