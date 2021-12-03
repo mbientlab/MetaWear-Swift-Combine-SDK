@@ -30,7 +30,9 @@ let package = Package(
             cxxSettings: [
                 .headerSearchPath("./src")
             ]
-        )
+        ),
+        .testTarget(name: "MetaWearTests",
+                    dependencies: ["MetaWear", "MetaWearCpp"])
     ],
     cxxLanguageStandard: .cxx11
 )
