@@ -22,7 +22,7 @@ public extension MetaWear {
             }
         }
 
-        var isolatedModelName: String {
+        public var isolatedModelName: String {
             switch self {
                 case .s: return "MetaMotion S"
                 case .c: return "MetaMotion C"
