@@ -24,7 +24,7 @@ public extension Publisher where Output == MetaWear {
             }
             return (metawear: metaWear, signal: pointer)
         }
-        .mapToMetaWearError()
+        .mapToMWError()
         .flatMap { o -> MWPublisher<Timestamped<S.DataType>> in
             o.signal.stream(streamable, board: o.metawear.board)
                 .erase(subscribeOn: o.metawear.apiAccessQueue)
@@ -43,7 +43,7 @@ public extension Publisher where Output == MetaWear {
             pollable.pollConfigure(board: metawear.board)
             return (metawear, moduleSignal)
         }
-        .mapToMetaWearError()
+        .mapToMWError()
         .flatMap { o -> MWPublisher<MWData> in
             _poll(
                 polling: o.sensor,
@@ -76,7 +76,7 @@ public extension Publisher where Output == MetaWear {
                    cleanup: (() -> Void)?
     ) -> MWPublisher<Timestamped<T>> {
 
-        mapToMetaWearError()
+        mapToMWError()
             .flatMap { metawear -> MWPublisher<Timestamped<T>> in
                 signal
                     .stream(as: type, start: start, cleanup: cleanup)
@@ -120,9 +120,9 @@ public extension Publisher where Output == MetaWear {
                rate: MWFrequency,
                cleanup: (() -> Void)?
     ) -> MWPublisher<MWData> {
-        mapToMetaWearError()
+        mapToMWError()
             .flatMap { metawear -> MWPublisher<(metawear: MetaWear, countedSensor: MWDataSignal, timer: MWDataSignal)> in
-                mapToMetaWearError()
+                mapToMWError()
                     .zip(readableSignal.accounterCreateCount(),
                          metawear.board.createTimedEvent(
                             period: UInt32(rate.periodMs),

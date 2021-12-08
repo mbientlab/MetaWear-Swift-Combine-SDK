@@ -130,7 +130,7 @@ public class MetaWear: NSObject {
         self.publishWhenConnected()
             .first()
             .map { MWModules.detect(in: $0.board) }
-            .mapToMetaWearError()
+            .mapToMWError()
             .erase(subscribeOn: self.apiAccessQueue)
     }
 

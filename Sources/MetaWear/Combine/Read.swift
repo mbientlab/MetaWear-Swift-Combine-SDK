@@ -23,7 +23,7 @@ public extension Publisher where Output == MetaWear {
             readable.readConfigure(board: metawear.board)
             return (metawear, signalPointer)
         }
-        .mapToMetaWearError()
+        .mapToMWError()
         .flatMap { metawear, signalPointer -> MWPublisher<Timestamped<R.DataType>> in
             signalPointer
                 .read(readable)
@@ -45,7 +45,7 @@ public extension Publisher where Output == MetaWear {
     /// - Returns: Pipeline on the BLE queue with the cast data. Fails if not connected.
     ///
     func read<T>(signal: OpaquePointer, as type: T.Type) -> MWPublisher<Timestamped<T>> {
-        mapToMetaWearError()
+        mapToMWError()
             .flatMap { metawear in
                 metawear.board
                     .read(as: T.self)

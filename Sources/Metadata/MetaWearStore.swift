@@ -245,6 +245,7 @@ public extension MetaWearStore {
     func refreshMetadata(for metawear: MetaWear, didRefresh: ((MetaWear.Metadata) -> Void)? = nil) {
         metawear.publishWhenConnected()
             .first()
+            .mapToMWError()
             .flatMap { metawear in
                 Publishers.Zip3(
                     metawear.detectModules(),
@@ -364,7 +365,7 @@ internal extension Publisher {
 
     /// Erase and share a publisher on the main queue.
     func shareOnMain() -> AnyPublisher<Output,Failure> {
-        share().receive(on: DispatchQueue.main).eraseToAnyPublisher()
+        receive(on: DispatchQueue.main).eraseToAnyPublisher()
     }
 }
 

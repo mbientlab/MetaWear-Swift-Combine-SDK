@@ -23,9 +23,9 @@ public extension Publisher where Output == MetaWear {
                           recordedEvent commands: @escaping () -> Void
     ) -> MWPublisher<(metawear: MetaWear, timer: OpaquePointer)> {
 
-        mapToMetaWearError()
+        mapToMWError()
             .flatMap { mw -> MWPublisher<(metawear: MetaWear, timer: OpaquePointer)> in
-                mapToMetaWearError()
+                mapToMWError()
                     .zip(mw.board.createTimedEvent(
                         period: period,
                         repetitions: repetitions,
@@ -52,7 +52,7 @@ public extension Publisher where Output == MetaWear {
                      immediateFire: Bool = false
     ) -> MWPublisher<OpaquePointer> {
 
-        mapToMetaWearError()
+        mapToMWError()
             .flatMap { device -> MWPublisher<OpaquePointer> in
                 device.board
                     .createTimer(period: periodMs, repetitions: repetitions, immediateFire: immediateFire)

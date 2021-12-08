@@ -38,10 +38,10 @@ func _Fail<Output>(mapping: Error) -> AnyPublisher<Output, MWError> {
     }
 }
 
-internal extension Publisher {
+public extension Publisher {
 
     /// Wraps any preceding error into a `MetaWearError`.
-    func mapToMetaWearError() -> AnyPublisher<Output,MWError> {
+    func mapToMWError() -> AnyPublisher<Output,MWError> {
         mapError { error -> MWError in
             if let mwe = error as? MWError {
                 return mwe

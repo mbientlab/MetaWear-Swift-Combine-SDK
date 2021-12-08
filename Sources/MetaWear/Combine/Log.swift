@@ -20,7 +20,7 @@ public extension Publisher where Output == MetaWear {
                 else { throw errorMsg }
                 return (mw, signal)
             }
-            .mapToMetaWearError()
+            .mapToMWError()
             .flatMap { metawear, signal -> MWPublisher<MetaWear> in
                 signal
                     .log(board: metawear.board,
@@ -47,7 +47,7 @@ public extension Publisher where Output == MetaWear {
             pollable.pollConfigure(board: metawear.board)
             return (metawear, moduleSignal)
         }
-        .mapToMetaWearError()
+        .mapToMWError()
         .flatMap { o -> MWPublisher<MetaWear> in
             log(byPolling: o.sensor, rate: pollable.pollingRate, overwriting: overwriting)
                 .mapError { _ in MWError.operationFailed("Unable to log \(pollable.name)") }
@@ -60,9 +60,9 @@ public extension Publisher where Output == MetaWear {
     /// - Returns: The connected MetaWear or an error if the logging attempt fails.
     ///
     func log(byPolling readableSignal: MWDataSignal, rate: MWFrequency, overwriting: Bool = false) -> MWPublisher<MetaWear> {
-        mapToMetaWearError()
+        mapToMWError()
             .flatMap { metawear -> MWPublisher<(metawear: MetaWear, countedSensor: MWDataSignal, timer: MWDataSignal)> in
-                mapToMetaWearError()
+                mapToMWError()
                     .zip(readableSignal.accounterCreateCount(),
                          metawear.board.createTimedEvent(
                             period: UInt32(rate.periodMs),
@@ -161,7 +161,7 @@ public extension Publisher where Output == MetaWear, Failure == MWError {
                 }
                 return (metawear, logger.log)
             }
-            .mapToMetaWearError()
+            .mapToMWError()
             .download(loggable)
             .eraseToAnyPublisher()
     }
@@ -301,7 +301,7 @@ public extension Publisher where Output == MWDataSignal {
              start:     (() -> Void)?
     ) -> AnyPublisher<(id: MWLogger, signal: OpaquePointer), MWError> {
 
-        mapToMetaWearError()
+        mapToMWError()
             .flatMap { signal -> AnyPublisher<(id: MWLogger, signal: OpaquePointer), MWError> in
                 signal.log(board: board, overwriting: overwriting, start: start)
             }

@@ -78,7 +78,7 @@ extension Publisher {
                         _ line: UInt = #line
     ) -> AnyPublisher<Output,MWError> {
 
-        mapToMetaWearError()
+        mapToMWError()
             .flatMap { output -> AnyPublisher<Output,MWError> in
                 metawear.publish()
                     .collectAnonymousLoggerSignals()
@@ -172,7 +172,7 @@ extension XCTestCase {
                 return metawear
                     .publishWhenConnected()
                     .first()
-                    .mapToMetaWearError()
+                    .mapToMWError()
                     .handleEvents(receiveOutput: { [weak didConnect] device in
                         didConnect?.fulfill()
                         announce(device: device)
@@ -202,7 +202,7 @@ extension XCTestCase {
                         return $0.rssi >= minimumRSSI
                     }
                     .first()
-                    .mapToMetaWearError()
+                    .mapToMWError()
                     .eraseToAnyPublisher()
             }
         }

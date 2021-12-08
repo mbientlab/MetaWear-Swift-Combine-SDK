@@ -10,7 +10,7 @@ public extension Publisher where Output == MetaWear {
     /// - Returns: MetaWear
     ///
     func command<C: MWCommand>(_ command: C) -> MWPublisher<MetaWear> {
-        mapToMetaWearError()
+        mapToMWError()
             .flatMap { metaWear -> MWPublisher<MetaWear> in
                 Just(metaWear)
                     .setFailureType(to: MWError.self)
@@ -45,7 +45,7 @@ public extension Publisher where Output == MetaWear, Failure == MWError {
     ///
     func factoryReset() -> MWPublisher<MetaWear> {
         flatMap { metawear in
-            Just(metawear)
+            _JustMW(metawear)
                 .handleEvents(receiveOutput: { metaWear in
                     metawear.resetToFactoryDefaults()
                 })
@@ -114,7 +114,7 @@ public extension Publisher where Output == MetaWear {
     func macro(executeOnBoot: Bool,
                actions: @escaping (MWPublisher<MetaWear>) -> MWPublisher<MetaWear>
     ) -> MWPublisher<MWMacroIdentifier> {
-        mapToMetaWearError()
+        mapToMWError()
             .macro(executeOnBoot: executeOnBoot, actions: actions)
     }
 }
