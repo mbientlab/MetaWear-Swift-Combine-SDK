@@ -99,7 +99,7 @@ public class MetaWear: NSObject {
     /// Last signal strength indicator received. Updates while `MetaWearScanner` or an rssi Publisher is active, plus when you call `updateRSSI()`.
     public var rssi: Int { _rssi.value }
 
-    /// Most recent RSSI, as pushed from an active `MetaWearScanner` or from `CBPeripheralDelegate` about every 5 seconds by automatic calls to `updateRSSI()`. -100  can indicate disconnection.
+    /// Most recent RSSI, as pushed from an active `MetaWearScanner` or from `CBPeripheralDelegate` about every 5 seconds by automatic calls to `updateRSSI()` (only while connected). -100  can indicate disconnection.
     public private(set) lazy var rssiPublisher: AnyPublisher<Int, Never> = _makeRSSIPublisher()
 
     /// Average of the last 5 seconds of signal strength, as pushed from an active `MetaWearScanner` or from `CBPeripheralDelegate` about every 5 seconds by automatic calls to `updateRSSI()`. -100 can indicate disconnection.
@@ -202,7 +202,7 @@ public class MetaWear: NSObject {
     public init(peripheral: CBPeripheral, scanner: MetaWearScanner) {
         self.peripheral = peripheral
         self.scanner = scanner
-        self._refreshTimer = Self._makeFiveSecondRefresher()
+        self._refreshTimer = Self._makeFiveSecondRefresher(scanner.bleQueue)
 
         self.connectionState = _connectionStateSubject.erase(subscribeOn: scanner.bleQueue)
 
@@ -981,14 +981,12 @@ private extension MetaWear {
     ///
     static func averageRSSI(_ history: [(date: Date, rssi: Double)],
                             lastNSeconds: Double = 5.0) -> Double {
-        Self._adQueue.sync {
-            let filteredRSSI = history.prefix {
-                -$0.date.timeIntervalSinceNow < lastNSeconds
-            }
-            guard filteredRSSI.count > 0 else { return -100 }
-            let sumArray = filteredRSSI.reduce(0.0) { $0 + $1.1 }
-            return sumArray / Double(filteredRSSI.count)
+        let filteredRSSI = history.prefix {
+            -$0.date.timeIntervalSinceNow < lastNSeconds
         }
+        guard filteredRSSI.endIndex > 0 else { return -100 }
+        let sumArray = filteredRSSI.reduce(0.0) { $0 + $1.1 }
+        return sumArray / Double(filteredRSSI.count)
     }
 
     func _startRefreshingRSSI() {
@@ -996,6 +994,7 @@ private extension MetaWear {
         guard _rssiRefreshSources == 1 else { return }
         _refreshables["rssi"] = _refreshTimer
             .sink { [weak self] date in
+                guard self?.isConnectedAndSetup == true else { return }
                 Self._adQueue.sync {
                     /// Only update if there isn't a recently refreshed value
                     guard (self?._rssiHistory.value.last?.0.distance(to: date) ?? 5) > 4 else { return }
@@ -1039,11 +1038,12 @@ private extension MetaWear {
             .erase(subscribeOn: apiAccessQueue)
     }
 
-    static func _makeFiveSecondRefresher() -> AnyPublisher<Date,Never> {
+    static func _makeFiveSecondRefresher(_ queue: DispatchQueue) -> AnyPublisher<Date,Never> {
         Timer.TimerPublisher
-            .init(interval: 5, tolerance: 1, runLoop: .current, mode: .default, options: nil)
+            .init(interval: 5, tolerance: 1, runLoop: RunLoop.main, mode: .default, options: nil)
             .autoconnect()
             .share()
-            .eraseToAnyPublisher()
+            .receive(on: queue)
+            .erase(subscribeOn: queue)
     }
 }
