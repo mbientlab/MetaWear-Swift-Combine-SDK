@@ -27,10 +27,10 @@ public struct MWData {
 public extension MWData {
 
     struct LogDownload {
-        public let logger: MWLogger
+        public let logger: MWNamedSignal
         public let data: [MWData]
 
-        public init(logger: MWLogger, data: [MWData]) {
+        public init(logger: MWNamedSignal, data: [MWData]) {
             self.logger = logger
             self.data = data
         }

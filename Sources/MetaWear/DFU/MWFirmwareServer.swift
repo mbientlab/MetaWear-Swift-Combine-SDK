@@ -65,7 +65,7 @@ public extension MWFirmwareServer {
     /// Get a pointer to the latest firmware for this device
     ///
     func fetchLatestFirmware(for device: MetaWear) -> AnyPublisher<MWFirmwareServer.Build,Swift.Error> {
-        Publishers.Zip(device.readCharacteristic(.hardwareRevision), device.readCharacteristic(.modelNumber))
+        Publishers.Zip(device.read(.hardwareRevision), device.read(.modelNumber))
             .eraseErrorType()
             .flatMap(Self.getLatestFirmwareAsync)
             .eraseToAnyPublisher()
@@ -75,7 +75,7 @@ public extension MWFirmwareServer {
     /// - Returns: Nil if already on latest, otherwise the latest build
     ///
     func fetchRelevantFirmwareUpdate(for device: MetaWear) -> AnyPublisher<MWFirmwareServer.Build?,Swift.Error> {
-        Publishers.Zip(self.fetchLatestFirmware(for: device), device.readCharacteristic(.firmwareRevision).eraseErrorType())
+        Publishers.Zip(self.fetchLatestFirmware(for: device), device.read(.firmwareRevision).eraseErrorType())
             .map { latestBuild, boardFirmware -> MWFirmwareServer.Build? in
                 boardFirmware.isMetaWearVersion(lessThan: latestBuild.firmwareRev) ? latestBuild : nil
             }

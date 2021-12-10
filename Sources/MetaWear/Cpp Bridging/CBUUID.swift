@@ -2,6 +2,7 @@
 
 import CoreBluetooth
 import Combine
+import MetaWearCpp
 
 // MARK: - Type safe encapsulation
 
@@ -149,13 +150,20 @@ public extension MetaWear {
 internal extension MetaWear.DeviceInformation {
 
     static func publisher(for device: MetaWear) -> MWPublisher<MetaWear.DeviceInformation> {
-        Publishers.Zip(device.readCharacteristic(.manufacturerName), device.readCharacteristic(.modelNumber))
-            .zip(device.readCharacteristic(.serialNumber),
-                 device.readCharacteristic(.firmwareRevision),
-                 device.readCharacteristic(.hardwareRevision), { mm, serial, firm, hard in
+        Publishers.Zip(device.read(.manufacturerName), _JustMW(Self.getModel(device: device))
+        )
+            .zip(device.read(.serialNumber),
+                 device.read(.firmwareRevision),
+                 device.read(.hardwareRevision),
+                 { mm, serial, firm, hard in
                 (mm.0, mm.1, serial, firm, hard)
             })
             .map(MetaWear.DeviceInformation.init)
             .eraseToAnyPublisher()
+    }
+
+    static func getModel(device: MetaWear) -> MetaWear.Model {
+        let number = mbl_mw_metawearboard_get_model(device.board)
+        return .init(modelNumber: number)
     }
 }

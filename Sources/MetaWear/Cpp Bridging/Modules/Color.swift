@@ -10,13 +10,20 @@ public struct MWColorDetector: MWPollable, MWReadable {
 
     public typealias DataType = ColorValue
     public typealias RawDataType = MblMwTcs34725ColorAdc
-    public var loggerName: MWLogger = .color
+    public var signalName: MWNamedSignal = .color
 
     public var gain: Gain? = nil
     public var pollingRate: MWFrequency
     public private(set) var integrationTime: Double
 
-    public init(gain: Gain? = nil, integrationTime: Double, rate: MWFrequency) throws {
+    public init(gain: Gain, presetRate: PresetFrequency) {
+        self.gain = gain
+        self.pollingRate = presetRate.freq
+        self.integrationTime = presetRate.integrationTimeMs
+    }
+
+    /// Set a custom integration time and frequency within sensor limits
+    public init(gain: Gain, integrationTime: Double, rate: MWFrequency) throws {
         self.gain = gain
         self.pollingRate = rate
         self.integrationTime = 0
@@ -58,14 +65,14 @@ public extension MWColorDetector {
 // MARK: - Discoverable Presets
 
 public extension MWPollable where Self == MWColorDetector {
-    static func colorDetector(gain: MWColorDetector.Gain?, rate: MWFrequency) -> Self {
-        try! Self(gain: gain, integrationTime: 36, rate: rate)
+    static func colorDetector(gain: MWColorDetector.Gain, rate: MWColorDetector.PresetFrequency) -> Self {
+        Self(gain: gain, presetRate: rate)
     }
 }
 
 public extension MWReadable where Self == MWColorDetector {
-    static func colorDetector(gain: MWColorDetector.Gain?) -> Self {
-        try! Self(gain: gain, integrationTime: 36, rate: .init(eventsPerSecond: 1))
+    static func colorDetector(gain: MWColorDetector.Gain, rate: MWColorDetector.PresetFrequency) -> Self {
+        Self(gain: gain, presetRate: rate)
     }
 }
 
@@ -89,11 +96,28 @@ public extension MWColorDetector {
         }
     }
 
-    enum PresetFrequency: Float, CaseIterable, IdentifiableByRawValue {
-        case hz1   = 614.4
-        case hz25  = 36
-        case hz50  = 16.8
-        case hz100 = 7.2
+    enum PresetFrequency: Int, CaseIterable, IdentifiableByRawValue {
+        case hz1 = 1
+        case hz25 = 25
+        case hz50 = 50
+        case hz100 = 100
+
+        public var freq: MWFrequency {
+            .init(hz: Double(rawValue))
+        }
+
+        public var label: String {
+            "\(rawValue) Hz"
+        }
+
+        public var integrationTimeMs: Double {
+            switch self {
+                case .hz1: return 700
+                case .hz25: return 36
+                case .hz50: return 16.8
+                case .hz100: return 7.2
+            }
+        }
     }
 
     struct ColorValue {

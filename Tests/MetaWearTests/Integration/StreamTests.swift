@@ -18,7 +18,7 @@ class StreamTests: XCTestCase {
     }
 
     func testStream_AmbientLight() {
-        _testStream(.ambientLight(rate: .ms500, gain: .gain1, integrationTime: .ms100))
+        _testStream(.ambientLight(rate: .ms500, gain: .x1, integrationTime: .ms100))
     }
 
     func testStream_BarometerAbsolute()  {
@@ -42,13 +42,13 @@ class StreamTests: XCTestCase {
     func testStreamPoll_Temperature() throws {
         try _testPoll { metawear in
             try [MWThermometer.Source.onboard, .bmp280, .onDie, .external]
-                .map { try .thermometer(type: $0, board: metawear.board, rate: .init(eventsPerSecond: 1)) }
+                .map { try .thermometer(type: $0, board: metawear.board, rate: .init(hz: 1)) }
         }
     }
 
     func testStreamPoll_Humidity() throws {
         try _testPoll { _ in
-            [.humidity(oversampling: .x1, rate: .init(eventsPerSecond: 1))]
+            [.humidity(oversampling: .x1, rate: .init(hz: 1))]
         }
     }
 
@@ -60,7 +60,7 @@ class StreamTests: XCTestCase {
 
     func testStreamPoll_Proximity() throws {
         try _testPoll { _ in
-            [.proximity(rate: .init(eventsPerSecond: 1), sensitivity: .init(5), current: .mA100)]
+            [.proximity(rate: .init(hz: 1), sensitivity: .init(5), current: .mA100)]
         }
     }
 

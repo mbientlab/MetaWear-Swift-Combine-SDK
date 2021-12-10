@@ -5,7 +5,7 @@ import Foundation
 
 public struct MWDataTable {
 
-    public let source: MWLogger
+    public let source: MWNamedSignal
     public let headerRow: [String]
     /// Outer: Row. Inner: Data columns, starting with epoch.
     public let rows: [[String]]
@@ -17,5 +17,17 @@ public struct MWDataTable {
         self.rows = utilities.convertRawDataToCSVColumns(download.data)
     }
 
+    public init<S: MWStreamable>(streamed: [(time: Date, value: S.DataType)], _ streamable: S) {
+        self.source = streamable.signalName
+        let utilties = source.downloadUtilities
+        self.headerRow = utilties.columnHeadings
+        self.rows = streamed.map(streamable.asColumns)
+    }
 
+    public init<P: MWPollable>(streamed: [(time: Date, value: P.DataType)], _ streamable: P) {
+        self.source = streamable.signalName
+        let utilties = source.downloadUtilities
+        self.headerRow = utilties.columnHeadings
+        self.rows = streamed.map(streamable.asColumns)
+    }
 }

@@ -12,6 +12,7 @@ public struct MWAmbientLight: MWStreamable {
     /// Lux (Illuminance)
     public typealias DataType = Double
     public typealias RawDataType = UInt32
+    public let signalName: MWNamedSignal = .ambientLight
     public let columnHeadings = ["Epoch", "Lux"]
 
     public var gain: Gain? = nil
@@ -68,21 +69,21 @@ public extension MWStreamable where Self == MWAmbientLight {
 public extension MWAmbientLight {
 
     enum Gain: Int, CaseIterable, IdentifiableByRawValue {
-        case gain1  = 1
-        case gain2  = 2
-        case gain4  = 4
-        case gain8  = 8
-        case gain48 = 48
-        case gain96 = 96
+        case x1  = 1
+        case x2  = 2
+        case x4  = 4
+        case x8  = 8
+        case x48 = 48
+        case x96 = 96
 
         public var cppEnumValue: MblMwAlsLtr329Gain {
             switch self {
-                case .gain1: return MBL_MW_ALS_LTR329_GAIN_1X
-                case .gain2: return MBL_MW_ALS_LTR329_GAIN_2X
-                case .gain4: return MBL_MW_ALS_LTR329_GAIN_4X
-                case .gain8: return MBL_MW_ALS_LTR329_GAIN_8X
-                case .gain48: return MBL_MW_ALS_LTR329_GAIN_48X
-                case .gain96: return MBL_MW_ALS_LTR329_GAIN_96X
+                case .x1: return MBL_MW_ALS_LTR329_GAIN_1X
+                case .x2: return MBL_MW_ALS_LTR329_GAIN_2X
+                case .x4: return MBL_MW_ALS_LTR329_GAIN_4X
+                case .x8: return MBL_MW_ALS_LTR329_GAIN_8X
+                case .x48: return MBL_MW_ALS_LTR329_GAIN_48X
+                case .x96: return MBL_MW_ALS_LTR329_GAIN_96X
             }
         }
     }
@@ -112,11 +113,17 @@ public extension MWAmbientLight {
     }
 
     enum MeasurementRate: Int, CaseIterable, IdentifiableByRawValue {
+        /// 50 Hz
         case ms50   = 50
+        /// 10 Hz
         case ms100  = 100
+        /// 5 Hz
         case ms200  = 200
+        /// 2 Hz
         case ms500  = 500
+        /// 1 Hz
         case ms1000 = 1000
+        /// 0.5 Hz
         case ms2000 = 2000
 
         public var cppEnumValue: MblMwAlsLtr329MeasurementRate {
@@ -127,6 +134,18 @@ public extension MWAmbientLight {
                 case .ms500: return MBL_MW_ALS_LTR329_RATE_500ms
                 case .ms1000: return MBL_MW_ALS_LTR329_RATE_1000ms
                 case .ms2000: return MBL_MW_ALS_LTR329_RATE_2000ms
+            }
+        }
+
+        public var freq: MWFrequency {
+            .init(periodMs: rawValue)
+        }
+
+        /// Hz
+        public var label: String {
+            switch self {
+                case .ms2000: return "0.5 Hz"
+                default: return "\(1000 / rawValue) Hz"
             }
         }
     }

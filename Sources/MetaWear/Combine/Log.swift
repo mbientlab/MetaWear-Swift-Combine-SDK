@@ -88,11 +88,28 @@ public extension Publisher where Output == MetaWear {
             .eraseToAnyPublisher()
     }
 
+    /// Given a non-nil preset, starts logging a preset sensor configuration.
+    /// - Returns: The connected MetaWear or an error if the logging attempt fails.
+    ///
+    func optionallyLog<L: MWLoggable>(_ loggable: L?, overwriting: Bool = false) -> MWPublisher<MetaWear> {
+        if let loggable = loggable {
+            return self.log(loggable, overwriting: overwriting)
+        } else { return self.mapToMWError() }
+    }
+
+    /// Given a non-nil preset, starts logging a preset sensor configuration that works by polling a readable signal.
+    /// - Returns: The connected MetaWear or an error if the logging attempt fails.
+    ///
+    func optionallyLog<P: MWPollable>(byPolling pollable: P?, overwriting: Bool = false) -> MWPublisher<MetaWear> {
+        if let pollable = pollable {
+            return self.log(byPolling: pollable, overwriting: overwriting)
+        } else { return self.mapToMWError() }
+    }
 }
 
 // MARK: - Download Logs
 
-public extension Publisher where Output == MetaWear, Failure == MWError {
+public extension Publisher where Output == MetaWear {
 
     /// Downloads all logs into a `String` format that can convert into a .csv file.
     /// You can also get an `MWData` array output using `_logDownloadData()`.
@@ -100,7 +117,7 @@ public extension Publisher where Output == MetaWear, Failure == MWError {
     ///
     func logsDownload() -> MWPublisher<Download<[MWDataTable]>> {
         _logDownloadData()
-            .map { ($0.map(MWDataTable.init), $1) }
+            .map { ($0.map(MWDataTable.init), $1) } 
             .eraseToAnyPublisher()
     }
 
@@ -108,12 +125,12 @@ public extension Publisher where Output == MetaWear, Failure == MWError {
     /// - Returns: Publishes percent complete. At 100% complete, publishes all logged data.
     ///
     func _logDownloadData() -> MWPublisher<Download<[MWData.LogDownload]>> {
-
-        zip(collectAnonymousLoggerSignals())
+        mapToMWError()
+            .zip(self.mapToMWError().collectAnonymousLoggerSignals())
             .flatMap { metawear, loggers -> MWPublisher<Download<[MWData.LogDownload]>> in
 
                 // Stop logging + subscribe/store the downloaded feed from each signal
-                let downloads = loggers.reduce(into: [MWLogger:CurrentValueSubject<[MWData], MWError>]()) { dict, logger in
+                let downloads = loggers.reduce(into: [MWNamedSignal:CurrentValueSubject<[MWData], MWError>]()) { dict, logger in
                     logger.id.downloadUtilities.stopModule(metawear.board)
                     dict[logger.id] = _datasignal_subscribe_accumulate(logger.log)
                 }
@@ -129,7 +146,7 @@ public extension Publisher where Output == MetaWear, Failure == MWError {
                 // Only pass data when 100% downloaded
                     .eraseToAnyPublisher()
                     .map({ (refs, download) -> (
-                        refs: (device: MetaWear, logs: [(id: MWLogger, log: OpaquePointer)] ),
+                        refs: (device: MetaWear, logs: [(id: MWNamedSignal, log: OpaquePointer)] ),
                         download: Download<[MWData.LogDownload]>
                     ) in
                         let data = download.percentComplete == 1 ? downloads.latest() : []
@@ -153,10 +170,10 @@ public extension Publisher where Output == MetaWear, Failure == MWError {
     ///
     func logDownload<L: MWLoggable>(_ loggable: L)
     -> MWPublisher<Download<[Timestamped<L.DataType>]>> {
-
-        zip(collectAnonymousLoggerSignals())
+        mapToMWError()
+            .zip(self.mapToMWError().collectAnonymousLoggerSignals())
             .tryMap { metawear, logs -> (MetaWear, OpaquePointer) in
-                guard let logger = logs.first(where: { $0.id == loggable.loggerName }) else {
+                guard let logger = logs.first(where: { $0.id == loggable.signalName }) else {
                     throw MWError.operationFailed("Could not find logger \(loggable.name)")
                 }
                 return (metawear, logger.log)
@@ -169,16 +186,16 @@ public extension Publisher where Output == MetaWear, Failure == MWError {
 
 // MARK: - Collect Loggers & Clear Loggers
 
-public extension Publisher where Output == MetaWear, Failure == MWError {
+public extension Publisher where Output == MetaWear{
 
     /// Collects references to active loggers on the MetaWear.
     ///
-    func collectAnonymousLoggerSignals() -> MWPublisher<[(id: MWLogger, log: OpaquePointer)]> {
-
-        flatMap { device -> MWPublisher<[(id: MWLogger, log: OpaquePointer)]> in
+    func collectAnonymousLoggerSignals() -> MWPublisher<[(id: MWNamedSignal, log: OpaquePointer)]> {
+        mapToMWError()
+            .flatMap { device -> MWPublisher<[(id: MWNamedSignal, log: OpaquePointer)]> in
             return device.board
                 .collectAnonymousLoggerSignals()
-                .map { log in log.map { (MWLogger(identifier: $0), $1) } }
+                .map { log in log.map { (MWNamedSignal(identifier: $0), $1) } }
                 .erase(subscribeOn: device.apiAccessQueue)
         }
         .eraseToAnyPublisher()
@@ -187,7 +204,8 @@ public extension Publisher where Output == MetaWear, Failure == MWError {
     /// Wipes logged data.
     ///
     func deleteLoggedEntries() -> MWPublisher<MetaWear> {
-        flatMap { metawear in
+        mapToMWError()
+            .flatMap { metawear in
             _JustMW(metawear)
                 .handleEvents(receiveOutput: { metaWear in
                     mbl_mw_logging_clear_entries(metaWear.board)
@@ -201,7 +219,7 @@ public extension Publisher where Output == MetaWear, Failure == MWError {
 
 // MARK: - Download Logs (One Signal Only)
 
-public extension Publisher where Output == (MetaWear, MWLoggerSignal), Failure == MWError {
+public extension Publisher where Output == (MetaWear, MWLoggerSignal) {
 
     /// Download one logger signal, ignoring all others.
     /// - Parameters:
@@ -212,7 +230,7 @@ public extension Publisher where Output == (MetaWear, MWLoggerSignal), Failure =
     func download<L: MWLoggable>(_ loggable: L)
     -> MWPublisher<Download<MWDataTable>> {
 
-        download(loggable.loggerName, loggerCleanup: loggable.loggerCleanup)
+        download(loggable.signalName, loggerCleanup: loggable.loggerCleanup)
             .map { data, percentage -> Download<MWDataTable> in
                 (.init(download: data), percentage)
             }
@@ -228,7 +246,7 @@ public extension Publisher where Output == (MetaWear, MWLoggerSignal), Failure =
     func download<L: MWLoggable>(_ loggable: L)
     -> MWPublisher<Download<[Timestamped<L.DataType>]>> {
 
-        download(loggable.loggerName, loggerCleanup: loggable.loggerCleanup)
+        download(loggable.signalName, loggerCleanup: loggable.loggerCleanup)
             .map { data, percentage -> Download<[Timestamped<L.DataType>]> in
                 (data.data.map(loggable.convertRawToSwift), percentage)
             }
@@ -241,11 +259,12 @@ public extension Publisher where Output == (MetaWear, MWLoggerSignal), Failure =
     ///   - loggerCleanup: Closure to perform to stop the signal being logged
     /// - Returns: Publishes percentage complete, with an empty array of data until 100% (1.0) downloaded
     ///
-    func download(_ loggerName: MWLogger,
+    func download(_ loggerName: MWNamedSignal,
                   loggerCleanup: @escaping (MWBoard) -> Void
     ) -> MWPublisher<Download<MWData.LogDownload>> {
 
-        flatMap { metawear, logger -> MWPublisher<Download<MWData.LogDownload>> in
+        mapToMWError()
+            .flatMap { metawear, logger -> MWPublisher<Download<MWData.LogDownload>> in
             // Stop recording
             loggerCleanup(metawear.board)
             mbl_mw_logging_stop(metawear.board)
@@ -299,10 +318,10 @@ public extension Publisher where Output == MWDataSignal {
     func log(board: MWBoard,
              overwriting: Bool,
              start:     (() -> Void)?
-    ) -> AnyPublisher<(id: MWLogger, signal: OpaquePointer), MWError> {
+    ) -> AnyPublisher<(id: MWNamedSignal, signal: OpaquePointer), MWError> {
 
         mapToMWError()
-            .flatMap { signal -> AnyPublisher<(id: MWLogger, signal: OpaquePointer), MWError> in
+            .flatMap { signal -> AnyPublisher<(id: MWNamedSignal, signal: OpaquePointer), MWError> in
                 signal.log(board: board, overwriting: overwriting, start: start)
             }
             .eraseToAnyPublisher()
@@ -322,10 +341,10 @@ public extension MWDataSignal {
     func log(board:       MWBoard,
              overwriting: Bool,
              start:       (() -> Void)?
-    ) -> AnyPublisher<(id: MWLogger, signal: OpaquePointer), MWError> {
+    ) -> AnyPublisher<(id: MWNamedSignal, signal: OpaquePointer), MWError> {
 
         makeLoggerSignal()
-            .map { (MWLogger(identifier: $0), $1) }
+            .map { (MWNamedSignal(identifier: $0), $1) }
             .handleEvents(receiveOutput: { id, signal in
                 mbl_mw_logging_start(board, overwriting ? 1 : 0)
                 start?()

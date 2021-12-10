@@ -72,7 +72,7 @@ extension Publisher {
 
 extension Publisher {
 
-    func _assertLoggers(_ loggers: [MWLogger],
+    func _assertLoggers(_ loggers: [MWNamedSignal],
                         metawear: MetaWear,
                         _ file: StaticString = #file,
                         _ line: UInt = #line

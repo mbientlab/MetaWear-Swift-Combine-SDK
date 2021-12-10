@@ -39,12 +39,13 @@ public extension MWBoard {
 
 // MARK: - Command-like Publishers
 
-public extension Publisher where Output == MetaWear, Failure == MWError {
+public extension Publisher where Output == MetaWear {
 
     /// Performs a factory reset, wiping all content and settings, before disconnecting.
     ///
     func factoryReset() -> MWPublisher<MetaWear> {
-        flatMap { metawear in
+        self.mapToMWError()
+            .flatMap { metawear in
             _JustMW(metawear)
                 .handleEvents(receiveOutput: { metaWear in
                     metawear.resetToFactoryDefaults()
@@ -58,7 +59,7 @@ public extension Publisher where Output == MetaWear, Failure == MWError {
 
 // MARK: - Macro
 
-public extension Publisher where Output == MetaWear, Failure == MWError {
+public extension Publisher where Output == MetaWear {
 
     /// Records the commands you provide in the closure. A macro can be executed on each reboot or by an explicit command that references the identifier returned by this function.
     ///
@@ -70,7 +71,8 @@ public extension Publisher where Output == MetaWear, Failure == MWError {
     func macro(executeOnBoot: Bool,
                actions: @escaping (MWPublisher<MetaWear>) -> MWPublisher<MetaWear>
     ) -> MWPublisher<MWMacroIdentifier> {
-        flatMap { metawear -> MWPublisher<MWMacroIdentifier> in
+        mapToMWError()
+            .flatMap { metawear -> MWPublisher<MWMacroIdentifier> in
                 mbl_mw_macro_record(metawear.board, executeOnBoot ? 1 : 0)
                 return actions(_JustMW(metawear))
                     .flatMap { mw -> MWPublisher<MWMacroIdentifier> in
@@ -93,29 +95,13 @@ public extension Publisher where Output == MetaWear, Failure == MWError {
     /// - Returns: Republishes the current MetaWear
     ///
     func macroExecute(id: MWMacroIdentifier) -> MWPublisher<MetaWear> {
-        flatMap { metawear -> MWPublisher<MetaWear> in
+        mapToMWError()
+            .flatMap { metawear -> MWPublisher<MetaWear> in
             mbl_mw_macro_execute(metawear.board, id)
             return _JustMW(metawear)
                 .erase(subscribeOn: metawear.apiAccessQueue)
         }
         .eraseToAnyPublisher()
-    }
-}
-
-public extension Publisher where Output == MetaWear {
-
-    /// Records the commands you provide in the closure. A macro can be executed on each reboot or by an explicit command that references the identifier returned by this function.
-    ///
-    /// - Parameters:
-    ///   - executeOnBoot: Execute this macro eagerly on reboot or when commanded
-    ///   - actions: Actions that form the macro
-    /// - Returns: An integer that identifies the recorded macro
-    ///
-    func macro(executeOnBoot: Bool,
-               actions: @escaping (MWPublisher<MetaWear>) -> MWPublisher<MetaWear>
-    ) -> MWPublisher<MWMacroIdentifier> {
-        mapToMWError()
-            .macro(executeOnBoot: executeOnBoot, actions: actions)
     }
 }
 

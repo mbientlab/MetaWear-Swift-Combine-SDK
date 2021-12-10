@@ -11,7 +11,7 @@ public struct MWHumidity: MWPollable, MWReadable {
     public typealias DataType = Float
     public typealias RawDataType = Float
     public let columnHeadings = ["Epoch", "Humidity"]
-    public var loggerName: MWLogger = .humidity
+    public var signalName: MWNamedSignal = .humidity
 
     public var oversampling: Oversampling? = nil
     public var pollingRate: MWFrequency
@@ -47,7 +47,7 @@ public extension MWPollable where Self == MWHumidity {
 
 public extension MWReadable where Self == MWHumidity {
     static func humidity(oversampling: MWHumidity.Oversampling? = nil) -> Self {
-        Self(oversampling: oversampling, rate: .init(eventsPerSecond: 1))
+        Self(oversampling: oversampling, rate: .init(hz: 1))
     }
 }
 

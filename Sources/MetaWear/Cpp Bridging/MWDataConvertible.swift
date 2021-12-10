@@ -10,7 +10,7 @@ import MetaWearCpp
 /// a `MblMwData` C++ struct into a
 /// defined Swift value type whose lifetime
 /// is not confined to the C++ closure.
-public protocol MWDataConvertible {
+public protocol MWDataConvertible: Equatable & Hashable {
 
     /// Final converted Swift value type
     associatedtype DataType
@@ -242,6 +242,10 @@ public extension String {
     static var metaWearStringDecimalDigits = 4
     init(mwDecimals: CVarArg) {
         self.init(format: "%1.\(String.metaWearStringDecimalDigits)", mwDecimals)
+    }
+
+    init(int: Double) {
+        self.init( Int(int) )
     }
 
     init(mwPercent: Double) {

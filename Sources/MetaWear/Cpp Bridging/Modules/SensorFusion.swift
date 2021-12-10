@@ -17,7 +17,7 @@ public extension MWSensorFusion {
         public typealias DataType = SIMD3<Float>
         public typealias RawDataType = MblMwEulerAngles
         public let columnHeadings = ["Epoch", "Pitch", "Roll", "Yaw"]
-        public let loggerName: MWLogger = .eulerAngles
+        public let signalName: MWNamedSignal = .eulerAngles
         public let output: OutputType = .eulerAngles
 
         public var mode: MWSensorFusion.Mode
@@ -34,7 +34,7 @@ public extension MWSensorFusion {
         /// WXYZ
         public typealias DataType = SIMD4<Float>
         public typealias RawDataType = MblMwQuaternion
-        public let loggerName: MWLogger = .quaternion
+        public let signalName: MWNamedSignal = .quaternion
         public let output: OutputType = .quaternion
 
         public var mode: MWSensorFusion.Mode
@@ -55,7 +55,7 @@ public extension MWSensorFusion {
         /// XYZ (Gs)
         public typealias DataType = SIMD3<Float>
         public typealias RawDataType = MblMwCartesianFloat
-        public let loggerName: MWLogger = .gravity
+        public let signalName: MWNamedSignal = .gravity
         public let output: OutputType = .gravity
 
         public var mode: MWSensorFusion.Mode
@@ -71,7 +71,7 @@ public extension MWSensorFusion {
         /// XYZ (Gs)
         public typealias DataType = SIMD3<Float>
         public typealias RawDataType = MblMwCartesianFloat
-        public let loggerName: MWLogger = .linearAcceleration
+        public let signalName: MWNamedSignal = .linearAcceleration
         public let output: OutputType = .linearAcceleration
 
         public var mode: MWSensorFusion.Mode
@@ -219,16 +219,23 @@ public extension MWLoggable where Self == MWSensorFusion.LinearAcceleration {
 public extension MWSensorFusion {
 
     enum Mode: Int, CaseIterable, IdentifiableByRawValue {
-        case ndof
-        case imuplus
         case compass
+        case imuplus
         case m4g
+        case ndof
 
-        public var cppValue: UInt32 { UInt32(rawValue + 1) }
+        public var cppValue: UInt32 {
+            switch self {
+                case .ndof: return 1
+                case .imuplus: return 2
+                case .compass: return 3
+                case .m4g: return 4
+            }
+        }
 
         public var cppMode: MblMwSensorFusionMode { MblMwSensorFusionMode(cppValue) }
 
-        public var displayName: String {
+        public var label: String {
             switch self {
                 case .ndof: return "NDoF"
                 case .imuplus: return "IMUPlus"
@@ -240,9 +247,9 @@ public extension MWSensorFusion {
 
     enum OutputType: Int, CaseIterable, IdentifiableByRawValue {
         case eulerAngles
-        case quaternion
         case gravity
         case linearAcceleration
+        case quaternion
 
         public var cppEnumValue: MblMwSensorFusionData {
             switch self {
@@ -264,7 +271,7 @@ public extension MWSensorFusion {
             }
         }
 
-        public var fullName: String {
+        public var label: String {
             switch self {
                 case .eulerAngles: return "Euler Angles"
                 case .quaternion: return "Quaternion"

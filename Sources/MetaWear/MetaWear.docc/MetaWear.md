@@ -70,7 +70,6 @@ Using any ``MWPublisher`` ensures calls into the C++ library and reads of any pr
 - ``MWPollable``
 - ``MWStreamable``
 - ``MWFrequency``
-- ``MWLogger``
 
 ### Data Output
 
@@ -100,12 +99,15 @@ Streaming data arrives in Swift formats. Logged data downloads in a string-based
 - ``MWStepCounter``
 - ``MWStepDetector``
 
-### Misc Signals
+### Misc Signals & Commands
 
 - ``MWBatteryLevel``
-- ``MWLogLength``
-- ``MWMACAddress``
+- ``MWChangeAdvertisingName``
 - ``MWLastResetTime``
+- ``MWLogLength``
+- ``MWMacro``
+- ``MWMACAddress``
+- ``MWNamedSignal``
 
 ### Utilities
 - ``MWFirmwareServer``
@@ -131,6 +133,7 @@ When interacting with the C++ library or forming your own publishers, these type
 - ``MWDataProcessorSignal``
 - ``MWLoggerSignal``
 - ``MWMacroIdentifier``
+- ``CBPeripheralIdentifier``
 
 ### C++ Library Status Code
 

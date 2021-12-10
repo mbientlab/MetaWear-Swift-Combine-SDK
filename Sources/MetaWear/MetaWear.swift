@@ -126,7 +126,7 @@ public class MetaWear: NSObject {
     public internal(set) var info: MetaWear.DeviceInformation?
 
     /// Builds a table of the board's modules
-    public func detectModules() -> MWPublisher<Set<MWModules>> {
+    public func detectModules() -> MWPublisher<[MWModules.ID:MWModules]> {
         self.publishWhenConnected()
             .first()
             .map { MWModules.detect(in: $0.board) }
@@ -414,7 +414,7 @@ public extension MetaWear {
     ///
     /// - Returns: A completing publisher for cast data supplied by the `CoreBluetooth` framework. Requests are queued for fulfillment by the `CBPeripheralDelegate` `peripheral(:didUpdateValueFor:error:)` method.
     ///
-    func readCharacteristic<T>(_ characteristic: MetaWear.ServiceCharacteristic<T>) -> MWPublisher<T> {
+    func read<T>(_ characteristic: MetaWear.ServiceCharacteristic<T>) -> MWPublisher<T> {
         if T.self == MetaWear.DeviceInformation.self {
             return MetaWear.DeviceInformation.publisher(for: self)
                 .map { $0 as! T }.eraseToAnyPublisher() // Compiler workaround
@@ -657,7 +657,7 @@ internal extension MetaWear {
 private extension MetaWear {
 
     func _didDiscoverCharacteristicsForMetaBoot() {
-        readCharacteristic(.allDeviceInformation)
+        read(.allDeviceInformation)
             .sink { completion in
                 guard case let .failure(error) = completion else { return }
                 self._invokeConnectionHandlers(error: error, cancelled: false)
@@ -679,7 +679,7 @@ private extension MetaWear {
 
             // Grab `DeviceInformation`
             let rawInfo = mbl_mw_metawearboard_get_device_information(device.board)
-            device.info = rawInfo?.pointee.convert()
+            device.info  = rawInfo!.pointee.convert(for: device)
             mbl_mw_memory_free(UnsafeMutableRawPointer(mutating: rawInfo))
 
             device._setupCppSDK_finalize()

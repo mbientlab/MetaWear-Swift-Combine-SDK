@@ -13,7 +13,7 @@ public struct MWProximity: MWPollable, MWReadable {
     public typealias DataType = Int
     public typealias RawDataType = UInt8
     public let columnHeadings = ["Epoch", "Event Count"]
-    public var loggerName: MWLogger = .proximity
+    public var signalName: MWNamedSignal = .proximity
 
     public var current: TransmitterCurrent?
     /// milliseconds
@@ -69,7 +69,7 @@ public extension MWReadable where Self == MWProximity {
     static func proximity(sensitivity: MWProximity.Pulses = .init(1),
                           current: MWProximity.TransmitterCurrent? = nil
     ) -> Self {
-        Self(current: current, sensitivity: sensitivity, rate: .init(eventsPerSecond: 1))
+        Self(current: current, sensitivity: sensitivity, rate: .init(hz: 1))
     }
 }
 
@@ -110,7 +110,7 @@ public extension MWProximity {
     }
 
     /// Number of pulses transmitted at a 62.5 kHz rate, with a limit of 32 pulses. Sensitivity increase by the square root of the pulse count.
-    struct Pulses {
+    struct Pulses: Equatable, Hashable {
         public let value: Int
         public init(_ value: Int) {
             self.value = max(1, min(32, value))

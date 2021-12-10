@@ -79,7 +79,7 @@ public class MetaWearStore {
     private unowned let loader:    MWKnownDevicesPersistence
     private var subs             = Set<AnyCancellable>()
     private let _groups:           Subject<[UUID : MetaWear.Group]>
-    private let _knownDevices:     Subject<[MWMACAddress : MetaWear.Metadata]>
+    private let _knownDevices:     Subject<[MACAddress : MetaWear.Metadata]>
     private let _unknownDevices:   Subject<Set<UUID>>
     private typealias Subject<T> = CurrentValueSubject<T,Never>
 
@@ -249,7 +249,7 @@ public extension MetaWearStore {
             .flatMap { metawear in
                 Publishers.Zip3(
                     metawear.detectModules(),
-                    metawear.readCharacteristic(.allDeviceInformation),
+                    metawear.read(.allDeviceInformation),
                     Just((localID: metawear.peripheral.identifier,
                           mac: metawear.mac,
                           adName: metawear.name
@@ -259,7 +259,7 @@ public extension MetaWearStore {
             .map { modules, info, identifiers -> MetaWear.Metadata in
             .init(mac: identifiers.mac ?? "Unknown \(identifiers.localID.uuidString)",
                   serial: info.serialNumber,
-                  model: info.modelNumber,
+                  model: info.model,
                   modules: modules,
                   localBluetoothIds: [identifiers.localID],
                   name: identifiers.adName

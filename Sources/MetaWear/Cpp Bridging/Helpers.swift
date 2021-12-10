@@ -98,7 +98,7 @@ public func _dataprocessor(_ dpFunc: _MWDataProcessorFunctionUInt8,
 
 // MARK: - Downloads
 
-public extension Dictionary where Key == MWLogger, Value == CurrentValueSubject<[MWData], MWError> {
+public extension Dictionary where Key == MWNamedSignal, Value == CurrentValueSubject<[MWData], MWError> {
     func latest() -> [MWData.LogDownload] {
         map { key, subject in
             MWData.LogDownload(logger: key, data: subject.value)

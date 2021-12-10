@@ -54,6 +54,7 @@ public extension Publisher where Output == MetaWear {
         .map(pollable.convertRawToSwift)
         .eraseToAnyPublisher()
     }
+
 }
 
 // MARK: - Stream (Manual)

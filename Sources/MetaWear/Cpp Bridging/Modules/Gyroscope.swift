@@ -10,7 +10,7 @@ public struct MWGyroscope: MWStreamable, MWLoggable {
 
     public typealias DataType = SIMD3<Float>
     public typealias RawDataType = MblMwCartesianFloat
-    public let loggerName: MWLogger = .gyroscope
+    public let signalName: MWNamedSignal = .gyroscope
 
     public var range: GraphRange? = nil
     public var frequency: Frequency? = nil
@@ -131,6 +131,8 @@ public extension MWGyroscope {
             }
         }
 
+        public var label: String { "± \(rawValue) °/s" }
+
         /// Raw Cpp constant
         public var cppEnumValue: MblMwGyroBoschRange {
             switch self {
@@ -164,6 +166,12 @@ public extension MWGyroscope {
                 case .hz25:   return MBL_MW_GYRO_BOSCH_ODR_25Hz
             }
         }
+
+        public var freq: MWFrequency {
+            .init(hz: Double(rawValue))
+        }
+
+        public var label: String { "\(rawValue) Hz" }
     }
 
     enum Model: String, CaseIterable, IdentifiableByRawValue {

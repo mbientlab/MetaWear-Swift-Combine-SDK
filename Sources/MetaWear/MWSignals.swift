@@ -31,7 +31,7 @@ public protocol MWLoggable: MWDataConvertible {
 
     /// The MetaWear device's identifier
     /// for the logger.
-    var loggerName: MWLogger { get }
+    var signalName: MWNamedSignal { get }
     /// Obtains a reference to the
     /// module's loggable signal.
     func loggerDataSignal(board: MWBoard) throws -> MWDataSignal?
@@ -58,6 +58,9 @@ public protocol MWStreamable: MWDataConvertible {
     func streamStart(board: MWBoard)
     // Commands to end the stream
     func streamCleanup(board: MWBoard)
+    /// Identifier for downloadable type
+    /// when exporting a MWDataTable.
+    var signalName: MWNamedSignal { get }
 }
 
 /// This module's data can be "streamed"
@@ -66,7 +69,7 @@ public protocol MWPollable: MWReadable {
 
     /// The MetaWear device's identifier
     /// for the logger.
-    var loggerName: MWLogger { get }
+    var signalName: MWNamedSignal { get }
 
     /// Queries per second or by millisecond periods
     var pollingRate: MWFrequency { get }
@@ -79,26 +82,6 @@ public protocol MWPollable: MWReadable {
     func pollSensorSignal(board: MWBoard) throws -> MWDataSignal?
 
     func pollCleanup(board: MWBoard)
-}
-
-/// Specify event frequencies in Hz or millisecond periods between events
-///
-public struct MWFrequency {
-
-    // Events per second (Hz)
-    public let rateHz: Double
-    // Milliseconds between events
-    public let periodMs: Int
-
-    public init(eventsPerSecond: Double) {
-        self.rateHz = eventsPerSecond
-        self.periodMs = Int(1/rateHz * 1000)
-    }
-
-    public init(periodMs: Int) {
-        self.periodMs = periodMs
-        self.rateHz = 1000 / Double(periodMs)
-    }
 }
 
 // MARK: - Read Once

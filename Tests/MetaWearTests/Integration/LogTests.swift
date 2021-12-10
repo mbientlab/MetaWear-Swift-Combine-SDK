@@ -41,7 +41,7 @@ class LogTests: XCTestCase {
 
     func test_LogThenDownload_Temperature() throws {
         _testLog(byPolling: {
-            try! MWThermometer(type: .onboard, board: $0.board, rate: .init(eventsPerSecond: 1))
+            try! MWThermometer(type: .onboard, board: $0.board, rate: .init(hz: 1))
         })
     }
 

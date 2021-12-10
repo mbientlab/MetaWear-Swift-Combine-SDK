@@ -4,10 +4,11 @@ import Foundation
 
 /// String key returned with a logger signal for a module
 ///
-public enum MWLogger: Equatable, Hashable {
+public enum MWNamedSignal: Equatable, Hashable {
     case custom(String)
     case acceleration
     case altitude
+    case ambientLight
     case color
     case eulerAngles
     case gravity
@@ -22,11 +23,12 @@ public enum MWLogger: Equatable, Hashable {
     case steps
     case temperature
 
-    #warning("FINISH LOGGER KEYS: ORIENTATION, STEPS x2")
+    #warning("FINISH LOGGER KEYS: ORIENTATION, STEPS x2, ILLUMINANCE, ")
     public var name: String {
         switch self {
             case .acceleration: return "acceleration"
             case .altitude: return "altitude"
+            case .ambientLight: return "ambient-light"
             case .color: return "color"
             case .eulerAngles: return "euler-angles"
             case .gravity: return "gravity"
@@ -44,9 +46,10 @@ public enum MWLogger: Equatable, Hashable {
         }
     }
 
-    public static let allCases: [MWLogger] = [
+    public static let allCases: [MWNamedSignal] = [
         .acceleration,
         .altitude,
+        .ambientLight,
         .color,
         .eulerAngles,
         .gravity,
@@ -68,13 +71,13 @@ public enum MWLogger: Equatable, Hashable {
 
 // MARK: - Support Downloading of Custom and Preset Types
 
-public extension MWLogger {
+public extension MWNamedSignal {
 
 
     /// Registry of custom loggables and functions to stop their logging and convert their raw data download into CSV-ready columns. For example, if you define a data processor chain, the `download` publisher will check here to correctly process its data according to your specifications.
-    static var customDownloads: [String: MWLogger.DownloadUtilities] = [:]
+    static var customDownloads: [String: MWNamedSignal.DownloadUtilities] = [:]
 
-    var downloadUtilities: MWLogger.DownloadUtilities {
+    var downloadUtilities: MWNamedSignal.DownloadUtilities {
         switch self {
             case .acceleration: return .init(loggable: .accelerometer(rate: .hz100, gravity: .g16))
             case .orientation: return .init(loggable: .orientation)  // Does orientation have any logging issues? Check MetaBase.
@@ -84,12 +87,13 @@ public extension MWLogger {
             case .gyroscope: return .init(loggable: .gyroscope(range: .dps1000, freq: .hz100))
             case .magnetometer: return .init(loggable: .magnetometer(freq: .hz10))
             case .humidity: return .init(pollable: .humidity())
-            case .color: return .init(pollable: .colorDetector(gain: .x1))
+            case .color: return .init(pollable: .colorDetector(gain: .x1, rate: .hz1))
             case .proximity: return .init(pollable: .proximity())
             case .eulerAngles: return .init(loggable: .sensorFusionEulerAngles(mode: .compass))
             case .gravity: return .init(loggable: .sensorFusionGravity(mode: .compass))
             case .quaternion: return .init(loggable: .sensorFusionQuaternion(mode: .compass))
             case .linearAcceleration: return .init(loggable: .sensorFusionLinearAcceleration(mode: .compass))
+            case .temperature: return .init(pollable: MWThermometer(type: .onboard, channel: 0, rate: .hz1))
             case .custom(let id): return Self.customDownloads[id]!
             default: fatalError()
         }
@@ -97,7 +101,7 @@ public extension MWLogger {
 
 }
 
-public extension MWLogger {
+public extension MWNamedSignal {
 
     struct DownloadUtilities {
         public let columnHeadings: [String]

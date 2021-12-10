@@ -142,37 +142,61 @@ fileprivate struct MWMetadataDTO1: Codable {
         self.mac = model.mac
         self.model = .init(model: model.model)
         self.serial = model.serial
-        self.modules = model.modules.map(MWModulesDTO1.init)
+        self.modules = model.modules.map(\.value).map(MWModulesDTO1.init)
         self.localBluetoothIds = model.localBluetoothIds
         self.name = model.name
     }
 
     var appModel: MetaWear.Metadata {
-        .init(mac: mac, serial: serial, model: model.model, modules: Set(modules.map(\.model)), localBluetoothIds: localBluetoothIds, name: name)
+        return .init(
+            mac: mac,
+            serial: serial,
+            model: model.model,
+            modules: modules.map(\.model).dictionary(),
+            localBluetoothIds: localBluetoothIds,
+            name: name
+        )
     }
 }
 
 fileprivate enum MWMetadataModelDTO1: Codable {
-    case s
-    case c
-    case rl
-    case notFound(String)
+    case unknown, wearR, wearRG, wearRPRO, wearC, wearCPRO, environment, detector, health, tracker, motionR, motionRL, motionC, motionS
 
     init(model: MetaWear.Model) {
         switch model {
-            case .s: self = .s
-            case .c: self = .c
-            case .rl: self = .rl
-            case .notFound(let string): self = .notFound(string)
+            case .wearR: self = .wearR
+            case .wearRG: self = .wearRG
+            case .wearRPRO: self = .wearRPRO
+            case .wearC: self = .wearC
+            case .wearCPRO: self = .wearCPRO
+            case .environment: self = .environment
+            case .detector: self = .detector
+            case .health: self = .health
+            case .tracker: self = .tracker
+            case .motionR: self = .motionR
+            case .motionRL: self = .motionRL
+            case .motionC: self = .motionC
+            case .motionS: self = .motionS
+            default: self = .unknown
         }
     }
 
     var model: MetaWear.Model {
         switch self {
-            case .s: return .s
-            case .c: return .c
-            case .rl: return .rl
-            case .notFound(let string): return .notFound(string)
+            case .wearR: return .wearR
+            case .wearRG: return .wearRG
+            case .wearRPRO: return .wearRPRO
+            case .wearC: return .wearC
+            case .wearCPRO: return .wearCPRO
+            case .environment: return .environment
+            case .detector: return .detector
+            case .health: return .health
+            case .tracker: return .tracker
+            case .motionR: return .motionR
+            case .motionRL: return .motionRL
+            case .motionC: return .motionC
+            case .motionS: return .motionS
+            default: return .unknown
         }
     }
 }

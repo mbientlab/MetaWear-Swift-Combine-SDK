@@ -23,28 +23,24 @@ Tasks vs. publishers.
 ### Essentials
 
 - ``MetaWearScanner/``
-- ``MetaWearScanner/startScan(allowDuplicates:)``
+- ``MetaWearScanner/startScan(higherPerformanceMode:)``
 - ``MetaWear/MetaWear``
 - ``MetaWear/MetaWear/connectPublisher()``
 
 ### Identifying MetaWears
 
 - ``MetaWear/MetaWear/mac``
-- ``MetaWear/MetaWear/readCharacteristic(_:)``
-- ``DeviceInformation``
+- ``MetaWear/MetaWear/read(_:)``
+- ``MetaWear/MetaWear/DeviceInformation``
 
 ### Logging & Streaming
 
 - ``MetaWear/MetaWear/publishIfConnected()``
-- ``MetaWear/MetaPublisher``
-- ``MWSignal``
+- ``MetaWear/MWPublisher``
+- ``MWDataSignal``
 
 ### Firmware Updates
 
-- ``MetaWearFirmwareServer``
-- ``MetaWearFirmwareServer/fetchRelevantFirmwareUpdate(for:)``
-- ``MetaWearFirmwareServer/updateFirmware(on:delegate:build:)``
-
-- ``MWAccelerometerGravityRange``
-- ``MWAccelerometerSampleFrequency``
-- ``MWAccelerometerModel``
+- ``MWFirmwareServer``
+- ``MWFirmwareServer/fetchRelevantFirmwareUpdate(for:)``
+- ``MWFirmwareServer/updateFirmware(on:delegate:build:)``

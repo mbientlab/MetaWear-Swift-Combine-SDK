@@ -77,6 +77,5 @@ internal extension MetaWear {
 
 
 func debugPrinter(f: String = #function, line: UInt = #line, p: String) {
-    print("")
     print(f, line, p)
 }

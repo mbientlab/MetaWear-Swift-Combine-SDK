@@ -10,7 +10,7 @@ public struct MWMagnetometer: MWStreamable, MWLoggable {
 
     public typealias DataType = SIMD3<Float>
     public typealias RawDataType = MblMwCartesianFloat
-    public let loggerName: MWLogger = .magnetometer
+    public let signalName: MWNamedSignal = .magnetometer
 
     public var frequency: SampleFrequency? = nil
 
@@ -90,5 +90,11 @@ extension MWMagnetometer {
                 case .hz2:  return MBL_MW_MAG_BMM150_ODR_2Hz
             }
         }
+
+        public var freq: MWFrequency {
+            .init(hz: Double(rawValue))
+        }
+
+        public var label: String { "\(rawValue) Hz" }
     }
 }

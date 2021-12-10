@@ -62,7 +62,7 @@ public struct MWAccelerometer: MWLoggable, MWStreamable {
 
     public typealias DataType = SIMD3<Float>
     public typealias RawDataType = MblMwCartesianFloat
-    public let loggerName: MWLogger = .acceleration
+    public let signalName: MWNamedSignal = .acceleration
 
     public var gravity: GravityRange? = nil
     public var rate: SampleFrequency? = nil
@@ -77,7 +77,7 @@ public struct MWAccelerometer: MWLoggable, MWStreamable {
 public struct MWOrientationSensor: MWStreamable, MWLoggable {
     public typealias DataType = MWAccelerometer.Orientation
     public typealias RawDataType = MblMwSensorOrientation
-    public let loggerName: MWLogger = .orientation
+    public let signalName: MWNamedSignal = .orientation
 }
 
 public struct MWStepCounter: MWDataConvertible {
@@ -91,6 +91,7 @@ public struct MWStepDetector: MWStreamable {
 
     public typealias DataType = Int
     public typealias RawDataType = Int32
+    public let signalName: MWNamedSignal = .steps
     public let columnHeadings = ["Epoch", "Steps"]
 
     public var sensitivity: MWAccelerometer.StepCounterSensitivity? = nil
@@ -206,6 +207,8 @@ extension MWAccelerometer {
                 case .g16: return MBL_MW_ACC_BOSCH_RANGE_16G
             }
         }
+
+        public var label: String { "± \(rawValue) g" }
     }
 
     /// Hertz
@@ -240,15 +243,19 @@ extension MWAccelerometer {
         case hz15_62 = 15.62
 
 
-        /// Returns an integer string, except for those with fractional values.
-        public var frequencyLabel: String {
+        /// Returns an integer string suffixed with Hz, except for those with fractional values.
+        public var label: String {
             switch self {
-                case .hz12_5:  return "12.5"
-                case .hz62_5:  return "62.5"
-                case .hz31_26: return "31.26"
-                case .hz15_62: return "15.62"
-                default: return String(format: "%1.0f", rawValue)
+                case .hz12_5:  return "12.5 Hz"
+                case .hz62_5:  return "62.5 Hz"
+                case .hz31_26: return "31.26 Hz"
+                case .hz15_62: return "15.62 Hz"
+                default: return String(format: "%1.0f Hz", rawValue)
             }
+        }
+
+        public var freq: MWFrequency {
+            .init(hz: Double(rawValue))
         }
 
         public var cppOdrValue: Float { rawValue }

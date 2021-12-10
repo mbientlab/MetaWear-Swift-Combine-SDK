@@ -17,7 +17,7 @@ extension MWBarometer {
         public typealias DataType = Float
         public typealias RawDataType = Float
         public let columnHeadings = ["Epoch", "Absolute Altitude (m)"]
-        public let loggerName: MWLogger = .altitude
+        public let signalName: MWNamedSignal = .altitude
 
         public var standby: StandbyTime?
         public var iir: IIRFilter?
@@ -38,7 +38,7 @@ extension MWBarometer {
         public typealias DataType = Float
         public typealias RawDataType = Float
         public let columnHeadings = ["Epoch", "Pressure (Pa)"]
-        public let loggerName: MWLogger = .pressure
+        public let signalName: MWNamedSignal = .pressure
 
         public var standby: StandbyTime?
         public var iir: IIRFilter?
@@ -147,28 +147,32 @@ public extension MWLoggable where Self == MWBarometer.MWPressure {
 public extension MWBarometer {
 
     /// Wait between readings
-    enum StandbyTime: Int, CaseIterable, IdentifiableByRawValue {
+    enum StandbyTime: Double, CaseIterable, IdentifiableByRawValue {
         /// 83.3 Hz
-        case ms0_5
+        case ms0_5 = 83.3
         /// Unavailable on the BMP module. 46.5 Hz
-        case ms10
+        case ms10 = 46.5
         /// Unavailable on the BMP module. 31.8 Hz
-        case ms20
+        case ms20 = 31.8
         /// 13.5 Hz
-        case ms62_5
+        case ms62_5 = 13.5
         /// 7.33 Hz
-        case ms125
+        case ms125 = 7.33
         /// 3.82 Hz
-        case ms250
+        case ms250 = 3.82
         /// 1.96 Hz
-        case ms500
+        case ms500 = 1.96
         /// 0.99 Hz
-        case ms1000
+        case ms1000 = 0.99
 
         /// Unavailable on the BME module. 0.5 Hz
-        case ms2000
+        case ms2000 = 0.5
         /// Unavailable on the BME module. 0.25 Hz
-        case ms4000
+        case ms4000 = 0.25
+
+        public var freq: MWFrequency {
+            .init(hz: rawValue)
+        }
 
         public static let BMPoptions: [Self] = [
             .ms0_5,
@@ -195,11 +199,11 @@ public extension MWBarometer {
         ]
 
         /// Returns an Int except for 0.5 and 62.5 ms
-        public var displayName: String {
+        public var label: String {
             switch self {
-                case .ms0_5: return "0.5"
-                case .ms62_5: return "62.5"
-                default: return String(rawValue)
+                case .ms0_5: return "0.5 Hz"
+                case .ms62_5: return "62.5 Hz"
+                default: return String(rawValue) + " Hz"
             }
         }
 

@@ -1,33 +1,43 @@
 // Copyright 2021 MbientLab Inc. All rights reserved. See LICENSE.MD.
 
 import Foundation
+import MetaWearCpp
 
 public extension MetaWear {
 
-    enum Model: Equatable {
-        case s
-        case c
-        case rl
-        case notFound(String)
+    enum Model: Int, Equatable, CaseIterable, IdentifiableByRawValue {
+        case unknown = -1
+        case wearR, wearRG, wearRPRO, wearC, wearCPRO, environment, detector, health, tracker, motionR, motionRL, motionC, motionS
 
-        public init(string: String) {
-            if string.contains("MetaMotion S") {
-                self = .s
-            } else if string.contains("MetaMotion C") {
-                self = .c
-            } else if string.contains("MetaMotion RL") {
-                self = .rl
-            } else {
-                self = .notFound(string)
-            }
+        public init(modelNumber: MblMwModel) {
+            let value = modelNumber.rawValue
+            self = Self.allCases.first(where: {
+                $0.rawValue == value
+            }) ?? .unknown
         }
 
-        public var isolatedModelName: String {
+        public init(modelName: String) {
+            self = Self.allCases.first(where: {
+                $0.name == modelName
+            }) ?? .unknown
+        }
+
+        public var name: String {
             switch self {
-                case .s: return "MetaMotion S"
-                case .c: return "MetaMotion C"
-                case .rl: return "MetaMotion RL"
-                case .notFound(let string): return "\(string)"
+                case .unknown: return "Unknown"
+                case .wearR: return "MetaWear R"
+                case .wearRG: return "MetaWear RG"
+                case .wearRPRO: return "MetaWear RPro"
+                case .wearC: return "MetaWear C"
+                case .wearCPRO: return "MetaWear CPro"
+                case .environment: return "MetaEnvironment"
+                case .detector: return "MetaDetector"
+                case .health: return "MetaHealth"
+                case .tracker: return "MetaTracker"
+                case .motionR: return "MetaMotion R"
+                case .motionRL: return "MetaMotion RL"
+                case .motionC: return "MetaMotion C"
+                case .motionS: return "MetaMotion S"
             }
         }
     }

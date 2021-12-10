@@ -15,7 +15,7 @@ public struct MWThermometer: MWReadable, MWPollable {
     public let columnHeadings = ["Epoch", "Temperature (C)"]
     public let type: Source
     public var pollingRate: MWFrequency
-    public let loggerName: MWLogger = .temperature
+    public let signalName: MWNamedSignal = .temperature
 
     public var channel: Int
     /// For external thermistors only. 0 - 5
@@ -23,7 +23,9 @@ public struct MWThermometer: MWReadable, MWPollable {
     /// For external thermistors only. 0 - 5
     public var pulldownPin: UInt8 = 0
 
-    public init(type: Source, channel: Int, board: MWBoard, rate: MWFrequency = .init(eventsPerSecond: 1)) throws {
+    /// Verifies channel and source alignment before streaming or logging.
+    ///
+    public init(type: Source, channel: Int, board: MWBoard, rate: MWFrequency = .init(hz: 1)) throws {
         guard Source(board: board, atChannel: channel) == type else {
             throw MWError.operationFailed("\(type.displayName) unavailable at the specified channel.")
         }
@@ -32,13 +34,25 @@ public struct MWThermometer: MWReadable, MWPollable {
         self.pollingRate = rate
     }
 
-    public init(type: Source, board: MWBoard, rate: MWFrequency = .init(eventsPerSecond: 1)) throws {
+    /// Verifies channel and source alignment before streaming or logging.
+    ///
+    public init(type: Source, board: MWBoard, rate: MWFrequency = .init(hz: 1)) throws {
         let available = MWThermometer.Source.availableChannels(on: board)
         guard let i = available.firstIndex(of: type) else {
             throw MWError.operationFailed("\(type.displayName) is not available.")
         }
         self.type = type
         self.channel = i
+        self.pollingRate = rate
+    }
+
+    /// Does not verify that the source is at the specified channel,
+    /// exposing possible faults when attempting to log or stream.
+    /// Useful when using the Metadata package and channels are known.
+    ///
+    public init(type: Source, channel: Int, rate: MWFrequency) {
+        self.type = type
+        self.channel = channel
         self.pollingRate = rate
     }
 }
@@ -74,7 +88,7 @@ public extension MWReadable where Self == MWThermometer {
         guard let i = available.firstIndex(of: type) else {
             throw MWError.operationFailed("\(type.displayName) is not available.")
         }
-        return try Self(type: type, channel: i, board: board, rate: .init(eventsPerSecond: 1))
+        return try Self(type: type, channel: i, board: board, rate: .init(hz: 1))
     }
 }
 
@@ -101,6 +115,7 @@ public extension MWThermometer {
         case onboard
         case custom
 
+        /// Thermometer sources. Indexes correspond to channel number.
         public static func availableChannels(on board: MWBoard) -> [Source] {
             var channels = [Source]()
             let maxChannels = mbl_mw_multi_chnl_temp_get_num_channels(board)
