@@ -23,7 +23,6 @@ public enum MWNamedSignal: Equatable, Hashable {
     case steps
     case temperature
 
-    #warning("FINISH LOGGER KEYS: ORIENTATION, STEPS x2, ILLUMINANCE, ")
     public var name: String {
         switch self {
             case .acceleration: return "acceleration"

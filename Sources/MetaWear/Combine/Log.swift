@@ -35,8 +35,6 @@ public extension Publisher where Output == MetaWear {
             .eraseToAnyPublisher()
     }
 
-    #warning("Handle custom loggable signal names by adding them to the cache")
-
     /// Starts logging a preset sensor configuration that works by polling a readable signal.
     /// - Returns: The connected MetaWear or an error if the logging attempt fails.
     ///

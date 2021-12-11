@@ -34,8 +34,8 @@
             @Step {
                 Create a new SwiftUI View file named `CustomizedSlothView.swift`.
                 
-                @Code(name: "CustomizedSlothView.swift", file: 01-creating-code-02-01.swift) {
-                    @Image(source: preview-01-creating-code-02-01.png, alt: ".")
+                @Code(name: "CustomizedSlothView.swift", file: 01-connecting-code-02-08.swift) {
+                    @Image(source: preview-01-connecting-code-02-01.png, alt: ".")
                 }
             }    
         }

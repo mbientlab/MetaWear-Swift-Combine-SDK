@@ -12,7 +12,7 @@ Blha
 - <doc:/tutorials/MetaWear/Connecting-To-A-MetaWear>
 - ``MetaWearScanner``
 - ``MetaWearScanner/didDiscoverUniqued``
-- ``MetaWearScanner/startScan(allowDuplicates:)``
+- ``MetaWearScanner/startScan(higherPerformanceMode:)``
 - ``MetaWear/MetaWear/connectPublisher()``
 
 

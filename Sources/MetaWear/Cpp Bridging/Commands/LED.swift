@@ -191,7 +191,11 @@ public extension MWLED {
         @available(iOS 14.0, macOS 12.0, *)
         public init(_ color: Color, intensity: Float, repetitions: UInt8, duration: UInt16, period: UInt16) {
             let converted = color.cgColor?.converted(to: CGColorSpace(name: CGColorSpace.sRGB)!, intent: .defaultIntent, options: nil) ?? .init(srgbRed: 1, green: 1, blue: 1, alpha: 1)
+            #if os(macOS)
             self.color = .init(cgColor: converted) ?? .white
+            #else
+            self.color = .init(cgColor: converted)
+            #endif
             self.intensity = intensity
             self.repetitions = repetitions
             self.duration = duration
