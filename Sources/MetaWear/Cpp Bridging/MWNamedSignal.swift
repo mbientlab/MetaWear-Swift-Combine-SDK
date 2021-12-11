@@ -9,7 +9,6 @@ public enum MWNamedSignal: Equatable, Hashable {
     case acceleration
     case altitude
     case ambientLight
-    case color
     case eulerAngles
     case gravity
     case gyroscope
@@ -18,7 +17,6 @@ public enum MWNamedSignal: Equatable, Hashable {
     case magnetometer
     case orientation
     case pressure
-    case proximity
     case quaternion
     case steps
     case temperature
@@ -28,7 +26,6 @@ public enum MWNamedSignal: Equatable, Hashable {
             case .acceleration: return "acceleration"
             case .altitude: return "altitude"
             case .ambientLight: return "ambient-light"
-            case .color: return "color"
             case .eulerAngles: return "euler-angles"
             case .gravity: return "gravity"
             case .gyroscope: return "angular-velocity"
@@ -36,7 +33,6 @@ public enum MWNamedSignal: Equatable, Hashable {
             case .linearAcceleration: return "linear-acceleration"
             case .magnetometer: return "magnetic-field"
             case .pressure: return "pressure"
-            case .proximity: return "proximity"
             case .quaternion: return "quaternion"
             case .custom(let string): return string
             case .orientation: return "orientation"
@@ -49,7 +45,6 @@ public enum MWNamedSignal: Equatable, Hashable {
         .acceleration,
         .altitude,
         .ambientLight,
-        .color,
         .eulerAngles,
         .gravity,
         .gyroscope,
@@ -58,7 +53,6 @@ public enum MWNamedSignal: Equatable, Hashable {
         .magnetometer,
         .orientation,
         .pressure,
-        .proximity,
         .quaternion,
         .steps
     ]
@@ -86,8 +80,6 @@ public extension MWNamedSignal {
             case .gyroscope: return .init(loggable: .gyroscope(range: .dps1000, freq: .hz100))
             case .magnetometer: return .init(loggable: .magnetometer(freq: .hz10))
             case .humidity: return .init(pollable: .humidity())
-            case .color: return .init(pollable: .colorDetector(gain: .x1, rate: .hz1))
-            case .proximity: return .init(pollable: .proximity())
             case .eulerAngles: return .init(loggable: .sensorFusionEulerAngles(mode: .compass))
             case .gravity: return .init(loggable: .sensorFusionGravity(mode: .compass))
             case .quaternion: return .init(loggable: .sensorFusionQuaternion(mode: .compass))

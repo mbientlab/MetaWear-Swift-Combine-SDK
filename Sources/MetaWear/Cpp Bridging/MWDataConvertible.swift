@@ -141,22 +141,6 @@ DataType == Int {
     }
 }
 
-// MARK: - Internal (Color)
-
-public extension MWDataConvertible where
-RawDataType == MblMwTcs34725ColorAdc,
-DataType == MWColorDetector.ColorValue {
-    func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
-        (raw.time, .init(r: raw.value.red, g: raw.value.green, b: raw.value.blue, unfilteredClear: raw.value.clear))
-    }
-
-    func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        [datum.time.metaWearCSVDate] + datum.value.stringify()
-    }
-
-    var columnHeadings: [String] { ["Epoch", "Red", "Green", "Blue", "Unfiltered Clear"] }
-}
-
 // MARK: - Data Type Conversions
 
 public extension MWDataConvertible where DataType == Int {
@@ -229,12 +213,6 @@ public extension SIMD4 where Scalar == Float {
         self.indices.reduce(into: [String]()) { string, index in
             string.append(.init(mwDecimals: self[index]))
         }
-    }
-}
-
-public extension MWColorDetector.ColorValue {
-    func stringify() -> [String] {
-        [.init(r), .init(g), .init(b), .init(unfilteredClear)]
     }
 }
 

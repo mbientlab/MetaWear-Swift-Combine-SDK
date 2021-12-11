@@ -209,8 +209,6 @@ fileprivate enum MWModulesDTO1: Codable {
     case magnetometer
     case humidity
     case illuminance
-    case color
-    case proximity
     case thermometer([Thermometer])
     case sensorFusion
 
@@ -222,8 +220,6 @@ fileprivate enum MWModulesDTO1: Codable {
             case .magnetometer: self = .magnetometer
             case .humidity: self = .humidity
             case .illuminance: self = .illuminance
-            case .color: self = .color
-            case .proximity: self = .proximity
             case .thermometer(let models): self = .thermometer(models.map(MWModulesDTO1.Thermometer.init(model:)))
             case .sensorFusion: self = .sensorFusion
         }
@@ -237,8 +233,6 @@ fileprivate enum MWModulesDTO1: Codable {
             case .magnetometer: return .magnetometer
             case .humidity: return .humidity
             case .illuminance: return .illuminance
-            case .color: return .color
-            case .proximity: return .proximity
             case .thermometer(let models): return .thermometer(models.map(\.model))
             case .sensorFusion: return .sensorFusion
         }

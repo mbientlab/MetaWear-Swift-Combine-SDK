@@ -9,12 +9,10 @@ public enum MWModules: Equatable, Identifiable {
 
     case accelerometer(MWAccelerometer.Model)
     case barometer(MWBarometer.Model)
-    case color
     case gyroscope(MWGyroscope.Model)
     case humidity
     case illuminance
     case magnetometer
-    case proximity
     case sensorFusion
     case thermometer([MWThermometer.Source])
 
@@ -47,14 +45,6 @@ public enum MWModules: Equatable, Identifiable {
             detected[.illuminance] = .illuminance
         }
 
-        if let _ = lookup(in: board, MBL_MW_MODULE_COLOR_DETECTOR) {
-            detected[.color] = .color
-        }
-
-        if let _ = lookup(in: board, MBL_MW_MODULE_PROXIMITY) {
-            detected[.proximity] = .proximity
-        }
-
         let sources = MWThermometer.Source.availableChannels(on: board)
         if sources.isEmpty == false {
             detected[.thermometer] = .thermometer(sources)
@@ -79,12 +69,10 @@ public enum MWModules: Equatable, Identifiable {
     public enum ID: Int, Equatable, Hashable, IdentifiableByRawValue, CaseIterable {
         case accelerometer
         case barometer
-        case color
         case gyroscope
         case humidity
         case illuminance
         case magnetometer
-        case proximity
         case sensorFusion
         case thermometer
     }
@@ -94,12 +82,10 @@ public enum MWModules: Equatable, Identifiable {
         switch self {
             case .accelerometer: return .accelerometer
             case .barometer: return .barometer
-            case .color: return .color
             case .gyroscope: return .gyroscope
             case .humidity: return .humidity
             case .illuminance: return .illuminance
             case .magnetometer: return .magnetometer
-            case .proximity: return .proximity
             case .sensorFusion: return .sensorFusion
             case .thermometer: return .thermometer
         }
