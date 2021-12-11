@@ -161,6 +161,11 @@ public extension MWLED {
         /// Spacing between flashes in milliseconds
         public var period: UInt16
 
+        /// For UI state that reflects the end of a flashing pattern
+        public var totalDuration: Double {
+            Double(repetitions) * Double(duration / 1000)
+        }
+
         /// A one-time LED flash pattern.
         ///
         /// - Parameters:
