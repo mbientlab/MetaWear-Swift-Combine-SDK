@@ -14,8 +14,8 @@ public struct MWMagnetometer: MWStreamable, MWLoggable {
 
     public var frequency: SampleFrequency? = nil
 
-    public init(frequency: MWMagnetometer.SampleFrequency? = nil) {
-        self.frequency = frequency
+    public init(freq: MWMagnetometer.SampleFrequency? = nil) {
+        self.frequency = freq
     }
 }
 
@@ -51,13 +51,13 @@ public extension MWMagnetometer {
 
 public extension MWStreamable where Self == MWMagnetometer {
     static func magnetometer(freq: MWMagnetometer.SampleFrequency? = nil) -> Self {
-        Self(frequency: freq)
+        Self(freq: freq)
     }
 }
 
 public extension MWLoggable where Self == MWMagnetometer {
     static func magnetometer(freq: MWMagnetometer.SampleFrequency? = nil) -> Self {
-        Self(frequency: freq)
+        Self(freq: freq)
     }
 }
 
