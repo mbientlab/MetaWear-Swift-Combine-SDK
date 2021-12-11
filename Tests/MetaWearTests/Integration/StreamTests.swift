@@ -54,7 +54,7 @@ class StreamTests: XCTestCase {
 
     func testStreamPoll_ColorDetector() throws {
         try _testPoll { _ in
-            [.colorDetector(gain: .x1)]
+            [.colorDetector(gain: .x1, rate: .hz1)]
         }
     }
 

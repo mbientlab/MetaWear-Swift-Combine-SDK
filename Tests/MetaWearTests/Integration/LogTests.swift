@@ -83,7 +83,7 @@ class LogTests: XCTestCase {
                 .deleteLoggedEntries()
                 .delay(for: 5, tolerance: 0, scheduler: metawear.apiAccessQueue)
                 .log(log)
-                ._assertLoggers([log.loggerName], metawear: metawear)
+                ._assertLoggers([log.signalName], metawear: metawear)
                 .delay(for: 10, tolerance: 0, scheduler: metawear.apiAccessQueue)
 
             // Act
@@ -109,7 +109,7 @@ extension XCTestCase {
             metawear.publish()
                 ._assertLoggers([], metawear: metawear, file, line)
                 .log(byPolling: _sut)
-                ._assertLoggers([_sut.loggerName], metawear: metawear, file, line)
+                ._assertLoggers([_sut.signalName], metawear: metawear, file, line)
 //                .share()
 //                .delay(for: 1, tolerance: 0, scheduler: metawear.apiAccessQueue)
 //                .logsDownload()
@@ -129,7 +129,7 @@ extension XCTestCase {
             if let message = expectFailure {
                 pipline._sinkExpectFailure(&subs, file, line, exp: exp, errorMessage: message)
             } else {
-                pipline._sinkNoFailure(&subs, file, line, receiveValue: { _ in print(_sut.loggerName); exp.fulfill() })
+                pipline._sinkNoFailure(&subs, file, line, receiveValue: { _ in print(_sut.signalName); exp.fulfill() })
             }
         }
     }
@@ -140,7 +140,7 @@ extension XCTestCase {
             metawear.publish()
                 ._assertLoggers([], metawear: metawear, file, line)
                 .log(sut)
-                ._assertLoggers([sut.loggerName], metawear: metawear, file, line)
+                ._assertLoggers([sut.signalName], metawear: metawear, file, line)
                 .share()
                 .delay(for: 1, tolerance: 0, scheduler: metawear.apiAccessQueue)
                 .logDownload(sut)
@@ -158,7 +158,7 @@ extension XCTestCase {
             if let message = expectFailure {
                 pipline._sinkExpectFailure(&subs, file, line, exp: exp, errorMessage: message)
             } else {
-                pipline._sinkNoFailure(&subs, file, line, receiveValue: { _ in print(sut.loggerName); exp.fulfill() })
+                pipline._sinkNoFailure(&subs, file, line, receiveValue: { _ in print(sut.signalName); exp.fulfill() })
             }
         }
     }
@@ -169,7 +169,7 @@ extension XCTestCase {
                 ._assertLoggers([], metawear: metawear, file, line)
                 .log(sut1)
                 .log(sut2)
-                ._assertLoggers([sut1.loggerName, sut2.loggerName], metawear: metawear, file, line)
+                ._assertLoggers([sut1.signalName, sut2.signalName], metawear: metawear, file, line)
                 .share()
                 .delay(for: 1, tolerance: 0, scheduler: metawear.apiAccessQueue)
                 .logsDownload()
@@ -180,7 +180,7 @@ extension XCTestCase {
                     if percentComplete < 1 { XCTAssertTrue(tables.isEmpty, file: file, line: line) }
                     guard percentComplete == 1 else { return }
                     XCTAssertEqual(tables.endIndex, 2, file: file, line: line)
-                    XCTAssertEqual(Set(tables.map(\.source)), Set([sut1.loggerName, sut2.loggerName]), file: file, line: line)
+                    XCTAssertEqual(Set(tables.map(\.source)), Set([sut1.signalName, sut2.signalName]), file: file, line: line)
                     XCTAssertTrue(tables.allSatisfy({ $0.rows.isEmpty == false }), file: file, line: line)
                 })
                 .drop(while: { $0.percentComplete < 1 })
