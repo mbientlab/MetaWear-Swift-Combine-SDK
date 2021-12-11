@@ -39,6 +39,9 @@ public extension MetaWear {
 
 extension MetaWear.Metadata: Comparable {
     public static func < (lhs: MetaWear.Metadata, rhs: MetaWear.Metadata) -> Bool {
-        lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+        let nameComparison = lhs.name.localizedCaseInsensitiveCompare(rhs.name)
+        guard nameComparison == .orderedSame else { return nameComparison == .orderedAscending }
+        let idComparison = lhs.id.localizedCaseInsensitiveCompare(rhs.id)
+        return idComparison == .orderedAscending
     }
 }
