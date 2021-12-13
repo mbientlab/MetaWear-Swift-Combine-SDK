@@ -8,7 +8,7 @@ let package = Package(
     products: [
         .library(name: "MetaWear", targets: ["MetaWear"]),
         .library(name: "MetaWearCpp", targets: ["MetaWearCpp"]),
-        .library(name: "MetaWearMetadata", targets: ["Metadata"])
+        .library(name: "MetaWearMetadata", targets: ["MetaWearMetadata"])
     ],
     dependencies: [
         .package(
@@ -31,7 +31,7 @@ let package = Package(
                 .headerSearchPath("./src")
             ]
         ),
-        .target(name: "Metadata",
+        .target(name: "MetaWearMetadata",
                 dependencies: ["MetaWear"],
                 path: "Sources/Metadata"
                ),
