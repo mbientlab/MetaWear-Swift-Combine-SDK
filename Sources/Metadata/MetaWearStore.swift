@@ -47,6 +47,10 @@ public class MetaWearStore {
     ///
     public let ungroupedDevices: AnyPublisher<[MetaWear.Metadata],Never>
 
+    /// Queue used by scanner and MetaWears for all Bluetooth operations
+    ///
+    public var bleQueue: DispatchQueue { scanner.bleQueue }
+
     /// Call `.load()` to asynchronously load persisted MetaWear metadata
     /// and enqueue a request for those devices once the MetaWearScanner is
     ///  active. Be sure to connect to unknown devices through the store so
