@@ -36,7 +36,7 @@ public struct MWMACAddress: MWDataConvertible, MWReadable {
 }
 
 extension MWReadable where Self == MWMACAddress {
-    static var macAddress: Self { Self() }
+    public static var macAddress: Self { Self() }
 }
 
 // MARK: - Log Length
