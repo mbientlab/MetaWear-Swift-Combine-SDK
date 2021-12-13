@@ -44,14 +44,20 @@ public extension Publisher where Output == MetaWear {
             return (metawear, moduleSignal)
         }
         .mapToMWError()
-        .flatMap { o -> MWPublisher<MWData> in
-            _poll(
-                polling: o.sensor,
-                rate: pollable.pollingRate,
-                cleanup: { pollable.pollCleanup(board: o.metawear.board) }
-            )
+        .createPollingTimer(freq: pollable.pollingRate)
+        .flatMap { metawear, counter, timer -> MWPublisher<Timestamped<P.DataType>> in
+            counter._stream(
+                start: { mbl_mw_timer_start(timer) },
+                cleanup: {
+                    mbl_mw_timer_stop(timer)
+                    mbl_mw_timer_remove(timer)
+                    pollable.pollCleanup(board: metawear.board)
+                })
+                .replaceMWError(.operationFailed("Could not stream \(P.DataType.self)"))
+            .map(pollable.convertRawToSwift)
+            .erase(subscribeOn: metawear.apiAccessQueue)
         }
-        .map(pollable.convertRawToSwift)
+        .share()
         .eraseToAnyPublisher()
     }
 
@@ -86,74 +92,12 @@ public extension Publisher where Output == MetaWear {
             .eraseToAnyPublisher()
     }
 
-
-    /// "Streams" a read-only signal at the interval provided.
-    /// - Parameters:
-    ///   - readableSignal: Configured sensor signal that can be read by `mbl_mw_datasignal_read`
-    ///   - periodMs: Milliseconds between poll events
-    ///   - as: Type to cast the data
-    /// - Returns: Stream of timestamped, cast data from the polled signal
-    ///
-    func stream<T>(polling readableSignal: MWDataSignal,
-                   rate: MWFrequency,
-                   as type: T.Type,
-                   cleanup: (() -> Void)?
-    ) -> MWPublisher<Timestamped<T>> {
-
-        _poll(polling: readableSignal, rate: rate, cleanup: cleanup)
-            .map { ($0.timestamp, $0.valueAs() as T) }
-            .eraseToAnyPublisher()
-    }
 }
 
 // MARK: - Stream Base Methods
 
-public extension Publisher where Output == MetaWear {
-
-    /// "Streams" a read-only signal at the interval provided.
-    ///
-    /// - Parameters:
-    ///   - readableSignal: Configured sensor signal that can be read by `mbl_mw_datasignal_read`
-    ///   - periodMs: Milliseconds between poll events
-    /// - Returns: Stream of data from the polled signal
-    ///
-    func _poll(polling readableSignal: MWDataSignal,
-               rate: MWFrequency,
-               cleanup: (() -> Void)?
-    ) -> MWPublisher<MWData> {
-        mapToMWError()
-            .flatMap { metawear -> MWPublisher<(metawear: MetaWear, countedSensor: MWDataSignal, timer: MWDataSignal)> in
-                mapToMWError()
-                    .zip(readableSignal.accounterCreateCount(),
-                         metawear.board.createTimedEvent(
-                            period: UInt32(rate.periodMs),
-                            repetitions: .max,
-                            immediateFire: false,
-                            recordedEvent: { mbl_mw_datasignal_read(readableSignal) }
-                         )
-                    ) { ($0, $1, $2) }.eraseToAnyPublisher()
-            }
-            .flatMap { o -> MWPublisher<MWData> in
-
-                let data = _datasignal_subscribe(o.countedSensor)
-                mbl_mw_timer_start(o.timer)
-
-                let stop = {
-                    mbl_mw_timer_stop(o.timer)
-                    mbl_mw_timer_remove(o.timer)
-                    mbl_mw_datasignal_unsubscribe(o.countedSensor)
-                    cleanup?()
-                }
-
-                return data
-                    .handleEvents(receiveCompletion: { _ in stop() }, receiveCancel: stop)
-                    .erase(subscribeOn: o.metawear.apiAccessQueue)
-            }
-            .eraseToAnyPublisher()
-    }
-}
-
 public extension MWDataSignal {
+
 
     /// When pointing to a data signal, start streaming the signal.
     ///
@@ -192,7 +136,7 @@ public extension MWDataSignal {
             .eraseToAnyPublisher()
     }
 
-    private func _stream(start:   (() -> Void)?,
+    fileprivate func _stream(start:   (() -> Void)?,
                          cleanup: (() -> Void)?
     ) -> AnyPublisher<MWData, MWError> {
 
@@ -200,13 +144,9 @@ public extension MWDataSignal {
         start?()
 
         return subject
-            .handleEvents(receiveCompletion: { completion in
+            .handleEvents(receiveCancel: {
                 cleanup?()
                 mbl_mw_datasignal_unsubscribe(self)
-            }, receiveCancel: {
-                cleanup?()
-                mbl_mw_datasignal_unsubscribe(self)
-                subject.send(completion: .finished)
             })
             .eraseToAnyPublisher()
     }
