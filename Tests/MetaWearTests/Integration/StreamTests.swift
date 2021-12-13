@@ -52,18 +52,6 @@ class StreamTests: XCTestCase {
         }
     }
 
-    func testStreamPoll_ColorDetector() throws {
-        try _testPoll { _ in
-            [.colorDetector(gain: .x1, rate: .hz1)]
-        }
-    }
-
-    func testStreamPoll_Proximity() throws {
-        try _testPoll { _ in
-            [.proximity(rate: .init(hz: 1), sensitivity: .init(5), current: .mA100)]
-        }
-    }
-
     // MARK: - Sensor Fusion All Modes
 
     func testStream_SensorFusion_EulerAngles() {

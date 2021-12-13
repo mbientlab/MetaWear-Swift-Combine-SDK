@@ -60,10 +60,12 @@ public struct MWThermometer: MWReadable, MWPollable {
 public extension MWThermometer {
 
     func readableSignal(board: MWBoard) throws -> MWDataSignal? {
+        print(Self.self, #function)
         return mbl_mw_multi_chnl_temp_get_temperature_data_signal(board, UInt8(channel))
     }
 
     func readConfigure(board: MWBoard) {
+        print(Self.self, #function)
         if type == .external {
             mbl_mw_multi_chnl_temp_configure_ext_thermistor(board, UInt8(channel), dataPin, pulldownPin, UInt8(1))
         }
@@ -73,6 +75,7 @@ public extension MWThermometer {
     }
 
     func readCleanup(board: MWBoard) {
+        print(Self.self, #function)
         if type == .bmp280 {
             mbl_mw_baro_bosch_stop(board)
         }
