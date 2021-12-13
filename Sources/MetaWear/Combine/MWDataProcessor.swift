@@ -270,7 +270,7 @@ public extension Publisher where Output == MWDataProcessorSignal, Failure == MWE
                 return output
             }
         }
-        .mapError { error -> MWError in error as! MWError } // Recast tryMap's mandated type erasure
+        .mapToMWError()
         .eraseToAnyPublisher()
     }
 

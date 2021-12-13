@@ -106,9 +106,7 @@ public extension MWDataSignal {
             start: { streamable.streamStart(board: board) },
             cleanup: { streamable.streamCleanup(board: board) }
         )
-            .mapError { _ in // Replace a generic stream error
-                MWError.operationFailed("Could not stream \(S.DataType.self)")
-            }
+            .replaceMWError(.operationFailed("Could not stream \(S.DataType.self)"))
             .map(streamable.convertRawToSwift)
             .eraseToAnyPublisher()
     }
@@ -129,9 +127,7 @@ public extension MWDataSignal {
                    cleanup: (() -> Void)?
     ) -> AnyPublisher<Timestamped<T>, MWError> {
         _stream(start: start, cleanup: cleanup)
-            .mapError { _ in // Replace a generic stream error
-                MWError.operationFailed("Could not stream \(T.self)")
-            }
+            .replaceMWError(.operationFailed("Could not stream \(T.self)"))
             .map { ($0.timestamp, $0.valueAs() as T) }
             .eraseToAnyPublisher()
     }

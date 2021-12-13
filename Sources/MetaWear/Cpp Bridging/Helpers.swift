@@ -69,7 +69,7 @@ public func _dataprocessor(_ dpFunc: _MWDataProcessorFunction,
         }
     }
     return subject
-        .mapError { _ in .operationFailed("could not perform \(errorLabel)") }
+        .replaceMWError(.operationFailed("could not perform \(errorLabel)"))
         .erasedWithDataProcessorError(code: code)
 }
 
@@ -90,7 +90,7 @@ public func _dataprocessor(_ dpFunc: _MWDataProcessorFunctionUInt8,
         }
     }
     return subject
-        .mapError { _ in .operationFailed("could not perform \(errorLabel)") }
+        .replaceMWError(.operationFailed("could not perform \(errorLabel)"))
         .erasedWithDataProcessorError(code: code)
 }
 

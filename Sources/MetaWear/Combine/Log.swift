@@ -28,7 +28,7 @@ public extension Publisher where Output == MetaWear {
                          start: { loggable.loggerStart(board: metawear.board) }
                     )
                     .compactMap { [weak metawear] _ in metawear }
-                    .mapError { _ in errorMsg }
+                    .replaceMWError(errorMsg)
                     .erase(subscribeOn: metawear.apiAccessQueue)
             }
             .share()
@@ -48,7 +48,7 @@ public extension Publisher where Output == MetaWear {
         .mapToMWError()
         .flatMap { o -> MWPublisher<MetaWear> in
             log(byPolling: o.sensor, rate: pollable.pollingRate, overwriting: overwriting)
-                .mapError { _ in MWError.operationFailed("Unable to log \(pollable.name)") }
+                .replaceMWError(.operationFailed("Unable to log \(pollable.name)"))
                 .erase(subscribeOn: o.metawear.apiAccessQueue)
         }
         .share()
@@ -123,8 +123,9 @@ public extension Publisher where Output == MetaWear {
     /// - Returns: Publishes percent complete. At 100% complete, publishes all logged data.
     ///
     func _logDownloadData() -> MWPublisher<Download<[MWData.LogDownload]>> {
-        mapToMWError()
-            .zip(self.mapToMWError().collectAnonymousLoggerSignals())
+        let shared = self.mapToMWError().share()
+        return shared
+            .zip(shared.collectAnonymousLoggerSignals())
             .flatMap { metawear, loggers -> MWPublisher<Download<[MWData.LogDownload]>> in
 
                 // Stop logging + subscribe/store the downloaded feed from each signal
@@ -168,8 +169,9 @@ public extension Publisher where Output == MetaWear {
     ///
     func logDownload<L: MWLoggable>(_ loggable: L)
     -> MWPublisher<Download<[Timestamped<L.DataType>]>> {
-        mapToMWError()
-            .zip(self.mapToMWError().collectAnonymousLoggerSignals())
+        let shared = self.mapToMWError().share()
+        return shared
+            .zip(shared.collectAnonymousLoggerSignals())
             .tryMap { metawear, logs -> (MetaWear, OpaquePointer) in
                 guard let logger = logs.first(where: { $0.id == loggable.signalName }) else {
                     throw MWError.operationFailed("Could not find logger \(loggable.name)")

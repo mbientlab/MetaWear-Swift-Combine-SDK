@@ -364,7 +364,7 @@ private extension MetaWearScanner {
                     @unknown default: fatalError("MetaWear: New central.state values, please update.")
                 }
             })
-            .mapError { $0 as! MWError }
+            .mapToMWError()
             .eraseToAnyPublisher()
     }
 }

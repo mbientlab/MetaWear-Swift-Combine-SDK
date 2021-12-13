@@ -51,6 +51,11 @@ public extension Publisher {
         }
         .eraseToAnyPublisher()
     }
+
+    internal func replaceMWError(_ replacement: MWError) -> AnyPublisher<Output,MWError> {
+        mapError { _ -> MWError in replacement }
+        .eraseToAnyPublisher()
+    }
 }
 
 

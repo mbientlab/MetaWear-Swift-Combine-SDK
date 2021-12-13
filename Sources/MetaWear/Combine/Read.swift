@@ -28,9 +28,8 @@ public extension Publisher where Output == MetaWear {
             signalPointer
                 .read(readable)
                 .handleEvents(receiveOutput: { _ in readable.readCleanup(board: metawear.board) })
-                .mapError { _ in // Replace any unspecific type casting failure message
-                    MWError.operationFailed("Failed reading \(readable.name).")
-                }
+            // Replace any unspecific type casting failure message
+                .replaceMWError(.operationFailed("Failed reading \(readable.name)."))
                 .erase(subscribeOn: metawear.apiAccessQueue)
         }
         .eraseToAnyPublisher()
@@ -62,9 +61,8 @@ public extension MWDataSignal {
     func read<R: MWReadable>(_ readable: R) -> AnyPublisher<Timestamped<R.DataType>, MWError> {
         _read()
             .map(readable.convertRawToSwift)
-            .mapError { _ in // Replace a generic read error (C function pointer cannot form w/ generic)
-                MWError.operationFailed("Could not read \(R.DataType.self)")
-            }
+        // Replace a generic read error (C function pointer cannot form w/ generic)
+            .replaceMWError(.operationFailed("Could not read \(R.DataType.self)"))
             .eraseToAnyPublisher()
     }
 
@@ -80,9 +78,8 @@ public extension MWDataSignal {
     func read<T>(as: T.Type) -> AnyPublisher<Timestamped<T>, MWError> {
         _read()
             .map { ($0.timestamp, $0.valueAs() as T) }
-            .mapError { _ in // Replace a generic read error (C function pointer cannot form w/ generic)
-                MWError.operationFailed("Could not read \(T.self)")
-            }
+        // Replace a generic read error (C function pointer cannot form w/ generic)
+            .replaceMWError(.operationFailed("Could not read \(T.self)"))
             .eraseToAnyPublisher()
     }
 }
