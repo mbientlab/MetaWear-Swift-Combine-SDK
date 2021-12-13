@@ -150,7 +150,9 @@ public extension MetaWear {
 internal extension MetaWear.DeviceInformation {
 
     static func publisher(for device: MetaWear) -> MWPublisher<MetaWear.DeviceInformation> {
-        Publishers.Zip(device.read(.manufacturerName), _JustMW(Self.getModel(device: device))
+        Publishers.Zip(
+            device.read(.manufacturerName),
+            _JustMW(Self.getModel(device: device))
         )
             .zip(device.read(.serialNumber),
                  device.read(.firmwareRevision),
