@@ -44,7 +44,7 @@ public class MetaWearScanner: NSObject {
     /// updates. Skips unknown and resetting states changes,
     /// but publishes powerOn and fails on power off, unsupported,
     /// and unauthorized.
-    public private(set) lazy var centralManagerFilteredDidUpdateState: AnyPublisher<CBManagerState, MWError> = _makeFilteredCentralDidUpdatePublisher()
+    public private(set) lazy var centralManagerDidUpdateStateFailing: AnyPublisher<CBManagerState, MWError> = _makeCentralDidUpdateFailingPublisher()
 
     /// Whether or not the scanner's CBCentralManager is scanning.
     public var isScanning: Bool { self.central.isScanning }
@@ -66,10 +66,10 @@ public class MetaWearScanner: NSObject {
     /// to gather remembered MetaWears and newly discovered
     /// nearby MetaWears (once Bluetooth is powered on).
     ///
-    public init(restoreIdentifier: String? = nil) {
+    public init(restoreIdentifier: String? = nil, showPoweredOffAlert: Bool = true) {
         self.bleQueue = .makeScannerQueue()
         super.init()
-        _makeCentralManager(with: restoreIdentifier)
+        _makeCentralManager(with: restoreIdentifier, showPowerAlert: showPoweredOffAlert)
     }
 
     // Internal
@@ -302,10 +302,12 @@ extension MetaWearScanner {
 
 private extension MetaWearScanner {
 
-    func _makeCentralManager(with restoreIdentifier: String?) {
-        let options: [String : Any] = restoreIdentifier == nil
-        ? [:]
-        : [CBCentralManagerOptionRestoreIdentifierKey: restoreIdentifier!]
+    func _makeCentralManager(with restoreIdentifier: String?, showPowerAlert: Bool) {
+        var options: [String:Any] = [:]
+        options[CBCentralManagerOptionShowPowerAlertKey] = showPowerAlert ? 1 : 0
+        if let id = restoreIdentifier {
+            options[CBCentralManagerOptionRestoreIdentifierKey] = id
+        }
         self.central = CBCentralManager(delegate: self, queue: bleQueue, options: options)
     }
 
@@ -351,7 +353,7 @@ private extension MetaWearScanner {
             .erase(subscribeOn: bleQueue)
     }
 
-    func _makeFilteredCentralDidUpdatePublisher() -> AnyPublisher<CBManagerState, MWError> {
+    func _makeCentralDidUpdateFailingPublisher() -> AnyPublisher<CBManagerState, MWError> {
         didUpdateStateSubject
             .tryCompactMap({ state in
                 switch state {
