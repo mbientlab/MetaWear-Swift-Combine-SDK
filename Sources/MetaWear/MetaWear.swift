@@ -729,7 +729,7 @@ private extension MetaWear {
     /// Complete connection-related pipelines upon a cancel request or an error during device setup methods (e.g., in `CBCharacteristic` discovery). If connection is successful, move the pipelines into the disconnect promise queue.
     ///
     func _invokeConnectionHandlers(error: Error?, cancelled: Bool) {
-        assert(DispatchQueue.isBleQueue)
+        assert(DispatchQueue.isOnBleQueue())
         if cancelled == false && error == nil {
             self.isConnectedAndSetup = true
             self._connectionStateSubject.send(.connected)
@@ -756,7 +756,7 @@ private extension MetaWear {
     /// Terminate connection-related pipelines or read promises upon a disconnect request or event or an error during setup methods.
     ///
     func _invokeDisconnectionHandlers(error: Error?) {
-        assert(DispatchQueue.isBleQueue)
+        assert(DispatchQueue.isOnBleQueue())
 
         isConnectedAndSetup = false
         _connectionStateSubject.send(.disconnected)
@@ -899,14 +899,9 @@ fileprivate func _writeGattChar(context: UnsafeMutableRawPointer?,
     if let charToWrite = device._getCBCharacteristic(characteristicPtr) {
         let data = Data(bytes: valuePtr!, count: Int(length))
         let type: CBCharacteristicWriteType = writeType == MBL_MW_GATT_CHAR_WRITE_WITH_RESPONSE ? .withResponse : .withoutResponse
-        if DispatchQueue.isBleQueue {
+        DispatchQueue.onBleQueue(device.apiAccessQueue) {
             device._writeQueue.append((data: data, characteristic: charToWrite, type: type))
             device._writeIfNeeded()
-        } else {
-            device.apiAccessQueue.async {
-                device._writeQueue.append((data: data, characteristic: charToWrite, type: type))
-                device._writeIfNeeded()
-            }
         }
     }
 }
