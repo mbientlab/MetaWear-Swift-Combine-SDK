@@ -369,24 +369,6 @@ private extension MetaWearScanner {
     }
 }
 
-internal extension DispatchQueue {
-
-    fileprivate static let bleQueueKey = DispatchSpecificKey<Int>()
-    fileprivate static let bleQueueValue = 1111
-    fileprivate static var scannerCount = 0
-
-    class var isBleQueue: Bool {
-        DispatchQueue.getSpecific(key: bleQueueKey) == bleQueueValue
-    }
-
-    static func makeScannerQueue() -> DispatchQueue {
-        let queue = DispatchQueue(label: "com.mbientlab.bleQueue\(scannerCount)")
-        scannerCount += 1
-        queue.setSpecific(key: bleQueueKey, value: bleQueueValue)
-        return queue
-    }
-}
-
 // MARK: - Optional Persistence
 
 extension UserDefaults {

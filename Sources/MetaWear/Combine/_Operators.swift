@@ -11,7 +11,12 @@ public extension Publisher {
     /// Sugar to ensure operations upstream of this are performed async on the provided queue.
     ///
     func erase(subscribeOn queue: DispatchQueue) -> AnyPublisher<Self.Output,Self.Failure> {
-        self
+        let warn: (Any) -> Void = { _ in DispatchQueue.warnIfNotOnBleQueue() }
+        return self
+            .handleEvents(receiveSubscription: warn,
+                          receiveCompletion: warn,
+                          receiveCancel: { DispatchQueue.warnIfNotOnBleQueue() },
+                          receiveRequest: warn)
             .subscribe(on: queue)
             .receive(on: queue)
             .eraseToAnyPublisher()
