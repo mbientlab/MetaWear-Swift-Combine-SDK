@@ -91,6 +91,74 @@ public class MetaWearStore {
 
 // MARK: - Public API Methods
 
+public extension MetaWearStore {
+
+    /// Receive updates when the device's Metadata changes or the scanner discovers the device locally.
+    func publisher(for mac: MACAddress) -> AnyPublisher<MWKnownDevice, Never> {
+
+        let known = getDeviceAndMetadata(mac)
+        let localID = known?.mw?.peripheral.identifier
+
+        let metawear: AnyPublisher<MetaWear?, Never> = scanner.discoveredDevices
+            .compactMap { [weak self] dict -> MetaWear? in
+
+                if let localID = localID { return dict[localID] }
+
+                let localIDs = self?._knownDevices.value[mac]?.localBluetoothIds ?? []
+                for id in localIDs {
+                    if let metawear = dict[id] { return metawear }
+                }
+
+                return nil
+            }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+
+        let metadata = _knownDevices
+            .compactMap { dict -> MetaWear.Metadata? in dict[mac] }
+            .removeDuplicates()
+
+        let forcedMetaWearKickoff = Just(known?.mw).merge(with: metawear)
+
+        return Publishers.CombineLatest(forcedMetaWearKickoff, metadata)
+            .map { ($0, $1) }
+            .subscribe(on: bleQueue)
+            .eraseToAnyPublisher()
+    }
+
+    /// Receive updates when the group's identity changes or when the scanner discovers any unknown devices.
+    func publisher(for group: MetaWear.Group) -> AnyPublisher<(group: MetaWear.Group, devices: [MWKnownDevice]), Never> {
+
+        let groupUpdates = _groups
+            .compactMap { dict -> MetaWear.Group? in dict[group.id] }
+            .removeDuplicates()
+
+        let knownDevicesUpdates = scanner.discoveredDevices
+            .compactMap { [weak self] devices -> (devices: [CBPeripheralIdentifier: MetaWear], group: MetaWear.Group)? in
+                guard let group = self?.getGroup(id: group.id) else { return nil }
+                return (devices, group)
+            }
+            .map { [weak self] devices, group -> [MWKnownDevice] in
+                group.deviceMACs.reduce(into: [MWKnownDevice]()) { result, mac in
+                    guard let metadata = self?._knownDevices.value[mac] else { return }
+                    let localID = metadata.localBluetoothIds.first(where: { devices[$0] != nil })
+                    let metawear = localID == nil ? nil : devices[localID!]
+                    result.append((metawear, metadata))
+                }
+            }
+            .removeDuplicates { prior, new in
+                prior.map(\.mw) == new.map(\.mw)
+            }
+
+        let forcedKnownDevicesKickoff = Just(getDevicesInGroup(group)).merge(with: knownDevicesUpdates)
+
+        return Publishers.CombineLatest(groupUpdates, forcedKnownDevicesKickoff)
+            .map { ($0, $1) }
+            .subscribe(on: bleQueue)
+            .eraseToAnyPublisher()
+    }
+}
+
 public extension Array where Element == MetaWear.Group {
     func allDevicesMACAddresses() -> Set<String> {
         reduce(into: Set<String>()) { $0.formUnion($1.deviceMACs) }
@@ -163,6 +231,10 @@ public extension MetaWearStore {
     ///
     func update(group: MetaWear.Group) {
         _groups.value[group.id] = group
+    }
+
+    func rename(group: MetaWear.Group, to newName: String) {
+        _groups.value[group.id, default: group].name = newName
     }
 
     func remove(group: UUID) {
