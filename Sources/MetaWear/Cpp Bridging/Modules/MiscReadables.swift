@@ -6,19 +6,18 @@ import Combine
 
 // MARK: - Battery Life
 
+/// Battery life percentage 0 to 100
 public struct MWBatteryLevel: MWDataConvertible, MWReadable {
-    public typealias DataType = Int8
-    public typealias RawDataType = Int8
+    public typealias DataType = Int
+    public typealias RawDataType = MblMwBatteryState
     public let columnHeadings = ["Epoch", "Battery Percentage"]
     public func readableSignal(board: MWBoard) throws -> MWDataSignal? {
         mbl_mw_settings_get_battery_state_data_signal(board)
     }
-    public func readConfigure(board: MWBoard) { }
-    public func readCleanup(board: MWBoard) { }
 }
 
 extension MWReadable where Self == MWBatteryLevel {
-    static var batteryLevel: Self { Self() }
+    public static var batteryLevel: Self { Self() }
 }
 
 
@@ -31,8 +30,6 @@ public struct MWMACAddress: MWDataConvertible, MWReadable {
     public func readableSignal(board: MWBoard) throws -> MWDataSignal? {
         mbl_mw_settings_get_mac_data_signal(board)
     }
-    public func readConfigure(board: MWBoard) { }
-    public func readCleanup(board: MWBoard) { }
 }
 
 extension MWReadable where Self == MWMACAddress {
@@ -49,8 +46,6 @@ public struct MWLogLength: MWDataConvertible, MWReadable {
     public func readableSignal(board: MWBoard) throws -> MWDataSignal? {
         mbl_mw_logging_get_length_data_signal(board)
     }
-    public func readConfigure(board: MWBoard) { }
-    public func readCleanup(board: MWBoard) { }
 }
 
 extension MWReadable where Self == MWLogLength {
@@ -67,8 +62,6 @@ public struct MWLastResetTime: MWDataConvertible, MWReadable {
     public func readableSignal(board: MWBoard) throws -> MWDataSignal? {
         mbl_mw_logging_get_time_data_signal(board)
     }
-    public func readConfigure(board: MWBoard) { }
-    public func readCleanup(board: MWBoard) { }
 
     public func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
         (raw.time, (Date(timeIntervalSinceReferenceDate: Double(raw.value.epoch) / 1000), raw.value.reset_uid) )

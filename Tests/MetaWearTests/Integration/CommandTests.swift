@@ -23,7 +23,7 @@ class CommandTests: XCTestCase {
                     intensity: .init(1),
                     repetitions: 10)
                 )
-                .delay(for: 3, tolerance: 0, scheduler: metawear.apiAccessQueue)
+                .delay(for: 3, tolerance: 0, scheduler: metawear.bleQueue)
                 ._sinkNoFailure(&subs, receiveValue: { _ in exp.fulfill() })
         }
     }
@@ -38,11 +38,11 @@ class CommandTests: XCTestCase {
                     intensity: .init(1),
                     repetitions: 10)
                 )
-                .delay(for: 1, tolerance: 0, scheduler: metawear.apiAccessQueue)
+                .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
 
             // Act
                 .command(.ledOff)
-                .delay(for: 2, tolerance: 0, scheduler: metawear.apiAccessQueue)
+                .delay(for: 2, tolerance: 0, scheduler: metawear.bleQueue)
                 ._sinkNoFailure(&subs, receiveValue: { _ in exp.fulfill() })
         }
     }

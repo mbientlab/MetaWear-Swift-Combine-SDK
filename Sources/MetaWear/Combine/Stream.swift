@@ -27,8 +27,16 @@ public extension Publisher where Output == MetaWear {
         .mapToMWError()
         .flatMap { o -> MWPublisher<Timestamped<S.DataType>> in
             o.signal.stream(streamable, board: o.metawear.board)
-                .erase(subscribeOn: o.metawear.apiAccessQueue)
+                .erase(subscribeOn: o.metawear.bleQueue)
         }
+        .handleEvents(receiveCompletion: { completion in
+            switch completion {
+                case .failure(let error): Swift.print(streamable.name, error.localizedDescription)
+                case .finished: Swift.print(streamable.name, "finished")
+            }
+        })
+        .handleEvents(receiveCancel: { Swift.print("Stream.swift -> Cancel \(streamable.name)") })
+        .handleEvents(receiveRequest: { _ in Swift.print("Stream.swift -> Request \(streamable.name)") })
         .eraseToAnyPublisher()
     }
 
@@ -62,8 +70,14 @@ public extension Publisher where Output == MetaWear {
                 })
                 .replaceMWError(.operationFailed("Could not stream \(P.DataType.self)"))
             .map(pollable.convertRawToSwift)
-            .erase(subscribeOn: metawear.apiAccessQueue)
+            .erase(subscribeOn: metawear.bleQueue)
         }
+        .handleEvents(receiveCompletion: { completion in
+            switch completion {
+                case .failure(let error): Swift.print(pollable.name, error.localizedDescription)
+                case .finished: Swift.print(pollable.name, "finished")
+            }
+        })
         .share()
         .print()
         .eraseToAnyPublisher()
@@ -95,7 +109,7 @@ public extension Publisher where Output == MetaWear {
             .flatMap { metawear -> MWPublisher<Timestamped<T>> in
                 signal
                     .stream(as: type, start: start, cleanup: cleanup)
-                    .erase(subscribeOn: metawear.apiAccessQueue)
+                    .erase(subscribeOn: metawear.bleQueue)
             }
             .eraseToAnyPublisher()
     }

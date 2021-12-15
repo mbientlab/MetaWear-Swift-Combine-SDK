@@ -5,6 +5,8 @@ import MetaWearCpp
 
 public extension MetaWear {
 
+    /// Marketed model name for this MetaWear.
+    ///
     enum Model: Int, Equatable, CaseIterable, IdentifiableByRawValue {
         case unknown = -1
         case wearR, wearRG, wearRPRO, wearC, wearCPRO, environment, detector, health, tracker, motionR, motionRL, motionC, motionS

@@ -61,7 +61,7 @@ class LogTests: XCTestCase {
             // Prepare
             metawear.publish()
                 .deleteLoggedEntries()
-                .delay(for: 1, tolerance: 0, scheduler: metawear.apiAccessQueue)
+                .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
 
             // Act
                 .read(.logLength)
@@ -81,10 +81,10 @@ class LogTests: XCTestCase {
             // Prepare
             metawear.publish()
                 .deleteLoggedEntries()
-                .delay(for: 5, tolerance: 0, scheduler: metawear.apiAccessQueue)
+                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
                 .log(log)
                 ._assertLoggers([log.signalName], metawear: metawear)
-                .delay(for: 10, tolerance: 0, scheduler: metawear.apiAccessQueue)
+                .delay(for: 10, tolerance: 0, scheduler: metawear.bleQueue)
 
             // Act
                 .read(.logLength)
@@ -142,7 +142,7 @@ extension XCTestCase {
                 .log(sut)
                 ._assertLoggers([sut.signalName], metawear: metawear, file, line)
                 .share()
-                .delay(for: 1, tolerance: 0, scheduler: metawear.apiAccessQueue)
+                .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
                 .logDownload(sut)
 
             // Assert
@@ -171,7 +171,7 @@ extension XCTestCase {
                 .log(sut2)
                 ._assertLoggers([sut1.signalName, sut2.signalName], metawear: metawear, file, line)
                 .share()
-                .delay(for: 1, tolerance: 0, scheduler: metawear.apiAccessQueue)
+                .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
                 .logsDownload()
 
             // Assert

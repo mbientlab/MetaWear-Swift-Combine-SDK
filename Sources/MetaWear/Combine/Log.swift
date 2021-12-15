@@ -29,7 +29,7 @@ public extension Publisher where Output == MetaWear {
                     )
                     .compactMap { [weak metawear] _ in metawear }
                     .replaceMWError(errorMsg)
-                    .erase(subscribeOn: metawear.apiAccessQueue)
+                    .erase(subscribeOn: metawear.bleQueue)
             }
             .share()
             .eraseToAnyPublisher()
@@ -49,7 +49,7 @@ public extension Publisher where Output == MetaWear {
         .flatMap { o -> MWPublisher<MetaWear> in
             log(byPolling: o.sensor, rate: pollable.pollingRate, overwriting: overwriting)
                 .replaceMWError(.operationFailed("Unable to log \(pollable.name)"))
-                .erase(subscribeOn: o.metawear.apiAccessQueue)
+                .erase(subscribeOn: o.metawear.bleQueue)
         }
         .share()
         .eraseToAnyPublisher()
@@ -80,7 +80,7 @@ public extension Publisher where Output == MetaWear {
                         mbl_mw_timer_start(o.timer)
                     })
                     .compactMap { [weak device] _ in device }
-                    .subscribe(on: device.apiAccessQueue)
+                    .subscribe(on: device.bleQueue)
                     .eraseToAnyPublisher()
             }
             .eraseToAnyPublisher()
@@ -159,7 +159,7 @@ public extension Publisher where Output == MetaWear {
                         mbl_mw_logging_clear_entries(output.refs.device.board)
                     })
                     .map(\.download)
-                    .erase(subscribeOn: metawear.apiAccessQueue)
+                    .erase(subscribeOn: metawear.bleQueue)
             }
             .eraseToAnyPublisher()
     }
@@ -196,7 +196,7 @@ public extension Publisher where Output == MetaWear{
             return device.board
                 .collectAnonymousLoggerSignals()
                 .map { log in log.map { (MWNamedSignal(identifier: $0), $1) } }
-                .erase(subscribeOn: device.apiAccessQueue)
+                .erase(subscribeOn: device.bleQueue)
         }
         .eraseToAnyPublisher()
     }
@@ -210,7 +210,7 @@ public extension Publisher where Output == MetaWear{
                 .handleEvents(receiveOutput: { metaWear in
                     mbl_mw_logging_clear_entries(metaWear.board)
                 })
-                .erase(subscribeOn: metawear.apiAccessQueue)
+                .erase(subscribeOn: metawear.bleQueue)
         }
         .eraseToAnyPublisher()
     }
@@ -297,7 +297,7 @@ public extension Publisher where Output == (MetaWear, MWLoggerSignal) {
                 .map(\.download)
             // Ensure idemmnopotent
                 .share()
-                .erase(subscribeOn: metawear.apiAccessQueue)
+                .erase(subscribeOn: metawear.bleQueue)
         }
         .eraseToAnyPublisher()
     }

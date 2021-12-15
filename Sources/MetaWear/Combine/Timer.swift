@@ -63,7 +63,7 @@ public extension Publisher where Output == MetaWear {
                     immediateFire: immediateFire,
                     recordedEvent: commands),
                      { ($0, $1) }
-                ).erase(subscribeOn: mw.apiAccessQueue)
+                ).erase(subscribeOn: mw.bleQueue)
         }
         .eraseToAnyPublisher()
     }
@@ -87,7 +87,7 @@ public extension Publisher where Output == MetaWear {
             .flatMap { device -> MWPublisher<OpaquePointer> in
                 device.board
                     .createTimer(period: periodMs, repetitions: repetitions, immediateFire: immediateFire)
-                    .erase(subscribeOn: device.apiAccessQueue)
+                    .erase(subscribeOn: device.bleQueue)
             }
             .eraseToAnyPublisher()
     }

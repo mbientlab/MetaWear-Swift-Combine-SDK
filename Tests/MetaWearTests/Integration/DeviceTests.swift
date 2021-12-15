@@ -40,7 +40,7 @@ class DeviceTests: XCTestCase {
             metawear
                 .publishWhenDisconnected()
                 .first()
-                .delay(for: 3, tolerance: 0, scheduler: metawear.apiAccessQueue)
+                .delay(for: 3, tolerance: 0, scheduler: metawear.bleQueue)
                 .flatMap { $0.connectPublisher() }
                 ._assertLoggers([], metawear: metawear)
                 .read(.lastResetTime)

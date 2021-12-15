@@ -38,7 +38,7 @@ public typealias MWDataProcessorSignal  = OpaquePointer
 
 /// References a signal referring to a
 /// logger for a particular data signal
-public typealias MWLoggerSignal           = OpaquePointer
+public typealias MWLoggerSignal         = OpaquePointer
 
 // MARK: - Other Aliases
 
@@ -53,3 +53,13 @@ public typealias MWMacroIdentifier = UInt8
 ///  and, once 100% complete, the
 ///  downloaded data itself.
 public typealias Download<D>             = (data: D, percentComplete: Double)
+
+/// A 6-byte unique identifier for a MetaWear and any Bluetooth device (e.g., F1:4A:45:90:AC:9D)
+public typealias MACAddress              = String
+
+/// While stable locally, Apple identifies CoreBluetooth peripherals via a UUID that differs between a user's phones and computers. ``MetaWear/MetaWear/info`` exposes the stable MAC address, as does our advertising packet when seen via Android.
+public typealias CBPeripheralIdentifier  = UUID
+
+public extension CBPeripheralIdentifier {
+     typealias UUIDString                = String
+}

@@ -141,6 +141,14 @@ DataType == Int {
     }
 }
 
+public extension MWDataConvertible where
+RawDataType == MblMwBatteryState,
+DataType == Int {
+    func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
+        (raw.time, Int(raw.value.charge))
+    }
+}
+
 // MARK: - Data Type Conversions
 
 public extension MWDataConvertible where DataType == Int {

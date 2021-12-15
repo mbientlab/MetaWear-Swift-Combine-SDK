@@ -57,9 +57,9 @@ public extension MWAmbientLight {
 // MARK: - Discoverable Presets
 
 public extension MWStreamable where Self == MWAmbientLight {
-    static func ambientLight(rate: MWAmbientLight.MeasurementRate? = nil,
-                             gain: MWAmbientLight.Gain? = nil,
-                             integrationTime: MWAmbientLight.IntegrationTime? = nil) -> Self {
+    static func ambientLight(rate: MWAmbientLight.MeasurementRate,
+                             gain: MWAmbientLight.Gain,
+                             integrationTime: MWAmbientLight.IntegrationTime) -> Self {
         Self(gain: gain, integrationTime: integrationTime, rate: rate)
     }
 }

@@ -4,6 +4,8 @@ import Foundation
 import MetaWear
 import Combine
 
+public typealias MWKnownDevice = (mw: MetaWear?, meta: MetaWear.Metadata)
+
 /// Stores all groups, known devices, and unknown devices merged from persistence and MetaWearScanner/CoreBluetooth. Retrieves devices from the scanner if detected. While each Apple device provides a Bluetooth accessory with a unique identifier, those UUIDs are not stable between a user's devices. This store maps stable MetaWear identifiers to those UUIDs so that metadata changes, such as a device's name or grouping, on any user device will synchronize between devices.
 ///
 public class MetaWearStore {
@@ -13,7 +15,6 @@ public class MetaWearStore {
     ///
     public func load() throws {
         try loader.load()
-        scanner.retrieveSavedMetaWearsAsync()
     }
 
     /// All known devices, including those part of groups.
@@ -75,7 +76,17 @@ public class MetaWearStore {
 
         self.persistChanges(to: loader)
         self.update(for: loader.metawears)
-        self.update(for: scanner.discoveredDevices)
+        self.update(for: scanner.discoveredDevicesPublisher)
+
+        _knownDevices.sink { update in
+            print("_known", update.map(\.key))
+        }
+        .store(in: &subs)
+
+        _unknownDevices.sink { update in
+            print("_unknown", update)
+        }
+        .store(in: &subs)
     }
 
     // Internal details
@@ -89,27 +100,33 @@ public class MetaWearStore {
 
 }
 
-// MARK: - Public API Methods
+// MARK: - Public API - Subscribe to specific items
 
 public extension MetaWearStore {
 
-    /// Receive updates when the device's Metadata changes or the scanner discovers the device locally.
+    /// Receive updates when the device's Metadata changes or the scanner discovers the device nearby.
+    ///
     func publisher(for mac: MACAddress) -> AnyPublisher<MWKnownDevice, Never> {
 
+        /// Retrieve a known or recently forgotten MetaWear and its metadata (or best representation)
         let known = getDeviceAndMetadata(mac)
         let localID = known?.mw?.peripheral.identifier
 
-        let metawear: AnyPublisher<MetaWear?, Never> = scanner.discoveredDevices
+        let metawear: AnyPublisher<MetaWear?, Never> = scanner.discoveredDevicesPublisher
             .compactMap { [weak self] dict -> MetaWear? in
 
+                // Return a MetaWear already discovered at kickoff
                 if let localID = localID { return dict[localID] }
 
+                // If it wasn't discovered at kickoff, find it if discovered since then
                 let localIDs = self?._knownDevices.value[mac]?.localBluetoothIds ?? []
                 for id in localIDs {
                     if let metawear = dict[id] { return metawear }
                 }
 
-                return nil
+                // Shouldn't be reached, but handle the case the where the MetaWear was just forgotten this session
+                guard mac.isEmpty == false else { return nil }
+                return dict.first(where: { $0.value.info.mac == mac })?.value
             }
             .removeDuplicates()
             .eraseToAnyPublisher()
@@ -126,14 +143,15 @@ public extension MetaWearStore {
             .eraseToAnyPublisher()
     }
 
-    /// Receive updates when the group's identity changes or when the scanner discovers any unknown devices.
+    /// Receive updates when the group's identity changes or when the scanner discovers any member devices nearby.
+    ///
     func publisher(for group: MetaWear.Group) -> AnyPublisher<(group: MetaWear.Group, devices: [MWKnownDevice]), Never> {
 
         let groupUpdates = _groups
             .compactMap { dict -> MetaWear.Group? in dict[group.id] }
             .removeDuplicates()
 
-        let knownDevicesUpdates = scanner.discoveredDevices
+        let knownDevicesUpdates = scanner.discoveredDevicesPublisher
             .compactMap { [weak self] devices -> (devices: [CBPeripheralIdentifier: MetaWear], group: MetaWear.Group)? in
                 guard let group = self?.getGroup(id: group.id) else { return nil }
                 return (devices, group)
@@ -142,7 +160,7 @@ public extension MetaWearStore {
                 group.deviceMACs.reduce(into: [MWKnownDevice]()) { result, mac in
                     guard let metadata = self?._knownDevices.value[mac] else { return }
                     let localID = metadata.localBluetoothIds.first(where: { devices[$0] != nil })
-                    let metawear = localID == nil ? nil : devices[localID!]
+                    let metawear = localID != nil ? devices[localID!] : devices.first(where: { $0.value.info.mac == mac && mac.isEmpty == false })?.value
                     result.append((metawear, metadata))
                 }
             }
@@ -159,35 +177,61 @@ public extension MetaWearStore {
     }
 }
 
-public extension Array where Element == MetaWear.Group {
-    func allDevicesMACAddresses() -> Set<String> {
-        reduce(into: Set<String>()) { $0.formUnion($1.deviceMACs) }
-    }
-}
+// MARK: - Public API - Retrieve Items
 
-public typealias MWKnownDevice = (mw: MetaWear?, meta: MetaWear.Metadata)
 public extension MetaWearStore {
 
-    // MARK: - Retrieve
-
-    /// Retrieve a reference for a device
+    /// Retrieve a reference for a device by MAC address.
+    ///
+    /// If ``forget(locally:)`` or ``forget(globally:)`` was called
+    /// on the device this session, `DeviceInformation` still exists
+    /// on the MetaWear instance and the device will be retrieved,
+    /// even though the local CoreBluetooth UUID is not associated
+    /// with metadata in ``knownDevices``.
+    ///
     /// - Parameter device: Targeted device
     /// - Returns: Reference to the device, if available from the scanner
     ///
     func getDevice(_ device: MetaWear.Metadata) -> MetaWear? {
-        for id in device.localBluetoothIds {
-            if let metawear = scanner.getMetaWear(id: id) { return metawear }
+        var metawear: MetaWear? = nil
+        bleQueue.sync {
+            for id in device.localBluetoothIds {
+                if let mw = scanner.discoveredDevices[id] {
+                    metawear = mw
+                    break
+                }
+            }
         }
-        return nil
+        // Try to retrieve a recently forgotten device by MAC
+        return metawear ?? _getMetaWearBy(mac: device.mac)
     }
 
-    /// Retrieve a reference and metadata for a device
+    /// Retrieve a reference and metadata for a device by MAC address.
+    ///
+    /// If ``forget(locally:)`` or ``forget(globally:)`` was called
+    /// on the device this session, `DeviceInformation` still exists
+    /// on the MetaWear instance and the device will be retrieved,
+    /// even though the local CoreBluetooth UUID is not associated
+    /// with metadata in ``knownDevices``.
+    ///
     /// - Parameter device: Targeted device
     /// - Returns: Reference to the device, if available from the scanner
     ///
-    func getDeviceAndMetadata(_ mac: String) -> MWKnownDevice? {
-        guard let metadata = _knownDevices.value[mac] else { return nil }
-        return (getDevice(metadata), metadata)
+    func getDeviceAndMetadata(_ mac: MACAddress) -> MWKnownDevice? {
+        if let metadata = _knownDevices.value[mac] {
+            return (getDevice(metadata), metadata)
+
+            // Retrieve as much info as possible from a recently forgotten MetaWear
+        } else if mac.isEmpty == false,
+                  let metawear = _getMetaWearBy(mac: mac) {
+            return (metawear, .init(mac: metawear.info.mac,
+                                    serial: metawear.info.serialNumber,
+                                    model: metawear.info.model,
+                                    modules: [:],
+                                    localBluetoothIds: [metawear.localBluetoothID],
+                                    name: metawear.name))
+        }
+        return nil
     }
 
     /// Update values for a group of MetaWear(s)
@@ -202,99 +246,168 @@ public extension MetaWearStore {
         }
     }
 
-    /// Using a local CBUUID, retrieves cloud-synced metadata. Matching uses
-    /// MAC addresses, which are only available after a first connection. Thus,
-    /// for `unknownDevices`, which have not been previously connected, metadata
-    /// retrieval will fail, even if this MetaWear has been used by other devices.
+    /// Using a local UUID, retrieves a MetaWear and any related cloud-synced metadata.
+    ///
+    /// If a device was recently forgotten, metadata still exists on the MetaWear instance and
+    /// some of it is recovered and returned here (except for module information).
     ///
     /// - Parameter byLocalCBUUID: A MetaWear's local CBPeripheral.identifier
     /// - Returns: Device reference from the MetaWearScanner and related Metadata, if available
     ///
     func getDevice(byLocalCBUUID: CBPeripheralIdentifier) -> (device: MetaWear?, metadata: MetaWear.Metadata?) {
-        let metawear = scanner.getMetaWear(id: byLocalCBUUID)
-        let metadata = _knownDevices.value.values.first(where: { $0.localBluetoothIds.contains(byLocalCBUUID) } )
+        var metawear: MetaWear? = nil
+        bleQueue.sync {
+            metawear = scanner.discoveredDevices[byLocalCBUUID]
+        }
+
+        var metadata = _knownDevices.value.values.first(where: { $0.localBluetoothIds.contains(byLocalCBUUID) } )
+        // Retrieve as much info as possible from a recently forgotten MetaWear
+        if metadata == nil, let metawear = metawear, metawear.info.mac.isEmpty == false {
+            metadata = .init(mac: metawear.info.mac,
+                             serial: metawear.info.serialNumber,
+                             model: metawear.info.model,
+                             modules: [:],
+                             localBluetoothIds: [], // Sign that it is not known
+                             name: metawear.name)
+        }
         return (metawear, metadata)
     }
 
+    /// To confirm whether the device is synced in known devices, useful
+    /// for edge case UIs where you wish to display a synced symbol
+    /// on a device subject to ``forget(locally:)`` this session
+    ///
+    func deviceIsCloudSynced(mac: MACAddress) -> Bool {
+        guard mac.isEmpty == false, mac.contains("Unkown") == false else { return false }
+        var isSyncedInKnownDevices = false
+        bleQueue.sync {
+            isSyncedInKnownDevices = _knownDevices.value[mac] != nil
+        }
+        return isSyncedInKnownDevices
+    }
+
+    /// Get a grouping of MetaWears by the group's id
+    ///
     func getGroup(id: UUID) -> MetaWear.Group? {
         _groups.value[id]
     }
+}
 
-    // MARK: - Edit
 
+// MARK: - Public API - Edit Items
+
+public extension MetaWearStore {
+
+    /// Add a MetaWear grouping
+    ///
     func add(group: MetaWear.Group) {
-        _groups.value[group.id] = group
+        bleQueue.async { [weak self] in
+            self?._groups.value[group.id] = group
+        }
     }
 
     /// Update values for a group
     /// - Parameter group: Group of MetaWear(s)
     ///
     func update(group: MetaWear.Group) {
-        _groups.value[group.id] = group
+        bleQueue.async { [weak self] in
+            self?._groups.value[group.id] = group
+        }
     }
 
+    /// Rename a MetaWear grouping
+    ///
     func rename(group: MetaWear.Group, to newName: String) {
-        _groups.value[group.id, default: group].name = newName
+        bleQueue.async { [weak self] in
+            self?._groups.value[group.id, default: group].name = newName
+        }
     }
 
+    /// Remove a MetaWear grouping across all devices
+    ///
     func remove(group: UUID) {
-        _groups.value.removeValue(forKey: group)
+        bleQueue.async { [weak self] in
+            self?._groups.value.removeValue(forKey: group)
+        }
     }
 
-    /// Update values for a known device
-    /// - Parameter known: Known device
+    /// Update values for a known device both in metadata and advertising packets
     ///
     func rename(known: MetaWear.Metadata, to newName: String) throws {
         let command = try MWChangeAdvertisingName(newName: newName)
+        let device = getDevice(known)
 
-        var edited = known
-        edited.name = newName
-        _knownDevices.value[known.id] = edited
+        bleQueue.async { [weak self] in
+            /// Rename in metadata
+            var edited = known
+            edited.name = newName
+            self?._knownDevices.value[known.id] = edited
 
-        guard let device = getDevice(known) else { return }
-        device.publishWhenConnected()
-            .command(command)
-            .sink { _ in } receiveValue: { _ in }
-            .store(in: &subs)
-    }
-
-    // MARK: - Add / Remove
-
-    func forget(globally metawear: MetaWear.Metadata) {
-        forget(locally: metawear)
-        _knownDevices.value.removeValue(forKey: metawear.mac)
-
-        // Remove from groups, remove any empty groups
-        var didEditGroups = false
-        let editedGroups = _groups.value.compactMapValues { group -> MetaWear.Group? in
-            guard group.deviceMACs.contains(metawear.mac) else { return group }
-            didEditGroups = true
-            var edited = group
-            edited.deviceMACs.remove(metawear.mac)
-            return edited.deviceMACs.isEmpty ? nil : edited
+            /// Rename in advertisements
+            guard let device = device, let self = self else { return }
+            device.publishWhenConnected()
+                .command(command)
+                .sink { _ in } receiveValue: { _ in }
+                .store(in: &self.subs)
         }
-        if didEditGroups { _groups.value = editedGroups }
     }
+}
 
-    /// Removes this device from memory, including its presence in any groups.
-    /// Emptied groups will be disbanded.
-    /// - Parameter known: Previously remembered device
+
+// MARK: - Public API - Add / Remove
+
+public extension MetaWearStore {
+
+    /// Removes this device from memory, including its presence in any groups,
+    /// across all iCloud-synced devices. Emptied groups will be disbanded.
     ///
-    func forget(locally metawear: MetaWear.Metadata) {
-        // Cache local CoreBluetooth ID
-        var localID: CBPeripheralIdentifier? = nil
+    /// - Parameter metawear: Previously remembered device
+    ///
+    func forget(globally metawear: MetaWear.Metadata) {
+        self.forget(locally: metawear)
 
-        // Remove local memory (i.e., will not be requested next app launch)
-        if let metawear = getDevice(metawear) {
-            localID = metawear.peripheral.identifier
-            scanner.forget(metawear)
+        bleQueue.async { [weak self] in
+            guard let self = self else { return }
+
+            self._knownDevices.value.removeValue(forKey: metawear.mac)
+
+            // Remove from groups, remove any empty groups
+            var didEditGroups = false
+            let editedGroups = self._groups.value.compactMapValues { group -> MetaWear.Group? in
+                guard group.deviceMACs.contains(metawear.mac) else { return group }
+                didEditGroups = true
+                var edited = group
+                edited.deviceMACs.remove(metawear.mac)
+                return edited.deviceMACs.isEmpty ? nil : edited
+            }
+            if didEditGroups { self._groups.value = editedGroups }
         }
+    }
 
-        // Remove local id from metadata, remove if empty
-        if var known = _knownDevices.value[metawear.mac], let localID = localID {
-            known.localBluetoothIds.remove(localID)
-            if known.localBluetoothIds.isEmpty { _knownDevices.value.removeValue(forKey: metawear.mac) }
-            else { _knownDevices.value[metawear.mac] = known }
+    /// Removes this device from memory, including its presence in any groups,
+    /// just for this current machine. Emptied groups will be disbanded.
+    /// - Parameter metadata: For previously remembered device
+    ///
+    func forget(locally metadata: MetaWear.Metadata) {
+        let device = getDevice(metadata)
+
+        bleQueue.async { [weak self] in
+            var localID: CBPeripheralIdentifier? = nil
+
+            // Remove local memory (i.e., will not be requested next app launch)
+            if let device = device {
+                // Cache local CoreBluetooth ID
+                localID = device.localBluetoothID
+                device.forget()
+            }
+
+            // Remove local id from metadata, remove if empty
+            if var known = self?._knownDevices.value[metadata.mac], let localID = localID {
+                known.localBluetoothIds.remove(localID)
+                if known.localBluetoothIds.isEmpty { self?._knownDevices.value.removeValue(forKey: metadata.mac) }
+                else { self?._knownDevices.value[metadata.mac] = known }
+                self?._unknownDevices.value.insert(localID)
+            }
         }
     }
 
@@ -304,42 +417,174 @@ public extension MetaWearStore {
     ///                     and matched/autofilled against persisted devices
     ///
     ///
-    func remember(unknown: CBPeripheralIdentifier, didAdd: ((MWKnownDevice) -> Void)? = nil) {
-        guard _unknownDevices.value.contains(unknown),
-              let metawear = scanner.getMetaWear(id: unknown)
-        else { return }
-        refreshMetadata(for: metawear) { [weak metawear, weak self] newMetadata in
+    func connectAndRemember(unknown: CBPeripheralIdentifier, didAdd: ((MWKnownDevice) -> Void)? = nil) {
+        bleQueue.async { [weak self] in
             guard let self = self else { return }
-            self._unknownDevices.value.remove(unknown)
-            didAdd?((metawear, newMetadata))
+            guard self._unknownDevices.value.contains(unknown),
+                  let metawear = self.scanner.discoveredDevices[unknown]
+            else { return }
+
+            self.makeFirstMetadata(for: metawear) { [weak metawear, weak self] newMetadata in
+                guard let self = self else { return }
+                self._unknownDevices.value.remove(unknown)
+                didAdd?((metawear, newMetadata))
+            }
         }
+    }
+}
+
+// MARK: - Internal Details
+
+private extension MetaWearStore {
+
+    /// Receives updates from `MetaWearScanner` when its device map changes with devices
+    /// locally persisted or presently discovered. This method updates `_knownDevices`
+    /// and `_unknownDevices` to reflect all devices that do or don't match a
+    /// known local UUID identifier.
+    ///
+    /// Note this may lead to duplication of a locally forgotten device, but where a
+    /// cloud record for other machines still exists. Reconnection to such a device will
+    /// "merge" it back into the known devices list. If locally forgotten during this session,
+    /// this `update` function will not be called (as it already is discovered) and the
+    /// `MetaWear` already instantiated will still maintain its `info` struct with, at minimum,
+    /// its MAC address.
+    ///
+    /// Some scanner updates may discover known devices, but not unknown devices. For
+    /// objects that need to obtain a reference to the initialized `MetaWear` of the
+    /// just-discovered known device, use ``publisher(for:)-78tdx``. In these cases,
+    /// this function will not diff the `_knownDevices` dictionary because it will
+    /// already have been populated by loading persisted data.
+    ///
+    func update(for discoveries: AnyPublisher<[CBPeripheralIdentifier : MetaWear], Never>) {
+        discoveries.map(\.keys)
+            .compactMap { [weak self] cbuuids -> Set<CBPeripheralIdentifier>? in
+                guard let self = self else { return nil }
+
+                let currentUnknowns = Set(self._unknownDevices.value)
+
+                let currentKnownUUIDs = self._knownDevices.value.reduce(into: Set<CBPeripheralIdentifier>()) {
+                    $0.formUnion($1.value.localBluetoothIds)
+                }
+
+                /// Remove from old unknowns any currently known local UUIDs (rare case)
+                var newUnknowns = currentUnknowns.subtracting(currentKnownUUIDs)
+
+                // For any (possibly new) discoveries, add to newUnknowns any that don't match a known ID
+                for id in cbuuids {
+                    if currentKnownUUIDs.contains(id) == false {
+                        newUnknowns.insert(id)
+                    }
+                }
+
+                return newUnknowns == currentKnownUUIDs ? nil : newUnknowns
+            }
+            .sink { [weak self] unknownIdentifiers in
+                self?._unknownDevices.send(unknownIdentifiers)
+            }
+            .store(in: &subs)
+    }
+
+    /// Updates the `_knownDevices`, `_groups` and `_unknownDevices` maps to reflect
+    /// persisted state from a local or cloud source.
+    ///
+    func update(for loader: AnyPublisher<MWKnownDevicesLoadable, Never>) {
+        loader
+            .sink { [ weak self] loaded in
+                guard let self = self else { return }
+
+                print(#function, loaded.devices.map(\.name))
+
+                /// Adopt the latest data wholesale (written only by loader + user interaction)
+                self._groups.value = loaded.groups.dictionary()
+                self._knownDevices.value = loaded.devices.dictionary()
+
+                /// At this time, `_unknownDevices` may be populated by the `MetaWearScanner` by:
+                /// (a) discovery
+                /// (b) populating from a UserDefaults request.
+                ///
+                /// For (a), the MAC is not available and these are truly unknown.
+                ///
+                /// For (b), the MAC is stored in the `localPeripherals` UserDefaults key.
+                /// When the MetaWear is initialized by the scanner, that key populates the MAC for an
+                /// otherwise blank `info` struct (until first connection).
+                ///
+                /// If this session a user requested to forget a device, the MetaWear's `info` struct remains
+                /// in the initialized MetaWear, but the the matching `_knownDevices` `Metadata` will not
+                /// contain the local ID.
+                ///
+                /// To support UI that indicates the device is cloud synced but is not in the local
+                /// "recognized short list", use ``getDeviceAndMetadata(_:)`` or ``getDevice(byLocalCBUUID:)``
+                /// and flag "locally unknown" state be the presence of the local ID in the `Metadata` object.
+                ///
+                /// Filter out any previously unknown devices that are now recognized from
+                /// persisted metadata.
+                ///
+                let latestKnownIDs = loaded.devices
+                    .map(\.localBluetoothIds)
+                    .reduce(into: Set<CBPeripheralIdentifier>()) { $0.formUnion($1) }
+
+                self._unknownDevices.value = self._unknownDevices.value.subtracting(latestKnownIDs)
+            }
+            .store(in: &subs)
+    }
+
+    /// Mirrors changes to metadata for persistence.
+    ///
+    func persistChanges(to loader: MWKnownDevicesPersistence) {
+        Publishers.CombineLatest(_groups, _knownDevices)
+        // Otherwise blanks or local will overwrite cloud immediately
+            .dropFirst(1)
+            .map { groups, known in MWKnownDevicesLoadable(groups: Array(groups.values), devices: Array(known.values)) }
+            .sink { _ in } receiveValue: { [weak self] in
+                print("Persisting", $0.devices.map(\.name))
+                do {
+                    try self?.loader.save($0)
+                } catch { NSLog("Metawear Metadata Save Failed: \(error.localizedDescription)") }
+            }
+            .store(in: &subs)
+    }
+
+    /// Obtain a MetaWear by MAC address in a queue safe manner from the MetaWearScanner
+    func _getMetaWearBy(mac: MACAddress) -> MetaWear? {
+        var metawear: MetaWear? = nil
+        guard mac.isEmpty == false else { return nil }
+        bleQueue.sync {
+            metawear = scanner.discoveredDevices.first(where: { $0.value.info.mac == mac })?.value
+        }
+        return metawear
     }
 
     /// Refreshes Metadata for the given MetaWear,
     /// updating any persisted information matching that MAC address.
     ///
-    func refreshMetadata(for metawear: MetaWear, didRefresh: ((MetaWear.Metadata) -> Void)? = nil) {
+    func makeFirstMetadata(for metawear: MetaWear, didRefresh: ((MetaWear.Metadata) -> Void)? = nil) {
         metawear.publishWhenConnected()
             .first()
             .mapToMWError()
+        /// Request module description async + zip with known post-connection identifiers
             .flatMap { metawear in
-                Publishers.Zip3(
-                    metawear.detectModules(),
-                    metawear.read(.allDeviceInformation),
-                    Just((localID: metawear.peripheral.identifier,
-                          mac: metawear.mac,
-                          adName: metawear.name
-                         )).setFailureType(to: MWError.self)
+                Publishers.Zip(
+                    metawear.describeModules(),
+                    Just((
+                        info: metawear.info,
+                        localID: metawear.localBluetoothID,
+                        adName: metawear.name
+                    )).setFailureType(to: MWError.self)
                 )
             }
-            .map { modules, info, identifiers -> MetaWear.Metadata in
-            .init(mac: identifiers.mac ?? "Unknown \(identifiers.localID.uuidString)",
-                  serial: info.serialNumber,
-                  model: info.model,
-                  modules: modules,
-                  localBluetoothIds: [identifiers.localID],
-                  name: identifiers.adName
-            )}
+        /// Make metadata from this
+            .map { modules, ids -> MetaWear.Metadata in
+                // An empty MAC never occur, but would be high-risk. Provide a stand-in identifier until refreshed.
+                let mac = ids.info.mac.isEmpty == false
+                ? ids.info.mac
+                : "Unknown \(ids.localID.uuidString)"
+                return .init(mac: mac,
+                             serial: ids.info.serialNumber,
+                             model: ids.info.model,
+                             modules: modules,
+                             localBluetoothIds: [ids.localID],
+                             name: ids.adName
+                )}
             .sink { completion in } receiveValue: { [weak self] refreshedData in
                 guard let self = self else { return }
                 var data = refreshedData
@@ -355,84 +600,9 @@ public extension MetaWearStore {
             }
             .store(in: &subs)
 
-        metawear.connect()
-    }
-}
-
-// MARK: - Internal Details
-
-private extension MetaWearStore {
-
-    /// Updates the `_unknownDevices` dictionary to reflect all devices that don't match
-    /// a known CBUUID.
-    ///
-    /// Receives a just-updated dictionary of devices from a CBCentralManager / scanner.
-    /// Some may be discovered nearby, others loaded from memory.
-    ///
-    func update(for discoveries: AnyPublisher<[CBPeripheralIdentifier : MetaWear], Never>) {
-        discoveries.map(\.keys)
-            .compactMap { [weak self] cbuuids -> Set<CBPeripheralIdentifier>? in
-                guard let self = self else { return nil }
-
-                let knownCBUUIDs = self._knownDevices.value.reduce(into: Set<CBPeripheralIdentifier>()) {
-                    $0.formUnion($1.value.localBluetoothIds)
-                }
-                let oldUnknowns = Set(self._unknownDevices.value)
-                var newUnknowns = oldUnknowns.subtracting(knownCBUUIDs)
-
-                for id in cbuuids {
-                    if knownCBUUIDs.contains(id) == false {
-                        newUnknowns.insert(id)
-                    }
-                }
-
-                return newUnknowns == knownCBUUIDs ? nil : newUnknowns
-            }
-            .sink { [weak self] unknownIdentifiers in
-                self?._unknownDevices.send(unknownIdentifiers)
-            }
-            .store(in: &subs)
+        if metawear.connectionState != .connected { metawear.connect() }
     }
 
-    /// Updates the `_knownDevices`, `_groups` and `_unknownDevices` maps to reflect
-    /// persisted state from a local or cloud source.
-    ///
-    /// Receives a just-updated pair or arrays of persisted device metadata. Since
-    /// updating the target Subjects will trigger persistence, be sure that the first
-    /// local update would be skipped for persistence, as that would overwrite the cloud
-    /// data with local data. (More careful diffing is not implemented.)
-    ///
-    func update(for loader: AnyPublisher<MWKnownDevicesLoadable, Never>) {
-        loader
-            .sink { [ weak self] in
-                guard let self = self else { return }
-
-                /// Adopt the latest data
-                self._groups.value = $0.groups.dictionary()
-                self._knownDevices.value = $0.devices.dictionary()
-
-                /// Filter out any previously unknown devices that are now recognized from
-                /// persisted metadata.
-                let latestKnowns = $0.devices.map(\.localBluetoothIds).reduce(into: Set<CBPeripheralIdentifier>()) { $0.formUnion($1) }
-                self._unknownDevices.value = self._unknownDevices.value.subtracting(latestKnowns)
-            }
-            .store(in: &subs)
-    }
-
-
-    /// Mirrors changes to metadata for persistence.
-    ///
-    func persistChanges(to loader: MWKnownDevicesPersistence) {
-        Publishers.CombineLatest(_groups, _knownDevices)
-            .dropFirst(3) // Otherwise blanks or local will overwrite cloud immediately
-            .map { groups, known in MWKnownDevicesLoadable(groups: Array(groups.values), devices: Array(known.values)) }
-            .sink { _ in } receiveValue: { [weak self] in
-                do {
-                    try self?.loader.save($0)
-                } catch { NSLog("Metawear Metadata Save Failed: \(error.localizedDescription)") }
-            }
-            .store(in: &subs)
-    }
 }
 
 // MARK: - Helpers
@@ -448,5 +618,11 @@ internal extension Publisher {
 extension UUID: Comparable {
     public static func < (lhs: Self, rhs: Self) -> Bool {
         lhs.uuidString < rhs.uuidString
+    }
+}
+
+public extension Array where Element == MetaWear.Group {
+    func allDevicesMACAddresses() -> Set<String> {
+        reduce(into: Set<String>()) { $0.formUnion($1.deviceMACs) }
     }
 }

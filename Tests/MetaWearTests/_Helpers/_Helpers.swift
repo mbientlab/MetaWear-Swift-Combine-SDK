@@ -192,7 +192,7 @@ extension XCTestCase {
 
         var device: MWPublisher<MetaWear> {
             if let id = requireDeviceUUID,
-               let target = MetaWearScanner.sharedRestore.deviceMap[.init(uuidString: id)!] {
+               let target = MetaWearScanner.sharedRestore.discoveredDevices[.init(uuidString: id)!] {
                 return _JustMW(target)
             } else {
                 return MetaWearScanner.sharedRestore.didDiscover

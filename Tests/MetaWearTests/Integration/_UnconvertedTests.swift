@@ -73,7 +73,7 @@ class ManualTests: XCTestCase, MetaWearTestCase {
             }
             this.counterInt += 1
         }
-        device.apiAccessQueue.async {
+        device.bleQueue.async {
             self.counterInt = 1
             for i in 1...1000 {
                 mbl_mw_debug_set_key_register(device.board, UInt32(i))
@@ -183,7 +183,7 @@ class ManualTests: XCTestCase, MetaWearTestCase {
                 .flatMap { macroID -> MWPublisher<MetaWear> in
                     metawear.publish().macroExecute(id: macroID)
                 }
-                .delay(for: 5, tolerance: 0, scheduler: metawear.apiAccessQueue)
+                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
                 .sink(receiveCompletion: { completion in
                     guard case let .failure(error) = completion else { return }
                     XCTFail(error.localizedDescription)

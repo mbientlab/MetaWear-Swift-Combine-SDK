@@ -232,6 +232,14 @@ public protocol MWReadable: MWDataConvertible {
     func readCleanup(board: MWBoard)
 }
 
+/// A read command that coalesces multiple operations into one output.
+///
+public protocol MWReadableExtended {
+    associatedtype DataType
+    /// Obtains are reference to the readable data signal.
+    func read(from device: MetaWear) -> MWPublisher<DataType>
+}
+
 // MARK: - Command
 
 /// Issues a command to the MetaWear, such as recording a macro
@@ -278,3 +286,7 @@ public extension MWPollable {
     }
 }
 
+public extension MWReadable {
+    func readConfigure(board: MWBoard) { }
+    func readCleanup(board: MWBoard) { }
+}

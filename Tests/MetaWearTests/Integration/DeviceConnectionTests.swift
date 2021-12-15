@@ -20,7 +20,7 @@ class DeviceConnectionTests: XCTestCase {
         let exps = makeExpectations()
         var (subs, metawear) = try _setupWithDevice()
 
-        metawear.connectionState
+        metawear.connectionStatePublisher
             ._assertStep { step in
 
                 if step(1, .disconnected) {
@@ -46,7 +46,7 @@ class DeviceConnectionTests: XCTestCase {
         let exps = makeExpectations()
         var (subs, metawear) = try _setupWithDevice()
 
-        metawear.connectionState
+        metawear.connectionStatePublisher
             ._assertStep { step in
 
                 if step(1, .disconnected) {
@@ -74,7 +74,7 @@ class DeviceConnectionTests: XCTestCase {
         let exps = makeExpectations()
         var (subs, metawear) = try _setupWithDevice()
 
-        metawear.connectionState
+        metawear.connectionStatePublisher
             ._assertStep { step in
 
                 if step(1, .disconnected) {
@@ -98,7 +98,7 @@ class DeviceConnectionTests: XCTestCase {
         let exps = makeExpectations()
         var (subs, metawear) = try _setupWithDevice()
 
-        metawear.connectionState
+        metawear.connectionStatePublisher
             ._assertStep { step in
 
                 if step(1, .disconnected) {
@@ -125,7 +125,7 @@ class DeviceConnectionTests: XCTestCase {
         let exps = makeExpectations()
         var (subs, metawear) = try _setupWithDevice()
 
-        metawear.connectionState
+        metawear.connectionStatePublisher
             ._assertStep { step in
 
                 if step(1, .disconnected) {
@@ -154,7 +154,7 @@ class DeviceConnectionTests: XCTestCase {
         let exps = makeExpectations()
         var (subs, metawear) = try _setupWithDevice()
 
-        metawear.connectionState
+        metawear.connectionStatePublisher
             ._assertStep { step in
 
                 if step(1, .disconnected) {
