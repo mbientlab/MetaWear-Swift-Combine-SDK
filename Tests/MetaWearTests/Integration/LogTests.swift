@@ -90,9 +90,14 @@ class LogTests: XCTestCase {
                 .read(.logLength)
 
             // Assert
-                ._sinkNoFailure(&subs, receiveValue: {
-                    XCTAssertGreaterThan($0.value, 1)
-                    metawear.resetToFactoryDefaults()
+                .handleEvents(receiveOutput: { output in
+                    XCTAssertGreaterThan(output.value, 1)
+                })
+                .map { _ in metawear }
+
+            // Cleanup
+                .factoryReset()
+                ._sinkNoFailure(&subs, receiveValue: { _ in
                     exp.fulfill()
                 })
         }

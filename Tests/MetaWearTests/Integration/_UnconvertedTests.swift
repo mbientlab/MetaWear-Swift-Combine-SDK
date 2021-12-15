@@ -33,7 +33,7 @@ class ManualTests: XCTestCase, MetaWearTestCase {
     }
 
     func testConnection() throws {
-        XCTAssertTrue(device?.isConnectedAndSetup == true)
+        XCTAssertTrue(device?.connectionState == .connected)
         try prepareDeviceForTesting()
     }
 
@@ -378,13 +378,14 @@ extension MetaWearTestCase {
                 self.device = $0
                 self.device?.logDelegate = MWConsoleLogger.shared
             })
+            .mapToMWError()
             .flatMap { metawear -> AnyPublisher<MetaWear,MWError> in
                 return metawear.connectPublisher()
                     .handleEvents(receiveOutput: { [weak didConnect] device in
                         didConnect?.fulfill()
                         print("")
                         print("--------------------------------------------------------------------")
-                        print("Connected to:", device.mac ?? "No MAC", device.peripheral.identifier.uuidString)
+                        print("Connected to:", device.info.mac, device.peripheral.identifier.uuidString)
                         print("--------------------------------------------------------------------")
                         print("")
                     })
@@ -411,9 +412,8 @@ extension MetaWearTestCase {
     ///
     func prepareDeviceForTesting() throws {
         let device = try XCTUnwrap(device)
-        print(device.mac ?? "In MetaBoot")
+        print(device.info.mac)
         print(try XCTUnwrap(device.info), device.name)
-        device.resetToFactoryDefaults()
     }
 
     /// Connect to the first nearby MetaWear discovered with decent signal strength within 60 seconds or fails. Sets up for disconnect expectation.

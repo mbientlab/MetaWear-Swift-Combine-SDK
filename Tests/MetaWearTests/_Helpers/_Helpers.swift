@@ -246,7 +246,7 @@ func _printProgress(_ percentComplete: Double) {
 fileprivate func announce(device: MetaWear) {
     print("")
     print("--------------------------------------------------------------------")
-    print("Connected to:", device.mac ?? "No MAC", device.peripheral.identifier.uuidString)
+    print("Connected to:", device.info.mac, device.peripheral.identifier.uuidString)
     print("--------------------------------------------------------------------")
     print("")
 }

@@ -17,7 +17,7 @@ class DeviceTests: XCTestCase {
 
     func test_QuickDebugReset() {
         connectNearbyMetaWear(timeout: .download) { metawear, exp, subs in
-            metawear.resetToFactoryDefaults()
+            metawear.publish().factoryReset()._sinkNoFailure(&subs)
             exp.fulfill()
         }
     }
@@ -30,17 +30,20 @@ class DeviceTests: XCTestCase {
             // Act
             metawear.publish()
                 .read(.lastResetTime)
-                ._sinkNoFailure(&subs, receiveValue: { output in
+                .handleEvents(receiveOutput: { output in 
                     lastReset = output.value.time
                     lastResetID = mbl_mw_logging_get_latest_reset_uid(metawear.board)
-                    metawear.resetToFactoryDefaults()
                 })
+                .map { _ in metawear }
+                .factoryReset()
+                ._sinkNoFailure(&subs)
 
             // Assert
             metawear
                 .publishWhenDisconnected()
                 .first()
                 .delay(for: 3, tolerance: 0, scheduler: metawear.bleQueue)
+                .mapToMWError()
                 .flatMap { $0.connectPublisher() }
                 ._assertLoggers([], metawear: metawear)
                 .read(.lastResetTime)

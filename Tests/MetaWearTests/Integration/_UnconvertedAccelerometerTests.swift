@@ -31,7 +31,7 @@ class AccelerometerTests: XCTestCase, MetaWearTestCase {
     }
 
     func testConnection() throws {
-        XCTAssertTrue(device?.isConnectedAndSetup == true)
+        XCTAssertTrue(device?.connectionState == .connected)
         try prepareDeviceForTesting()
     }
 
