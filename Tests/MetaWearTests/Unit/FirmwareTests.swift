@@ -1,8 +1,8 @@
 //// Copyright 2021 MbientLab Inc. All rights reserved. See LICENSE.MD.
 //
 //import XCTest
-//@testable import MetaWear
-//@testable import MetaWearCpp
+//@testable @testable import MetaWear
+//@testable @testable import MetaWearCpp
 //
 //class FirmwareTests: XCTestCase {
 //

@@ -17,7 +17,7 @@ extension MWStreamable where Self == MWAccelerometer {
     ///   - rate: Sampling frequency (if nil, device uses last setting or a default)
     ///   - gravity: Range of detection
     /// - Returns: Accelerometer module configuration
-    static func accelerometer(rate: Self.SampleFrequency? = nil, gravity: Self.GravityRange? = nil) -> Self {
+    public static func accelerometer(rate: Self.SampleFrequency? = nil, gravity: Self.GravityRange? = nil) -> Self {
         Self(rate: rate, gravity: gravity)
     }
 }
@@ -32,27 +32,27 @@ extension MWLoggable where Self == MWAccelerometer {
     ///   - rate: Sampling frequency (if nil, device uses last setting or a default)
     ///   - gravity: Range of detection
     /// - Returns: Accelerometer module configuration
-    static func accelerometer(rate: Self.SampleFrequency? = nil, gravity: Self.GravityRange? = nil) -> Self {
+    public static func accelerometer(rate: Self.SampleFrequency? = nil, gravity: Self.GravityRange? = nil) -> Self {
         Self(rate: rate, gravity: gravity)
     }
 }
 
 extension MWStreamable where Self == MWOrientationSensor {
-    static var orientation: Self { Self() }
+    public static var orientation: Self { Self() }
 }
 
 extension MWLoggable where Self == MWOrientationSensor {
-    static var orientation: Self { Self() }
+    public static var orientation: Self { Self() }
 }
 
 extension MWStreamable where Self == MWStepDetector {
-    static func steps(sensitivity: MWAccelerometer.StepCounterSensitivity? = nil) -> Self {
+    public static func steps(sensitivity: MWAccelerometer.StepCounterSensitivity? = nil) -> Self {
         Self(sensitivity: sensitivity)
     }
 }
 
 extension MWDataConvertible where Self == MWStepCounter {
-    static var steps: Self { Self() }
+    public static var steps: Self { Self() }
 }
 
 
