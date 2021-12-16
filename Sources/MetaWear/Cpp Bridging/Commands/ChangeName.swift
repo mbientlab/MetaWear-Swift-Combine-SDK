@@ -19,7 +19,6 @@ public struct MWChangeAdvertisingName: MWCommand {
 }
 
 
-
 // MARK: - Public Presets
 
 public extension MWCommand where Self == MWChangeAdvertisingName {
