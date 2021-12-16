@@ -45,16 +45,6 @@ extension MWLoggable where Self == MWOrientationSensor {
     public static var orientation: Self { Self() }
 }
 
-extension MWStreamable where Self == MWStepDetector {
-    public static func steps(sensitivity: MWAccelerometer.StepCounterSensitivity? = nil) -> Self {
-        Self(sensitivity: sensitivity)
-    }
-}
-
-extension MWDataConvertible where Self == MWStepCounter {
-    public static var steps: Self { Self() }
-}
-
 
 // MARK: - Signals
 
@@ -80,27 +70,6 @@ public struct MWOrientationSensor: MWStreamable, MWLoggable {
     public let signalName: MWNamedSignal = .orientation
 }
 
-public struct MWStepCounter: MWDataConvertible {
-    public typealias DataType = Int32
-    public typealias RawDataType = Int32
-    public let columnHeadings = ["Epoch", "Steps"]
-}
-
-/// Requires counting steps by counting each closure returned as one step
-public struct MWStepDetector: MWStreamable {
-
-    public typealias DataType = Int
-    public typealias RawDataType = Int32
-    public let signalName: MWNamedSignal = .steps
-    public let columnHeadings = ["Epoch", "Steps"]
-
-    public var sensitivity: MWAccelerometer.StepCounterSensitivity? = nil
-    public var needsConfiguration: Bool { sensitivity != nil }
-
-    public init(sensitivity: MWAccelerometer.StepCounterSensitivity?) {
-        self.sensitivity = sensitivity
-    }
-}
 
 // MARK: - Signal Implementations
 
@@ -155,33 +124,6 @@ public extension MWOrientationSensor {
     func streamCleanup(board: MWBoard) {
         mbl_mw_acc_stop(board)
         mbl_mw_acc_bosch_disable_orientation_detection(board)
-    }
-}
-
-public extension MWStepDetector {
-
-    func streamSignal(board: MWBoard) throws -> MWDataSignal? {
-        fatalError("Get correct methods")
-        guard mbl_mw_metawearboard_lookup_module(board, MBL_MW_MODULE_ACCELEROMETER) == MBL_MW_MODULE_ACC_TYPE_BMI160 else {
-            throw MWError.operationFailed("Steps requires a BMI160 module, which this device lacks.")
-        }
-        return mbl_mw_acc_bosch_get_orientation_detection_data_signal(board)
-    }
-
-    func streamConfigure(board: MWBoard) {
-        guard let sensitivity = sensitivity else { return }
-        mbl_mw_acc_bmi160_set_step_counter_mode(board, sensitivity.cppEnumValue)
-        mbl_mw_acc_bmi160_write_step_counter_config(board)
-    }
-
-    func streamStart(board: MWBoard) {
-        mbl_mw_acc_bmi160_enable_step_detector(board)
-        mbl_mw_acc_start(board)
-    }
-
-    func streamCleanup(board: MWBoard) {
-        mbl_mw_acc_stop(board)
-        mbl_mw_acc_bmi160_disable_step_detector(board)
     }
 }
 
@@ -296,28 +238,6 @@ extension MWAccelerometer {
                         default: return self
                     }
             }
-        }
-    }
-
-    /// Available on the BMI160 only.
-    public enum StepCounterSensitivity: String, CaseIterable, IdentifiableByRawValue {
-        case normal
-        case sensitive
-        case robust
-
-        /// Raw Cpp constant
-        public var cppEnumValue: MblMwAccBmi160StepCounterMode {
-            switch self {
-                case .normal:    return MBL_MW_ACC_BMI160_STEP_COUNTER_MODE_NORMAL
-                case .sensitive: return MBL_MW_ACC_BMI160_STEP_COUNTER_MODE_SENSITIVE
-                case .robust:    return MBL_MW_ACC_BMI160_STEP_COUNTER_MODE_ROBUST
-            }
-        }
-
-        /// Returns a sensitivity valid for use on this model. (Setting is available only on the BMI160.)
-        public func supported(by accelerometer: Model) -> StepCounterSensitivity? {
-            guard accelerometer == .bmi160 else { return nil }
-            return self
         }
     }
 
