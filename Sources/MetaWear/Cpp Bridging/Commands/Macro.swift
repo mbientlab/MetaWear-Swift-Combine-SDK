@@ -41,19 +41,27 @@ public extension MWMacro {
                 .erase(subscribeOn: device.bleQueue)
         }
     }
+
+    struct EraseAll: MWCommand {
+        public init() {}
+        public func command(board: MWBoard) {
+            mbl_mw_macro_erase_all(board)
+            mbl_mw_debug_reset_after_gc(board)
+        }
+    }
 }
 
 
 
 // MARK: - Public Presets
-public extension MWCommandOutcome where Self == MWMacro.StopRecording {
-    static func macroEndRecording() -> Self {
-        Self.init()
-    }
-}
-
 public extension MWCommand where Self == MWMacro.Record {
     static func macroStartRecording(runOnStartup: Bool) -> Self {
         Self.init(runOnStartup: runOnStartup)
+    }
+}
+
+public extension MWCommand where Self == MWMacro.EraseAll {
+    static func macroEraseAll() -> Self {
+        Self.init()
     }
 }
