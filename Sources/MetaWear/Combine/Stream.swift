@@ -79,7 +79,6 @@ public extension Publisher where Output == MetaWear {
             }
         })
         .share()
-        .print()
         .eraseToAnyPublisher()
     }
 
@@ -129,7 +128,6 @@ public extension MWDataSignal {
             cleanup: { streamable.streamCleanup(board: board) }
         )
             .handleEvents(receiveCancel: { Swift.print("Stream.swift -> Cancel \(streamable.name)") })
-            .handleEvents(receiveRequest: { _ in Swift.print("Stream.swift -> Request \(streamable.name)") })
             .replaceMWError(.operationFailed("Could not stream \(S.DataType.self)"))
             .map(streamable.convertRawToSwift)
             .eraseToAnyPublisher()

@@ -20,7 +20,9 @@ public struct MWAmbientLight: MWStreamable {
     public var rate: MeasurementRate? = nil
     public var needsConfiguration: Bool { gain != nil || integrationTime != nil || rate != nil }
 
-    public init(gain: MWAmbientLight.Gain? = nil, integrationTime: MWAmbientLight.IntegrationTime? = nil, rate: MWAmbientLight.MeasurementRate? = nil) {
+    public init(gain: MWAmbientLight.Gain? = nil,
+                integrationTime: MWAmbientLight.IntegrationTime? = nil,
+                rate: MWAmbientLight.MeasurementRate? = nil) {
         self.gain = gain
         self.integrationTime = integrationTime
         self.rate = rate
