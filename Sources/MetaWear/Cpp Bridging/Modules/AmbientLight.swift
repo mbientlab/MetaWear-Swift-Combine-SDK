@@ -7,7 +7,7 @@ import Combine
 // MARK: - Signals
 
 /// Lux (Illuminance)
-public struct MWAmbientLight: MWStreamable {
+public struct MWAmbientLight: MWStreamable, MWLoggable {
 
     /// Lux (Illuminance)
     public typealias DataType = Double
@@ -59,6 +59,14 @@ public extension MWAmbientLight {
 // MARK: - Discoverable Presets
 
 public extension MWStreamable where Self == MWAmbientLight {
+    static func ambientLight(rate: MWAmbientLight.MeasurementRate,
+                             gain: MWAmbientLight.Gain,
+                             integrationTime: MWAmbientLight.IntegrationTime) -> Self {
+        Self(gain: gain, integrationTime: integrationTime, rate: rate)
+    }
+}
+
+public extension MWLoggable where Self == MWAmbientLight {
     static func ambientLight(rate: MWAmbientLight.MeasurementRate,
                              gain: MWAmbientLight.Gain,
                              integrationTime: MWAmbientLight.IntegrationTime) -> Self {
