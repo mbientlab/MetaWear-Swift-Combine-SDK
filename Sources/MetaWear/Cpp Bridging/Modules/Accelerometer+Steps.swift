@@ -44,7 +44,7 @@ public struct MWStepDetector: MWStreamable, MWLoggable {
     public typealias DataType = Int
     public typealias RawDataType = UInt32
     public let signalName: MWNamedSignal = .steps
-    public let columnHeadings = ["Epoch", "Steps"]
+    public let columnHeadings = ["Epoch", "Step"]
 
     /// Sensitivity available on BMI160 (e.g., MetaMotion RL devices only)
     public var sensitivity: MWAccelerometer.StepCounterSensitivity? = nil
@@ -130,18 +130,17 @@ public extension MWStepCounter {
         configureAccelerometerForStepping(board)
         switch MWAccelerometer.Model(board: board) {
             case .bmi160:
-                mbl_mw_acc_bmi160_enable_step_counter(board)
                 mbl_mw_acc_bmi160_set_step_counter_mode(board, (sensitivity ?? .normal).cppEnumValue)
                 // No 20-step trigger config method
                 mbl_mw_acc_bmi160_write_step_counter_config(board)
                 mbl_mw_acc_bmi160_reset_step_counter(board)
-                
 
             case .bmi270:
-                mbl_mw_acc_bmi270_enable_step_counter(board)
+                // No sensitivity adjustment
                 mbl_mw_acc_bmi270_set_step_counter_trigger(board, 1) //every 20 steps
                 mbl_mw_acc_bmi270_write_step_counter_config(board)
                 mbl_mw_acc_bmi270_reset_step_counter(board)
+
 
             default: return
         }
@@ -161,8 +160,8 @@ public extension MWStepCounter {
     func streamStart(board: MWBoard) {
         guard let model = MWAccelerometer.Model(board: board) else { return }
         switch model {
-            case .bmi160: return
-            case .bmi270: return
+            case .bmi160: mbl_mw_acc_bmi160_enable_step_counter(board)
+            case .bmi270: mbl_mw_acc_bmi270_enable_step_counter(board)
             default: return
         }
     }
