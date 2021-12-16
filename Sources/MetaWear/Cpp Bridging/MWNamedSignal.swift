@@ -19,13 +19,13 @@ public enum MWNamedSignal: Equatable, Hashable {
     case pressure
     case quaternion
     case steps
-    case temperature
+    case temperature(MWThermometer.Source)
 
     public var name: String {
         switch self {
             case .acceleration: return "acceleration"
             case .altitude: return "altitude"
-            case .ambientLight: return "ambient-light"
+            case .ambientLight: return "illuminance"
             case .eulerAngles: return "euler-angles"
             case .gravity: return "gravity"
             case .gyroscope: return "angular-velocity"
@@ -34,10 +34,10 @@ public enum MWNamedSignal: Equatable, Hashable {
             case .magnetometer: return "magnetic-field"
             case .pressure: return "pressure"
             case .quaternion: return "quaternion"
-            case .custom(let string): return string
             case .orientation: return "orientation"
+            case .temperature(let source): return "temperature\(source.loggerIndex)"
+            case .custom(let string): print("->>>>", string); return string
             case .steps: return "steps"
-            case .temperature: return "temperature"
         }
     }
 
@@ -54,10 +54,15 @@ public enum MWNamedSignal: Equatable, Hashable {
         .orientation,
         .pressure,
         .quaternion,
-        .steps
+        .steps,
+        .temperature(.onboard),
+        .temperature(.onDie),
+        .temperature(.external),
+        .temperature(.bmp280),
     ]
 
     public init(identifier: String) {
+        print("Logger ", identifier)
         self = Self.allCases.first(where: { $0.name == identifier }) ?? .custom(identifier)
     }
 }
@@ -74,9 +79,9 @@ public extension MWNamedSignal {
         switch self {
             case .acceleration: return .init(loggable: .accelerometer(rate: .hz100, gravity: .g16))
             case .orientation: return .init(loggable: .orientation)  // Does orientation have any logging issues? Check MetaBase.
-//            case .steps: return .init(loggable: .steps)
-//            case .pressure: return .init(loggable: .relativeAltitude)
-//            case .altitude: return .init(loggable: .absoluteAltitude)
+            case .steps: return .init(loggable: .stepDetector(sensitivity: .normal))
+            case .pressure: return .init(loggable: .relativePressure(standby: .ms10, iir: .off, oversampling: .standard))
+            case .altitude: return .init(loggable: .absoluteAltitude(standby: .ms10, iir: .off, oversampling: .standard))
             case .gyroscope: return .init(loggable: .gyroscope(range: .dps1000, freq: .hz100))
             case .magnetometer: return .init(loggable: .magnetometer(freq: .hz10))
             case .humidity: return .init(pollable: .humidity())

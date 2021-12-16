@@ -15,7 +15,7 @@ public struct MWThermometer: MWReadable, MWPollable {
     public let columnHeadings = ["Epoch", "Temperature (C)"]
     public let type: Source
     public var pollingRate: MWFrequency
-    public let signalName: MWNamedSignal = .temperature
+    public let signalName: MWNamedSignal
 
     public var channel: Int
     /// For external thermistors only. 0 - 5
@@ -32,6 +32,7 @@ public struct MWThermometer: MWReadable, MWPollable {
         self.type = type
         self.channel = channel
         self.pollingRate = rate
+        self.signalName = .temperature(type)
     }
 
     /// Verifies channel and source alignment before streaming or logging.
@@ -44,6 +45,7 @@ public struct MWThermometer: MWReadable, MWPollable {
         self.type = type
         self.channel = i
         self.pollingRate = rate
+        self.signalName = .temperature(type)
     }
 
     /// Does not verify that the source is at the specified channel,
@@ -54,6 +56,7 @@ public struct MWThermometer: MWReadable, MWPollable {
         self.type = type
         self.channel = channel
         self.pollingRate = rate
+        self.signalName = .temperature(type)
     }
 }
 
@@ -113,9 +116,9 @@ public extension MWThermometer {
 
     enum Source: String, CaseIterable, IdentifiableByRawValue {
         case onDie
+        case onboard
         case external
         case bmp280
-        case onboard
         case custom
 
         /// Thermometer sources. Indexes correspond to channel number.
@@ -154,6 +157,16 @@ public extension MWThermometer {
                 case .bmp280: return "BMP280"
                 case .onboard: return "Onboard"
                 case .custom: return "Custom"
+            }
+        }
+
+        public var loggerIndex: String {
+            switch self {
+                case .onDie: return "[0]"
+                case .external: return "[2]"
+                case .bmp280: return "[3]"
+                case .onboard: return "[1]"
+                case .custom: return "[]"
             }
         }
     }
