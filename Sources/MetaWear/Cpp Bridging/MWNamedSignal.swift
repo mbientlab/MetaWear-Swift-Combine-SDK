@@ -5,7 +5,6 @@ import Foundation
 /// String key returned with a logger signal for a module
 ///
 public enum MWNamedSignal: Equatable, Hashable {
-    case custom(String)
     case acceleration
     case altitude
     case ambientLight
@@ -15,11 +14,13 @@ public enum MWNamedSignal: Equatable, Hashable {
     case humidity
     case linearAcceleration
     case magnetometer
+    case mechanicalButton
     case orientation
     case pressure
     case quaternion
     case steps
     case temperature(MWThermometer.Source)
+    case custom(String)
 
     public var name: String {
         switch self {
@@ -32,6 +33,7 @@ public enum MWNamedSignal: Equatable, Hashable {
             case .humidity: return "relative-humidity"
             case .linearAcceleration: return "linear-acceleration"
             case .magnetometer: return "magnetic-field"
+            case .mechanicalButton: return "switch"
             case .pressure: return "pressure"
             case .quaternion: return "quaternion"
             case .orientation: return "orientation"
@@ -51,6 +53,7 @@ public enum MWNamedSignal: Equatable, Hashable {
         .humidity,
         .linearAcceleration,
         .magnetometer,
+        .mechanicalButton,
         .orientation,
         .pressure,
         .quaternion,
@@ -90,6 +93,7 @@ public extension MWNamedSignal {
             case .quaternion: return .init(loggable: .sensorFusionQuaternion(mode: .compass))
             case .linearAcceleration: return .init(loggable: .sensorFusionLinearAcceleration(mode: .compass))
             case .temperature: return .init(pollable: MWThermometer(type: .onboard, channel: 0, rate: .hz1))
+            case .mechanicalButton: return .init(loggable: .mechanicalButton())
             case .custom(let id): return Self.customDownloads[id]!
             default: fatalError()
         }
