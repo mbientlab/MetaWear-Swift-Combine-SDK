@@ -118,7 +118,6 @@ public extension MWCommand where Self == MWLED.Off {
     static var ledOff: Self { Self() }
 }
 
-
 public extension MWCommand where Self == MWLED.Flash {
     /// Start a one-time LED flash pattern.
     /// - Parameters:

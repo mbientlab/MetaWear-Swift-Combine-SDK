@@ -46,31 +46,6 @@ public extension MWBoard {
     }
 }
 
-// MARK: - Command-like Publishers
-
-public extension Publisher where Output == MetaWear {
-
-    /// Performs a factory reset, wiping all content and settings, such as macros and logs, before disconnecting.
-    ///
-    func factoryReset() -> MWPublisher<MetaWear> {
-        self.mapToMWError()
-            .flatMap { metawear in
-            _JustMW(metawear)
-                .handleEvents(receiveOutput: { metaWear in
-                    let board = metawear.board
-                    mbl_mw_logging_stop(board)
-                    mbl_mw_metawearboard_tear_down(board)
-                    mbl_mw_logging_clear_entries(board)
-                    mbl_mw_macro_erase_all(board)
-                    mbl_mw_debug_reset_after_gc(board) //05
-                    mbl_mw_debug_disconnect(board) //06
-                })
-                .erase(subscribeOn: metawear.bleQueue)
-        }
-        .eraseToAnyPublisher()
-    }
-}
-
 
 // MARK: - Macro
 
@@ -119,6 +94,7 @@ public extension Publisher where Output == MetaWear {
         .eraseToAnyPublisher()
     }
 }
+
 
 // MARK: - MWBoard
 
