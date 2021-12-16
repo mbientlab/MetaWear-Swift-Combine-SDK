@@ -60,8 +60,11 @@ public extension MWCommand where Self == MWMacro.Record {
     }
 }
 
+public extension MWCommandOutcome where Self == MWMacro.StopRecording {
+    /// Returns the identifier for the recorded macro.
+    static var macroStartRecording: Self { Self() }
+}
+
 public extension MWCommand where Self == MWMacro.EraseAll {
-    static func macroEraseAll() -> Self {
-        Self.init()
-    }
+    static var macroEraseAll: Self { Self() }
 }

@@ -59,13 +59,9 @@ public extension MWiBeacon {
 // MARK: - Public Presets
 
 public extension MWCommand where Self == MWiBeacon.Start {
-    static func iBeaconStart() -> Self {
-        Self.init()
-    }
+    static var iBeaconStart: Self { Self() }
 }
 
 public extension MWCommand where Self == MWiBeacon.Stop {
-    static func iBeaconStop() -> Self {
-        Self.init()
-    }
+    static var iBeaconStop: Self { Self() }
 }

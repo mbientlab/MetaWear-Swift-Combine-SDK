@@ -17,7 +17,7 @@ public struct MWLogLength: MWDataConvertible, MWReadable {
 }
 
 extension MWReadable where Self == MWLogLength {
-    static var logLength: Self { Self() }
+    public static var logLength: Self { Self() }
 }
 
 
@@ -34,7 +34,7 @@ public struct MWLastResetTime: MWDataConvertible, MWReadable {
 }
 
 extension MWReadable where Self == MWLastResetTime {
-    static var lastResetTime: Self { Self() }
+    public static var lastResetTime: Self { Self() }
 }
 
 
