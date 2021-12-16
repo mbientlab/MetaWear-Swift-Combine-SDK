@@ -120,6 +120,71 @@ DataType    == SIMD3<Float> {
 }
 
 public extension MWDataConvertible where
+RawDataType == MblMwBoschAnyMotion,
+DataType    == MWMotion.Activity.AnyMotionTrigger {
+
+    func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
+        (raw.time, .init(raw: raw.value))
+    }
+
+    func asColumns(_ datum: Timestamped<DataType>) -> [String] {
+        return [datum.time.metaWearCSVDate] + datum.value.stringify()
+    }
+}
+
+public extension MWDataConvertible where
+RawDataType == MblMwAccBoschActivity,
+DataType    == MWMotion.Activity.Classification {
+
+    func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
+        (raw.time, .init(cppValue: raw.value))
+    }
+
+    func asColumns(_ datum: Timestamped<DataType>) -> [String] {
+        [datum.time.metaWearCSVDate, datum.value.label]
+    }
+}
+
+public extension MWDataConvertible where
+RawDataType == UInt32,
+DataType    == MWChargingStatus.State {
+
+    func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
+        (raw.time, .init(value: raw.value))
+    }
+
+    func asColumns(_ datum: Timestamped<DataType>) -> [String] {
+        [datum.time.metaWearCSVDate, datum.value.label]
+    }
+}
+
+public extension MWDataConvertible where
+RawDataType == UInt32,
+DataType    == MWMechanicalButton.State {
+
+    func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
+        (raw.time, .init(value: raw.value))
+    }
+
+    func asColumns(_ datum: Timestamped<DataType>) -> [String] {
+        [datum.time.metaWearCSVDate, datum.value.label]
+    }
+}
+
+public extension MWDataConvertible where
+RawDataType == MblMwLoggingTime,
+DataType    == (time: Date, resetID: UInt8) {
+
+    func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
+        (raw.time, (Date(timeIntervalSinceReferenceDate: Double(raw.value.epoch) / 1000), raw.value.reset_uid) )
+    }
+
+    func asColumns(_ datum: Timestamped<DataType>) -> [String] {
+        [datum.time.metaWearCSVDate, String(datum.value.time.timeIntervalSinceReferenceDate)]
+    }
+}
+
+public extension MWDataConvertible where
 RawDataType == UInt8,
 DataType    == Int {
 

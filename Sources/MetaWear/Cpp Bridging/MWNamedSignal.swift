@@ -16,6 +16,7 @@ public enum MWNamedSignal: Equatable, Hashable {
     case linearAcceleration
     case magnetometer
     case mechanicalButton
+    case motion
     case orientation
     case pressure
     case quaternion
@@ -36,6 +37,7 @@ public enum MWNamedSignal: Equatable, Hashable {
             case .linearAcceleration:       return "linear-acceleration"
             case .magnetometer:             return "magnetic-field"
             case .mechanicalButton:         return "switch"
+            case .motion:                   return "bosch-motion"
             case .pressure:                 return "pressure"
             case .quaternion:               return "quaternion"
             case .orientation:              return "orientation"
@@ -57,6 +59,7 @@ public enum MWNamedSignal: Equatable, Hashable {
         .linearAcceleration,
         .magnetometer,
         .mechanicalButton,
+        .motion,
         .orientation,
         .pressure,
         .quaternion,
@@ -92,7 +95,8 @@ public extension MWNamedSignal {
             case .humidity: return .init(pollable: .humidity())
             case .linearAcceleration: return .init(loggable: .sensorFusionLinearAcceleration(mode: .compass))
             case .magnetometer: return .init(loggable: .magnetometer(freq: .hz10))
-            case .mechanicalButton: return .init(loggable: .mechanicalButton())
+            case .mechanicalButton: return .init(loggable: .mechanicalButton)
+            case .motion: return .init(loggable: .motionActivityClassification)
             case .orientation: return .init(loggable: .orientation)  // Does orientation have any logging issues? Check MetaBase.
             case .pressure: return .init(loggable: .relativePressure(standby: .ms10, iir: .off, oversampling: .standard))
             case .quaternion: return .init(loggable: .sensorFusionQuaternion(mode: .compass))

@@ -31,14 +31,6 @@ public struct MWLastResetTime: MWDataConvertible, MWReadable {
     public func readableSignal(board: MWBoard) throws -> MWDataSignal? {
         mbl_mw_logging_get_time_data_signal(board)
     }
-
-    public func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
-        (raw.time, (Date(timeIntervalSinceReferenceDate: Double(raw.value.epoch) / 1000), raw.value.reset_uid) )
-    }
-
-    public func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        [datum.time.metaWearCSVDate, String(datum.value.time.timeIntervalSinceReferenceDate)]
-    }
 }
 
 extension MWReadable where Self == MWLastResetTime {

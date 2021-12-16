@@ -7,6 +7,12 @@ import Combine
 
 // MARK: - Battery Life
 
+extension MWReadable where Self == MWBatteryLevel {
+    /// Battery life percentage 0 to 100
+    public static var batteryLevel: Self { Self() }
+}
+
+
 /// Battery life percentage 0 to 100
 public struct MWBatteryLevel: MWDataConvertible, MWReadable {
     public typealias DataType = Int
@@ -17,21 +23,8 @@ public struct MWBatteryLevel: MWDataConvertible, MWReadable {
     }
 }
 
-extension MWReadable where Self == MWBatteryLevel {
-    /// Battery life percentage 0 to 100
-    public static var batteryLevel: Self { Self() }
-}
-
 
 // MARK: - Charging State
-
-/// Battery's current charging state
-public struct MWChargingStatus: MWDataConvertible, MWStreamable, MWLoggable {
-    public typealias DataType = MWChargingStatus.State
-    public typealias RawDataType = UInt32
-    public var signalName: MWNamedSignal = .chargingStatus
-    public let columnHeadings = ["Epoch", "Battery"]
-}
 
 extension MWStreamable where Self == MWChargingStatus {
     /// Battery's current charging state
@@ -43,18 +36,19 @@ extension MWLoggable where Self == MWChargingStatus {
     public static var chargingStatus: Self { Self() }
 }
 
+
+/// Battery's current charging state
+public struct MWChargingStatus: MWDataConvertible, MWStreamable, MWLoggable {
+    public typealias DataType = MWChargingStatus.State
+    public typealias RawDataType = UInt32
+    public var signalName: MWNamedSignal = .chargingStatus
+    public let columnHeadings = ["Epoch", "Battery"]
+}
+
 public extension MWChargingStatus {
 
     func streamSignal(board: MWBoard) throws -> MWDataSignal? {
         mbl_mw_settings_get_charge_status_data_signal(board)
-    }
-
-    func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
-        (raw.time, .init(value: raw.value))
-    }
-
-    func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        [datum.time.metaWearCSVDate, datum.value.label]
     }
 
     func streamConfigure(board: MWBoard) {}

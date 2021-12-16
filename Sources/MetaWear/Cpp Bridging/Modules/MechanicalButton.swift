@@ -8,10 +8,10 @@ import Combine
 // MARK: - Discoverable Presets
 
 public extension MWStreamable where Self == MWMechanicalButton {
-    static func mechanicalButton() -> Self { Self() }
+    static var mechanicalButton: Self { Self() }
 }
 public extension MWLoggable where Self == MWMechanicalButton {
-    static func mechanicalButton() -> Self { Self() }
+    static var mechanicalButton: Self { Self() }
 }
 
 // MARK: - Signals
@@ -34,13 +34,6 @@ public extension MWMechanicalButton {
     func streamStart(board: MWBoard) {}
     func streamCleanup(board: MWBoard) {}
 
-    func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
-        (raw.time, .init(value: raw.value))
-    }
-
-    func asColumns(_ datum: Timestamped<State>) -> [String] {
-        [datum.time.metaWearCSVDate, datum.value.label]
-    }
 }
 
 
