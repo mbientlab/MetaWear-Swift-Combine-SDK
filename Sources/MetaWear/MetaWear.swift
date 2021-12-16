@@ -101,9 +101,9 @@ public class MetaWear: NSObject {
 
     // MARK: - Connection State
 
-    /// Whether advertised or discovered in recovery (MetaBoot) mode
+    /// Whether advertised or discovered in recovery (MetaBoot) mode. KVO enabled.
     ///
-    public private(set) var isMetaBoot = false
+    @objc dynamic public private(set) var isMetaBoot = false
 
     /// Stream of connecting, connected (and with C++ library setup), disconnecting, and disconnected events.
     ///
@@ -130,7 +130,7 @@ public class MetaWear: NSObject {
 
     /// Most recent signal strength and advertisement packet data, while the `MetaWearScanner` is active.
     ///
-    public let advertisementReceived: AnyPublisher<(rssi: Int, advertisementData: [String:Any]), Never>
+    public let advertisementDataPublisher: AnyPublisher<(rssi: Int, advertisementData: [String:Any]), Never>
 
     /// Last advertisement packet data received.
     ///
@@ -151,9 +151,9 @@ public class MetaWear: NSObject {
     ///
     public var localBluetoothID: CBPeripheralIdentifier { peripheral.identifier }
 
-    /// Latest advertised name, which may might be cached on iOS. We recommend storing names in shared metadata, for example via `MetaWearStore` iCloud sync.
+    /// Latest advertised name, which may might be cached on iOS. We recommend storing names in shared metadata, for example via `MetaWearStore` iCloud user defaults sync.
     ///
-    public var name: String {
+    @objc dynamic public var name: String {
         return Self._adQueue.sync {
             let adName = _adData[CBAdvertisementDataLocalNameKey] as? String
             return adName ?? peripheral.name ?? Self.defaultName
@@ -243,7 +243,7 @@ public class MetaWear: NSObject {
 
         self.connectionStatePublisher = _connectionStateSubject.erase(subscribeOn: scanner.bleQueue)
 
-        self.advertisementReceived = self._adReceivedSubject
+        self.advertisementDataPublisher = self._adReceivedSubject
             .subscribe(on: Self._adQueue)
             .receive(on: scanner.bleQueue)
             .share()
