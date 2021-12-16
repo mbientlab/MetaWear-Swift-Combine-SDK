@@ -38,7 +38,10 @@ public class MWCloudLoader: MWKnownDevicesPersistence {
     private unowned let local: UserDefaults
     private unowned let cloud: NSUbiquitousKeyValueStore
 
-    public init(local: UserDefaults, cloud: NSUbiquitousKeyValueStore) {
+    private let key = UserDefaults.MetaWear.Keys.syncedMetadata
+
+    public init(local: UserDefaults = UserDefaults.MetaWear.suite,
+                cloud: NSUbiquitousKeyValueStore) {
         self.local = local
         self.cloud = cloud
         self.metawears = _loadable.eraseToAnyPublisher()
@@ -55,8 +58,8 @@ public class MWCloudLoader: MWKnownDevicesPersistence {
 
     /// When iCloud synchronizes defaults at app startup, this function is called.
     @objc internal func cloudDidChange(_ note: Notification) {
-        let key = UserDefaults.MetaWear.Keys.syncedMetadata
         guard let changedKeys = note.userInfo?[NSUbiquitousKeyValueStoreChangedKeysKey] as? [NSString] else { return }
+        print(#function, changedKeys)
         if changedKeys.contains(.init(string: key)),
            let data = cloud.value(forKey: key) as? Data {
             do {
@@ -67,14 +70,16 @@ public class MWCloudLoader: MWKnownDevicesPersistence {
     }
 
     public func load() throws {
-        guard let data = local.value(forKey: UserDefaults.MetaWear.Keys.syncedMetadata) as? Data
-        else { return }
+        print(#function, "start")
+        guard let data = local.value(forKey: key) as? Data else { return }
+        print(#function, data.count)
         let loadable = try MWMetadataSaveContainer.decode(loadable: data)
+        print(#function, loadable.devices.map(\.name))
         _loadable.send(loadable)
     }
 
     public func save(_ loadable: MWKnownDevicesLoadable) throws {
-        let key = UserDefaults.MetaWear.Keys.syncedMetadata
+        print(#function, loadable.devices.map(\.name))
         let data = try MWMetadataSaveContainer.encode(metadata: loadable)
         local.set(data, forKey: key)
         cloud.set(data, forKey: key)

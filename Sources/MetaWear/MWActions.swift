@@ -143,10 +143,10 @@ public protocol MWLoggable: MWDataConvertible {
 ///
 public protocol MWStreamable: MWDataConvertible {
 
-    /// Obtains a reference to the module's streamable signal.
-    func streamSignal(board: MWBoard) throws -> MWDataSignal?
     /// Commands to customize the stream.
     func streamConfigure(board: MWBoard)
+    /// Obtains a reference to the module's already-configured streamable signal.
+    func streamSignal(board: MWBoard) throws -> MWDataSignal?
     /// Commands before starting the stream.
     func streamStart(board: MWBoard)
     /// Called after unsubscribing from the data signal.
@@ -232,6 +232,14 @@ public protocol MWReadable: MWDataConvertible {
     func readCleanup(board: MWBoard)
 }
 
+/// A read command that coalesces multiple operations into one output.
+///
+public protocol MWReadableExtended {
+    associatedtype DataType
+    /// Obtains are reference to the readable data signal.
+    func read(from device: MetaWear) -> MWPublisher<DataType>
+}
+
 // MARK: - Command
 
 /// Issues a command to the MetaWear, such as recording a macro
@@ -278,3 +286,7 @@ public extension MWPollable {
     }
 }
 
+public extension MWReadable {
+    func readConfigure(board: MWBoard) { }
+    func readCleanup(board: MWBoard) { }
+}

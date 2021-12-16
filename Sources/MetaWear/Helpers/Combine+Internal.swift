@@ -76,7 +76,7 @@ internal extension MetaWear {
                 closure(promise)
             }
         }
-        .erase(subscribeOn: self.apiAccessQueue)
+        .erase(subscribeOn: self.bleQueue)
     }
 }
 

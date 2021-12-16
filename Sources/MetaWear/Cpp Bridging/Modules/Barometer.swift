@@ -19,12 +19,11 @@ extension MWBarometer {
         public let columnHeadings = ["Epoch", "Absolute Altitude (m)"]
         public let signalName: MWNamedSignal = .altitude
 
-        public var standby: StandbyTime?
-        public var iir: IIRFilter?
-        public var oversampling: Oversampling?
-        public var needsConfiguration: Bool { standby != nil || iir != nil || oversampling != nil }
+        public var standby: StandbyTime
+        public var iir: IIRFilter
+        public var oversampling: Oversampling
 
-        public init(standby: MWBarometer.StandbyTime? = nil, iir: MWBarometer.IIRFilter? = nil, oversampling: MWBarometer.Oversampling? = nil) {
+        public init(standby: MWBarometer.StandbyTime = .ms125, iir: MWBarometer.IIRFilter = .off, oversampling: MWBarometer.Oversampling = .standard) {
             self.standby = standby
             self.iir = iir
             self.oversampling = oversampling
@@ -40,12 +39,11 @@ extension MWBarometer {
         public let columnHeadings = ["Epoch", "Pressure (Pa)"]
         public let signalName: MWNamedSignal = .pressure
 
-        public var standby: StandbyTime?
-        public var iir: IIRFilter?
-        public var oversampling: Oversampling?
-        public var needsConfiguration: Bool { standby != nil || iir != nil || oversampling != nil }
+        public var standby: StandbyTime
+        public var iir: IIRFilter
+        public var oversampling: Oversampling
 
-        public init(standby: MWBarometer.StandbyTime? = nil, iir: MWBarometer.IIRFilter? = nil, oversampling: MWBarometer.Oversampling? = nil) {
+        public init(standby: MWBarometer.StandbyTime = .ms125, iir: MWBarometer.IIRFilter = .off, oversampling: MWBarometer.Oversampling = .standard) {
             self.standby = standby
             self.iir = iir
             self.oversampling = oversampling
@@ -60,7 +58,7 @@ public extension MWBarometer.MWAltitude {
     }
 
     func streamConfigure(board: MWBoard) {
-        MWBarometer.configureBarometer(board, standby, iir, oversampling, needsConfiguration)
+        MWBarometer.configureBarometer(board, standby, iir, oversampling)
     }
 
     func streamStart(board: MWBoard) {
@@ -79,7 +77,7 @@ public extension MWBarometer.MWPressure {
     }
 
     func streamConfigure(board: MWBoard) {
-        MWBarometer.configureBarometer(board, standby, iir, oversampling, needsConfiguration)
+        MWBarometer.configureBarometer(board, standby, iir, oversampling)
     }
 
     func streamStart(board: MWBoard) {
@@ -92,19 +90,13 @@ public extension MWBarometer.MWPressure {
 }
 
 internal extension MWBarometer {
-    static func configureBarometer(_ board: MWBoard, _ standby: StandbyTime?, _ iir: IIRFilter?, _ oversampling: Oversampling?, _ needsConfiguration: Bool) {
-        guard needsConfiguration else { return }
-        if let oversampling = oversampling {
-            mbl_mw_baro_bosch_set_oversampling(board, oversampling.cppEnumValue)
-        }
-        if let iir = iir {
-            mbl_mw_baro_bosch_set_iir_filter(board, iir.cppEnumValue)
-        }
-        if let standby = standby, let model = MWBarometer.Model(board: board) {
-            switch model {
-                case .bme280: mbl_mw_baro_bme280_set_standby_time(board, standby.BME_cppEnumValue)
-                case .bmp280: mbl_mw_baro_bmp280_set_standby_time(board, standby.BMP_cppEnumValue)
-            }
+    static func configureBarometer(_ board: MWBoard, _ standby: StandbyTime, _ iir: IIRFilter, _ oversampling: Oversampling) {
+        mbl_mw_baro_bosch_set_oversampling(board, oversampling.cppEnumValue)
+        mbl_mw_baro_bosch_set_iir_filter(board, iir.cppEnumValue)
+        switch MWBarometer.Model(board: board) {
+            case .bme280: mbl_mw_baro_bme280_set_standby_time(board, standby.BME_cppEnumValue)
+            case .bmp280: mbl_mw_baro_bmp280_set_standby_time(board, standby.BMP_cppEnumValue)
+            case .none: fatalError()
         }
         mbl_mw_baro_bosch_write_config(board)
     }
@@ -113,31 +105,31 @@ internal extension MWBarometer {
 // MARK: - Discoverable Presets
 
 public extension MWStreamable where Self == MWBarometer.MWAltitude {
-    static func absoluteAltitude(standby: MWBarometer.StandbyTime? = nil,
-                                 iir: MWBarometer.IIRFilter? = nil,
-                                 oversampling: MWBarometer.Oversampling? = nil) -> Self {
+    static func absoluteAltitude(standby: MWBarometer.StandbyTime,
+                                 iir: MWBarometer.IIRFilter,
+                                 oversampling: MWBarometer.Oversampling) -> Self {
         Self(standby: standby, iir: iir, oversampling: oversampling)
     }
 }
 public extension MWStreamable where Self == MWBarometer.MWPressure {
-    static func relativePressure(standby: MWBarometer.StandbyTime? = nil,
-                                 iir: MWBarometer.IIRFilter? = nil,
-                                 oversampling: MWBarometer.Oversampling? = nil) -> Self {
+    static func relativePressure(standby: MWBarometer.StandbyTime,
+                                 iir: MWBarometer.IIRFilter,
+                                 oversampling: MWBarometer.Oversampling) -> Self {
         Self(standby: standby, iir: iir, oversampling: oversampling)
     }
 }
 
 public extension MWLoggable where Self == MWBarometer.MWAltitude {
-    static func absoluteAltitude(standby: MWBarometer.StandbyTime? = nil,
-                                 iir: MWBarometer.IIRFilter? = nil,
-                                 oversampling: MWBarometer.Oversampling? = nil) -> Self {
+    static func absoluteAltitude(standby: MWBarometer.StandbyTime,
+                                 iir: MWBarometer.IIRFilter,
+                                 oversampling: MWBarometer.Oversampling) -> Self {
         Self(standby: standby, iir: iir, oversampling: oversampling)
     }
 }
 public extension MWLoggable where Self == MWBarometer.MWPressure {
-    static func relativePressure(standby: MWBarometer.StandbyTime? = nil,
-                                 iir: MWBarometer.IIRFilter? = nil,
-                                 oversampling: MWBarometer.Oversampling? = nil) -> Self {
+    static func relativePressure(standby: MWBarometer.StandbyTime,
+                                 iir: MWBarometer.IIRFilter,
+                                 oversampling: MWBarometer.Oversampling) -> Self {
         Self(standby: standby, iir: iir, oversampling: oversampling)
     }
 }

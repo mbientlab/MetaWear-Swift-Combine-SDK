@@ -42,7 +42,7 @@ public extension MWFirmwareServer {
                 let isInMetaBoot = device.isMetaBoot
                 if isInMetaBoot == false { mbl_mw_debug_jump_to_bootloader(device.board) }
                 return _updateMetaBoot(device, build, delegate)
-                    .delay(for: isInMetaBoot ? 3.0 : 0, tolerance: 0, scheduler: device.apiAccessQueue, options: nil)
+                    .delay(for: isInMetaBoot ? 3.0 : 0, tolerance: 0, scheduler: device.bleQueue, options: nil)
                     .eraseToAnyPublisher()
             }
 
@@ -65,7 +65,7 @@ public extension MWFirmwareServer {
     /// Get a pointer to the latest firmware for this device
     ///
     func fetchLatestFirmware(for device: MetaWear) -> AnyPublisher<MWFirmwareServer.Build,Swift.Error> {
-        Publishers.Zip(device.read(.hardwareRevision), device.read(.modelNumber))
+        Publishers.Zip(device._read(.hardwareRevision), device._read(.modelNumber))
             .eraseErrorType()
             .flatMap(Self.getLatestFirmwareAsync)
             .eraseToAnyPublisher()
@@ -75,7 +75,7 @@ public extension MWFirmwareServer {
     /// - Returns: Nil if already on latest, otherwise the latest build
     ///
     func fetchRelevantFirmwareUpdate(for device: MetaWear) -> AnyPublisher<MWFirmwareServer.Build?,Swift.Error> {
-        Publishers.Zip(self.fetchLatestFirmware(for: device), device.read(.firmwareRevision).eraseErrorType())
+        Publishers.Zip(self.fetchLatestFirmware(for: device), device._read(.firmwareRevision).eraseErrorType())
             .map { latestBuild, boardFirmware -> MWFirmwareServer.Build? in
                 boardFirmware.isMetaWearVersion(lessThan: latestBuild.firmwareRev) ? latestBuild : nil
             }
@@ -306,7 +306,7 @@ func _updateMetaBoot_CheckBootLoaderVersion(
     // Does the device's firmware version meet the new firmware's required bootloader version (if specified)?
     let canPerformDfuUpdate = build.requiredBootloader == nil
     ? true
-    : build.requiredBootloader == metaboot.info?.firmwareRevision
+    : build.requiredBootloader == metaboot.info.firmwareRevision
 
     return canPerformDfuUpdate
     ? build.getNordicFirmware()
@@ -342,7 +342,7 @@ func _updateMetaBoot_UpgradeFirmwareToMeetBootloaderRequirement(
 /// Call into the actual Nordic DFU library. Returns a reference to a callback cached in `dfuSourceCache`.
 ///
 func _runNordicInstall(metaboot: MetaWear, firmware: DFUFirmware, delegate: DFUProgressDelegate?) -> PassthroughSubject<Void,Error> {
-    let initiator = DFUServiceInitiator(queue: metaboot.apiAccessQueue).with(firmware: firmware)
+    let initiator = DFUServiceInitiator(queue: metaboot.bleQueue).with(firmware: firmware)
     initiator.forceDfu = true // We also have the DIS which confuses the DFU library
     initiator.logger = metaboot
     initiator.delegate = metaboot

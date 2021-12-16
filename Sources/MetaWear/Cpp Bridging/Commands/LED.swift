@@ -144,6 +144,10 @@ public extension MWCommand where Self == MWLED.Flash {
 public extension MWLED {
 
     /// A one-time LED flash pattern.
+    ///
+    /// Duration specifies the length of a flash in milliseconds (e.g., 400).
+    /// Period specifies the spacing between the start of flashes (e.g., 800).
+    ///
     struct FlashPattern: Equatable, Hashable {
 
         /// RGB color to mimic

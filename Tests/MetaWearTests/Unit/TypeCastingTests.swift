@@ -6,7 +6,7 @@ import CoreBluetooth
 @testable import MetaWear
 @testable import MetaWearCpp
 
-class TypeCasting: XCTestCase {
+class TypeCastingTests: XCTestCase {
 
     func testParse_ByteArray() {
         let exp: [UInt8] = [0, 1, 2, 3]

@@ -27,8 +27,16 @@ public extension Publisher where Output == MetaWear {
         .mapToMWError()
         .flatMap { o -> MWPublisher<Timestamped<S.DataType>> in
             o.signal.stream(streamable, board: o.metawear.board)
-                .erase(subscribeOn: o.metawear.apiAccessQueue)
+                .erase(subscribeOn: o.metawear.bleQueue)
         }
+        .handleEvents(receiveCompletion: { completion in
+            switch completion {
+                case .failure(let error): Swift.print(streamable.name, error.localizedDescription)
+                case .finished: Swift.print(streamable.name, "finished")
+            }
+        })
+        .handleEvents(receiveCancel: { Swift.print("Stream.swift -> Cancel \(streamable.name)") })
+        .handleEvents(receiveRequest: { _ in Swift.print("Stream.swift -> Request \(streamable.name)") })
         .eraseToAnyPublisher()
     }
 
@@ -38,16 +46,23 @@ public extension Publisher where Output == MetaWear {
     ///
     func stream<P: MWPollable>(_ pollable: P) -> MWPublisher<Timestamped<P.DataType>> {
         tryMap { metawear -> (metawear: MetaWear, sensor: MWDataSignal) in
+            Swift.print("Stream.swift -> Pollable tryMap sensorSignal")
             guard let moduleSignal = try pollable.pollSensorSignal(board: metawear.board)
             else { throw MWError.operationFailed("Could not create \(pollable.name)") }
             pollable.pollConfigure(board: metawear.board)
             return (metawear, moduleSignal)
         }
         .mapToMWError()
+        .handleEvents(receiveOutput: { _ in Swift.print("Stream.swift -> Pollable got sensorSignal") })
         .createPollingTimer(freq: pollable.pollingRate)
+        .handleEvents(receiveOutput: { _ in Swift.print("Stream.swift -> Pollable got polling timer") })
         .flatMap { metawear, counter, timer -> MWPublisher<Timestamped<P.DataType>> in
             counter._stream(
-                start: { mbl_mw_timer_start(timer) },
+                start: {
+                    Swift.print("Stream.swift -> Starting timer")
+                    mbl_mw_timer_start(timer)
+                    Swift.print("Stream.swift -> Started timer")
+                },
                 cleanup: {
                     mbl_mw_timer_stop(timer)
                     mbl_mw_timer_remove(timer)
@@ -55,8 +70,14 @@ public extension Publisher where Output == MetaWear {
                 })
                 .replaceMWError(.operationFailed("Could not stream \(P.DataType.self)"))
             .map(pollable.convertRawToSwift)
-            .erase(subscribeOn: metawear.apiAccessQueue)
+            .erase(subscribeOn: metawear.bleQueue)
         }
+        .handleEvents(receiveCompletion: { completion in
+            switch completion {
+                case .failure(let error): Swift.print(pollable.name, error.localizedDescription)
+                case .finished: Swift.print(pollable.name, "finished")
+            }
+        })
         .share()
         .eraseToAnyPublisher()
     }
@@ -87,7 +108,7 @@ public extension Publisher where Output == MetaWear {
             .flatMap { metawear -> MWPublisher<Timestamped<T>> in
                 signal
                     .stream(as: type, start: start, cleanup: cleanup)
-                    .erase(subscribeOn: metawear.apiAccessQueue)
+                    .erase(subscribeOn: metawear.bleQueue)
             }
             .eraseToAnyPublisher()
     }
@@ -106,6 +127,7 @@ public extension MWDataSignal {
             start: { streamable.streamStart(board: board) },
             cleanup: { streamable.streamCleanup(board: board) }
         )
+            .handleEvents(receiveCancel: { Swift.print("Stream.swift -> Cancel \(streamable.name)") })
             .replaceMWError(.operationFailed("Could not stream \(S.DataType.self)"))
             .map(streamable.convertRawToSwift)
             .eraseToAnyPublisher()
@@ -138,9 +160,11 @@ public extension MWDataSignal {
 
         let subject = _datasignal_subscribe(self)
         start?()
+        Swift.print("Stream.swift -> Returning base stream subject")
 
         return subject
             .handleEvents(receiveCancel: {
+                Swift.print("Stream.swift -> Base stream subject cancelling")
                 cleanup?()
                 mbl_mw_datasignal_unsubscribe(self)
             })

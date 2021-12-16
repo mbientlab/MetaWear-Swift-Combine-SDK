@@ -54,7 +54,7 @@ scanner.startScan(allowDuplicates: true)
 
 ### Essentials
 
-Using any ``MWPublisher`` ensures calls into the C++ library and reads of any properties occur on the ``MetaWear/apiAccessQueue``.
+Using any ``MWPublisher`` ensures calls into the C++ library and reads of any properties occur on the ``MetaWear/MetaWear/bleQueue``.
 
 - ``MetaWear/MetaWearScanner``
 - ``MetaWear/MetaWear``
@@ -90,11 +90,9 @@ Streaming data arrives in Swift formats. Logged data downloads in a string-based
 - ``MWGyroscope``
 - ``MWHumidity``
 - ``MWThermometer``
-- ``MWColorDetector``
 - ``MWLED``
 - ``MWMagnetometer``
 - ``MWOrientationSensor``
-- ``MWProximity``
 - ``MWSensorFusion``
 - ``MWStepCounter``
 - ``MWStepDetector``

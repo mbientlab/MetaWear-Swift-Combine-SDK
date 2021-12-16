@@ -4,70 +4,6 @@ import CoreBluetooth
 import Combine
 import MetaWearCpp
 
-// MARK: - Type safe encapsulation
-
-public extension MetaWear.ServiceCharacteristic where DataType == UInt8 {
-
-    /// Values: 0 to 100
-    static let batteryLife = MetaWear.ServiceCharacteristic("Battery Life", .battery, .batteryLife, parse: Self.toUInt8)
-
-    private static func toUInt8(_ data: Data) -> UInt8 {
-        [UInt8](data).first ?? 0
-    }
-}
-
-public extension MetaWear.ServiceCharacteristic where DataType == String {
-
-    /// The board's manufacturer.
-    static let manufacturerName = MetaWear.ServiceCharacteristic("Manufacturer Name", .dis, .manufacturerName, parse: Self.toString)
-
-    /// The board's hardware version.
-    static let hardwareRevision = MetaWear.ServiceCharacteristic("Hardware Revision", .dis, .hardwareRevision, parse: Self.toString)
-
-    /// The board's firmware version.
-    static let firmwareRevision = MetaWear.ServiceCharacteristic("Firmware Revision", .dis, .firmwareRevision, parse: Self.toString)
-
-    /// The board's model number.
-    static let modelNumber = MetaWear.ServiceCharacteristic("Model Number", .dis, .modelNumber, parse: Self.toString)
-
-    /// The board's serial number.
-    static let serialNumber = MetaWear.ServiceCharacteristic("Serial Number", .dis, .serialNumber, parse: Self.toString)
-
-    private static func toString(_ data: Data) -> String {
-        String(data: data, encoding: .utf8) ?? ""
-    }
-}
-
-public extension MetaWear.ServiceCharacteristic where DataType == MetaWear.DeviceInformation {
-
-    /// The board's manufacturer, hardware version, firmware version, serial number, and model number.
-    ///
-    static let allDeviceInformation = MetaWear.ServiceCharacteristic("Device Information", .dis, .manufacturerName, parse: Self.handleSeparately)
-
-    private static func handleSeparately(_ data: Data) -> MetaWear.DeviceInformation {
-        fatalError()
-    }
-}
-
-public extension MetaWear {
-    /// Defines a response for a Characteristic and Service combo
-    ///
-    struct ServiceCharacteristic<DataType> {
-
-        /// Used for error messages
-        public let name: String
-        public let service: MetaWear.Service
-        public let characteristic: MetaWear.Characteristic
-        public var parse: (Data) -> DataType
-
-        internal init(_ name: String, _ service: MetaWear.Service, _ characteristic: MetaWear.Characteristic, parse: @escaping (Data) -> DataType) {
-            self.name = name
-            self.service = service
-            self.characteristic = characteristic
-            self.parse = parse
-        }
-    }
-}
 
 // MARK: - CBUUID
 
@@ -88,9 +24,6 @@ public extension CBUUID {
 }
 
 public extension MetaWear {
-
-    static let Notification = CBUUID(string: "326A9006-85CB-9195-D9DD-464CFBBAE75A")
-    static let Command      = CBUUID(string: "326A9001-85CB-9195-D9DD-464CFBBAE75A")
 
     enum Service {
         case metaWear
@@ -145,27 +78,94 @@ public extension MetaWear {
     }
 }
 
-// MARK: - Internal Utility
+// MARK: - Internal Publishers
 
-internal extension MetaWear.DeviceInformation {
+internal extension MetaWear {
 
-    static func publisher(for device: MetaWear) -> MWPublisher<MetaWear.DeviceInformation> {
-        Publishers.Zip(
-            device.read(.manufacturerName),
-            _JustMW(Self.getModel(device: device))
-        )
-            .zip(device.read(.serialNumber),
-                 device.read(.firmwareRevision),
-                 device.read(.hardwareRevision),
-                 { mm, serial, firm, hard in
-                (mm.0, mm.1, serial, firm, hard)
-            })
-            .map(MetaWear.DeviceInformation.init)
+    /// Requests refreshed information about this MetaWear, such as its battery percentage, serial number, model, manufacturer, and hardware and firmware versions.
+    func _read<T>(_ characteristic: MetaWear.ServiceCharacteristic<T>) -> MWPublisher<T> {
+        _read(service: characteristic.service.cbuuid, characteristic: characteristic.characteristic.cbuuid)
+            .map { characteristic.parse($0) }
             .eraseToAnyPublisher()
     }
 
-    static func getModel(device: MetaWear) -> MetaWear.Model {
-        let number = mbl_mw_metawearboard_get_model(device.board)
-        return .init(modelNumber: number)
+    /// Request a refreshed value for the target service and characteristic.
+    func _read(service: CBUUID, characteristic: CBUUID) -> MWPublisher<Data> {
+        _getCharacteristic(service, characteristic)
+            .publisher
+            .flatMap { [weak self] characteristic -> AnyPublisher<Data,MWError> in
+                let subject = PassthroughSubject<Data, MWError>()
+                self?._readCharacteristicSubjects[characteristic, default: []].append(subject)
+                self?.peripheral.readValue(for: characteristic)
+                return subject.eraseToAnyPublisher()
+            }
+            .erase(subscribeOn: bleQueue)
+    }
+
+    /// Synchronously lookup CBService and CBCharacteristics.
+    func _getCharacteristic(_ serviceUUID: CBUUID,_ characteristicUUID: CBUUID) -> Result<CBCharacteristic, MWError> {
+        guard let service = self.peripheral.services?.first(where: { $0.uuid == serviceUUID })
+        else { return .failure(.operationFailed("Service not found")) }
+
+        guard let characteristic = service.characteristics?.first(where: { $0.uuid == characteristicUUID })
+        else { return .failure(.operationFailed("Characteristics not found")) }
+
+        return .success(characteristic)
+    }
+}
+
+
+
+// MARK: - Type safe encapsulation
+
+internal extension MetaWear.ServiceCharacteristic where DataType == UInt8 {
+
+    /// Values: 0 to 100
+    static let batteryLife = MetaWear.ServiceCharacteristic("Battery Life", .battery, .batteryLife, parse: Self.toUInt8)
+
+    private static func toUInt8(_ data: Data) -> UInt8 {
+        [UInt8](data).first ?? 0
+    }
+}
+
+internal extension MetaWear.ServiceCharacteristic where DataType == String {
+
+    /// The board's manufacturer.
+    static let manufacturerName = MetaWear.ServiceCharacteristic("Manufacturer Name", .dis, .manufacturerName, parse: Self.toString)
+
+    /// The board's hardware version.
+    static let hardwareRevision = MetaWear.ServiceCharacteristic("Hardware Revision", .dis, .hardwareRevision, parse: Self.toString)
+
+    /// The board's firmware version.
+    static let firmwareRevision = MetaWear.ServiceCharacteristic("Firmware Revision", .dis, .firmwareRevision, parse: Self.toString)
+
+    /// The board's model number.
+    static let modelNumber = MetaWear.ServiceCharacteristic("Model Number", .dis, .modelNumber, parse: Self.toString)
+
+    /// The board's serial number.
+    static let serialNumber = MetaWear.ServiceCharacteristic("Serial Number", .dis, .serialNumber, parse: Self.toString)
+
+    private static func toString(_ data: Data) -> String {
+        String(data: data, encoding: .utf8) ?? ""
+    }
+}
+
+internal extension MetaWear {
+    /// Defines a response for a Characteristic and Service combo
+    ///
+    struct ServiceCharacteristic<DataType> {
+
+        /// Used for error messages
+        public let name: String
+        public let service: MetaWear.Service
+        public let characteristic: MetaWear.Characteristic
+        public var parse: (Data) -> DataType
+
+        internal init(_ name: String, _ service: MetaWear.Service, _ characteristic: MetaWear.Characteristic, parse: @escaping (Data) -> DataType) {
+            self.name = name
+            self.service = service
+            self.characteristic = characteristic
+            self.parse = parse
+        }
     }
 }

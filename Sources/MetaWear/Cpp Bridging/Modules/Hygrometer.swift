@@ -13,10 +13,10 @@ public struct MWHumidity: MWPollable, MWReadable {
     public let columnHeadings = ["Epoch", "Humidity"]
     public var signalName: MWNamedSignal = .humidity
 
-    public var oversampling: Oversampling? = nil
+    public var oversampling: Oversampling
     public var pollingRate: MWFrequency
 
-    public init(oversampling: MWHumidity.Oversampling? = nil, rate: MWFrequency) {
+    public init(oversampling: MWHumidity.Oversampling, rate: MWFrequency) {
         self.oversampling = oversampling
         self.pollingRate = rate
     }
@@ -29,7 +29,6 @@ public extension MWHumidity {
     }
 
     func readConfigure(board: MWBoard) {
-        guard let oversampling = oversampling else { return }
         mbl_mw_humidity_bme280_set_oversampling(board, oversampling.cppEnumValue)
     }
 
@@ -40,13 +39,13 @@ public extension MWHumidity {
 // MARK: - Discoverable Presets
 
 public extension MWPollable where Self == MWHumidity {
-    static func humidity(oversampling: MWHumidity.Oversampling? = nil, rate: MWFrequency) -> Self {
+    static func humidity(oversampling: MWHumidity.Oversampling = .x1, rate: MWFrequency) -> Self {
         Self(oversampling: oversampling, rate: rate)
     }
 }
 
 public extension MWReadable where Self == MWHumidity {
-    static func humidity(oversampling: MWHumidity.Oversampling? = nil) -> Self {
+    static func humidity(oversampling: MWHumidity.Oversampling = .x1) -> Self {
         Self(oversampling: oversampling, rate: .init(hz: 1))
     }
 }

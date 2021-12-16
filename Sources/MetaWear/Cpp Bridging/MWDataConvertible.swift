@@ -6,10 +6,8 @@ import MetaWearCpp
 
 // MARK: - Type Safe Data Conversions
 
-/// Has a defined conversion from
-/// a `MblMwData` C++ struct into a
-/// defined Swift value type whose lifetime
-/// is not confined to the C++ closure.
+/// Has a defined conversion from a `MblMwData` C++ struct into a
+/// defined Swift value type whose lifetime is not confined to the C++ closure.
 public protocol MWDataConvertible: Equatable & Hashable {
 
     /// Final converted Swift value type
@@ -63,7 +61,8 @@ public extension MWDataConvertible where RawDataType == DataType {
 
 public extension MWDataConvertible where
 RawDataType == MblMwSensorOrientation,
-DataType == MWAccelerometer.Orientation {
+DataType    == MWAccelerometer.Orientation {
+
     func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
         (raw.time, .init(sensor: raw.value)!)
     }
@@ -77,7 +76,8 @@ DataType == MWAccelerometer.Orientation {
 
 public extension MWDataConvertible where
 RawDataType == MblMwCartesianFloat,
-DataType == SIMD3<Float> {
+DataType    == SIMD3<Float> {
+
     func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
         (raw.time, .init(cartesian: raw.value))
     }
@@ -91,7 +91,8 @@ DataType == SIMD3<Float> {
 
 public extension MWDataConvertible where
 RawDataType == MblMwQuaternion,
-DataType == SIMD4<Float> {
+DataType    == SIMD4<Float> {
+
     func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
         (raw.time, .init(quaternion: raw.value))
     }
@@ -105,7 +106,8 @@ DataType == SIMD4<Float> {
 
 public extension MWDataConvertible where
 RawDataType == MblMwEulerAngles,
-DataType == SIMD3<Float> {
+DataType    == SIMD3<Float> {
+
     func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
         (raw.time, .init(euler: raw.value))
     }
@@ -119,7 +121,8 @@ DataType == SIMD3<Float> {
 
 public extension MWDataConvertible where
 RawDataType == UInt8,
-DataType == Int {
+DataType    == Int {
+
     func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
         (raw.time, .init(raw.value))
     }
@@ -127,7 +130,8 @@ DataType == Int {
 
 public extension MWDataConvertible where
 RawDataType == Int32,
-DataType == Int {
+DataType    == Int {
+
     func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
         (raw.time, .init(raw.value))
     }
@@ -135,9 +139,19 @@ DataType == Int {
 
 public extension MWDataConvertible where
 RawDataType == UInt32,
-DataType == Int {
+DataType    == Int {
+
     func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
         (raw.time, .init(raw.value))
+    }
+}
+
+public extension MWDataConvertible where
+RawDataType == MblMwBatteryState,
+DataType    == Int {
+
+    func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
+        (raw.time, Int(raw.value.charge))
     }
 }
 

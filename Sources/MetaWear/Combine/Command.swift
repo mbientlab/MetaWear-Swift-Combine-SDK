@@ -17,7 +17,7 @@ public extension Publisher where Output == MetaWear {
                     .handleEvents(receiveOutput: { metaWear in
                         command.command(board: metaWear.board)
                     })
-                    .erase(subscribeOn: metaWear.apiAccessQueue)
+                    .erase(subscribeOn: metaWear.bleQueue)
             }
             .eraseToAnyPublisher()
     }
@@ -41,16 +41,22 @@ public extension MWBoard {
 
 public extension Publisher where Output == MetaWear {
 
-    /// Performs a factory reset, wiping all content and settings, before disconnecting.
+    /// Performs a factory reset, wiping all content and settings, such as macros and logs, before disconnecting.
     ///
     func factoryReset() -> MWPublisher<MetaWear> {
         self.mapToMWError()
             .flatMap { metawear in
             _JustMW(metawear)
                 .handleEvents(receiveOutput: { metaWear in
-                    metawear.resetToFactoryDefaults()
+                    let board = metawear.board
+                    mbl_mw_logging_stop(board)
+                    mbl_mw_metawearboard_tear_down(board)
+                    mbl_mw_logging_clear_entries(board)
+                    mbl_mw_macro_erase_all(board)
+                    mbl_mw_debug_reset_after_gc(board) //05
+                    mbl_mw_debug_disconnect(board) //06
                 })
-                .erase(subscribeOn: metawear.apiAccessQueue)
+                .erase(subscribeOn: metawear.bleQueue)
         }
         .eraseToAnyPublisher()
     }
@@ -85,7 +91,7 @@ public extension Publisher where Output == MetaWear {
                         }
                         return subject.eraseToAnyPublisher()
                     }
-                    .erase(subscribeOn: metawear.apiAccessQueue)
+                    .erase(subscribeOn: metawear.bleQueue)
             }
             .eraseToAnyPublisher()
     }
@@ -99,7 +105,7 @@ public extension Publisher where Output == MetaWear {
             .flatMap { metawear -> MWPublisher<MetaWear> in
             mbl_mw_macro_execute(metawear.board, id)
             return _JustMW(metawear)
-                .erase(subscribeOn: metawear.apiAccessQueue)
+                .erase(subscribeOn: metawear.bleQueue)
         }
         .eraseToAnyPublisher()
     }

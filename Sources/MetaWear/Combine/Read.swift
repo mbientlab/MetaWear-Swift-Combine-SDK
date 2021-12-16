@@ -12,7 +12,7 @@ public extension Publisher where Output == MetaWear {
     /// Performs a one-time read of a board signal, handling C++ library calls, pointer bridging, and returned data type casting.
     ///
     /// - Parameters:
-    ///   - signal: Type-safe preset for `MetaWear` board signals
+    ///   - readable: Type-safe preset for `MetaWear` board signals
     ///
     /// - Returns: Pipeline on the BLE queue with the cast data. Fails if not connected.
     ///
@@ -30,7 +30,7 @@ public extension Publisher where Output == MetaWear {
                 .handleEvents(receiveOutput: { _ in readable.readCleanup(board: metawear.board) })
             // Replace any unspecific type casting failure message
                 .replaceMWError(.operationFailed("Failed reading \(readable.name)."))
-                .erase(subscribeOn: metawear.apiAccessQueue)
+                .erase(subscribeOn: metawear.bleQueue)
         }
         .eraseToAnyPublisher()
     }
@@ -48,8 +48,21 @@ public extension Publisher where Output == MetaWear {
             .flatMap { metawear in
                 metawear.board
                     .read(as: T.self)
-                    .erase(subscribeOn: metawear.apiAccessQueue)
+                    .erase(subscribeOn: metawear.bleQueue)
             }
+            .eraseToAnyPublisher()
+    }
+
+    /// Performs a one-time read of compound board signals, handling C++ library calls, pointer bridging, and returned data type casting.
+    ///
+    /// - Parameters:
+    ///   - readable: Type-safe preset for `MetaWear` signals
+    ///
+    /// - Returns: Pipeline on the BLE queue with the cast data. Fails if not connected.
+    ///
+    func read<E:MWReadableExtended>(_ readable: E) -> MWPublisher<E.DataType> {
+        mapToMWError()
+            .flatMap(readable.read)
             .eraseToAnyPublisher()
     }
 }

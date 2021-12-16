@@ -3,9 +3,6 @@
 import Foundation
 import MetaWear
 
-public typealias CBPeripheralIdentifierUUIDString = String
-public typealias MACAddress                       = String
-
 public extension MetaWear {
 
     struct Metadata: Identifiable {

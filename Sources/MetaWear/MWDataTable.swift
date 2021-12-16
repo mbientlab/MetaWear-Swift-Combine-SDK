@@ -10,6 +10,17 @@ public struct MWDataTable {
     /// Outer: Row. Inner: Data columns, starting with epoch.
     public let rows: [[String]]
 
+    /// Make a CSV with a labeled header row, optionally with other delimiters like a pipe |
+    public func makeCSV(delimiter: String = ",") -> String {
+        rows.reduce(into: makeRow(row: headerRow)) { csv, row in
+            csv.append(makeRow(row: row))
+        }
+    }
+
+    internal func makeRow(row: [String], delimiter: String = ",") -> String {
+        row.joined(separator: delimiter).appending("\n")
+    }
+
     public init(download: MWData.LogDownload) {
         self.source = download.logger
         let utilities = download.logger.downloadUtilities

@@ -5,110 +5,135 @@ import MetaWearCpp
 import Combine
 
 
-/// Each MetaWear object corresponds a physical MetaWear board. Many
-/// type-safe methods here abstract working with C++ functions for
-/// connecting, disconnecting, saving and restoring state, and
-/// performing commands like logging and streaming.
+/// Each MetaWear object corresponds a physical MetaWear board. This SDK
+/// wraps type-safe Swift methods and Combine publishers around C/C++ functions
+/// and CoreBluetooth APIs so you can get started quickly.
 ///
-/// Most methods in this SDK are async `Combine` operators on
-/// the `MetaWear.publish*()` publishers. You can find these operators
-/// by code completion or in`Publisher<MetaWear,*>`. Unfortunately,
-/// Xcode 13.0's documentation browser does not show extensions to
-/// out-of-module types like `Publisher`.
+/// Most methods in this SDK are async `Combine` operators that extend
+/// publishers with an output of `MetaWear`, which include:
+/// - ``MetaWear/MetaWear/publish()``
+/// - ``MetaWear/MetaWear/publishWhenConnected()``
+/// - ``MetaWear/MetaWear/publishWhenDisconnected()``
 ///
+/// You can find  operators via code completion or in the SDK's
+/// `Combine` directory. (Sadly, Xcode 13.0's documentation
+/// browser does not show extensions to out-of-module types.
 ///
-/// Example 1. Stream safely-typed data once connected the first time
-/// ```swift
-/// let stream = metawear
-///       .publishWhenConnected()
-///       .first()
-///       .stream(.ambientLight())
-///       .sink { [weak self] value in
-///           self?.lux = value
-///       }
-///
-/// stream.cancel()
-///
-/// // Note: `.publishWhenConnected()` only waits for, not starts a connection.
-/// // To start, call `.connect()` or `.connectPublisher()`.
-/// ```
-///
-/// Example 2. Read battery percentage remaining if connected when the call is placed.
+/// Example 1. Read battery percentage remaining if connected when called.
 /// ```swift
 /// metawear
-///       .publishIfConnected()
-///       .read(.batteryLife)
-///       .sink(receiveCompletion: {
-///           switch $0 {
-///               case .error(let error):   // Setup error
-///               case .finished:           // Disconnected by request
-///           }
-///       }, receiveValue: { [weak self] value in {
-///           self?.battery = value         // Connected & read
-///       })
-///
+///     .publishIfConnected()
+///     .read(.batteryLife)
+///     .sink(receiveCompletion: {
+///         switch $0 {
+///             case .error(let error):   // Setup error
+///             case .finished:           // Disconnected by request
+///         }
+///     }, receiveValue: { [weak self] value in {
+///         self?.battery = value         // Connected & read
+///     })
 /// ```
 ///
-/// Example 3. Mix C++ methods with Combine
+/// Example 2. Stream data once connected the first time.
 /// ```swift
+/// let sensor: MWStreamable = .ambientLight(
+///     rate: .ms1000,
+///     gain: .x1,
+///     integrationTime: .ms100
+/// )
+/// let stream = metawear
+///     .publishWhenConnected()
+///     .first()
+///     .stream(sensor)
+///     .sink { [weak self] value in
+///         self?.lux = value
+///     }
 ///
+/// metawear.connect() // Kickoff connection
+/// stream.cancel()    // Stop stream
 /// ```
-/// - Warning: Use the `apiAccessQueue` to read `MetaWear` properties and place calls
-/// into the MetaWear C++ library.
 ///
-/// - Tip: All publishers with the alias `MWPublisher` perform work on
-/// the `apiAccessQueue` for you.
+/// Example 3. Mix C++ with Combine in a recorded macro that clears logs on boot.
+/// ```swift
+/// let recordMacro = metawear
+///     .publish()
+///     .macro(executeOnBoot: true) { mw in
+///         mw.flatMap { mw in
+///             mbl_mw_logging_clear_entries(mw.board)
+///             return mw
+///         }
+///     }
+///     .sink { [weak self] macroIdentifier in
+///         self?.macroID = macroIdentifier
+///     }
+/// ```
+///
+/// - Tip: Only use the serial ``bleQueue`` to read `MetaWear` properties and place
+/// calls into the MetaWear C++ library. All SDK publishers subscribe and output on
+/// the `bleQueue` unless stated. Beware that a Combine operator like `.prefix(untilOutputFrom:)`
+/// will switch cancellation and receipt to the exogenous publisher.
 ///
 public class MetaWear: NSObject {
 
     // MARK: - References
 
     /// To prevent crashes, use this queue for all MetaWearCpp library calls.
-    public var apiAccessQueue: DispatchQueue { scanner?.bleQueue ?? DispatchQueue.global() }
+    /// All SDK publishers subscribe and return on this queue unless stated.
+    ///
+    public var bleQueue: DispatchQueue { scanner.bleQueue }
 
     /// This device's CoreBluetooth object
+    ///
     public let peripheral: CBPeripheral
 
     /// Scanner that discovered this device
-    public private(set) weak var scanner: MetaWearScanner?
+    ///
+    public unowned let scanner: MetaWearScanner
 
     /// Receives device activity
+    ///
     public var logDelegate: MWConsoleLoggerDelegate?
 
-    /// Pass to MetaWearCpp functions
+    /// Pass to MetaWear C++ functions
+    ///
     public private(set) var board: MWBoard!
 
 
     // MARK: - Connection State
 
-    /// Has BLE connection and an initialized MetaWearCpp library
-    public private(set) var isConnectedAndSetup = false
-
-    /// Whether advertised or discovered as a MetaBoot
+    /// Whether advertised or discovered in recovery (MetaBoot) mode
+    ///
     public private(set) var isMetaBoot = false
 
     /// Stream of connecting, connected (and with C++ library setup), disconnecting, and disconnected events.
-    public let connectionState: AnyPublisher<CBPeripheralState, Never>
+    ///
+    public let connectionStatePublisher: AnyPublisher<CBPeripheralState, Never>
 
-    /// Current connection state
-    public var connectionStateCurrent: CBPeripheralState { _connectionStateSubject.value }
+    /// Current connection state. Connected indicates a BLE connection and an initialized MetaWear C++ library.
+    ///
+    public var connectionState: CBPeripheralState { _connectionStateSubject.value }
 
 
     // MARK: - Signal (refreshed by `MetaWearScanner` activity)
 
     /// Last signal strength indicator received. Updates while `MetaWearScanner` or an rssi Publisher is active, plus when you call `updateRSSI()`.
+    ///
     public var rssi: Int { _rssi.value }
 
     /// Most recent RSSI, as pushed from an active `MetaWearScanner` or from `CBPeripheralDelegate` about every 5 seconds by automatic calls to `updateRSSI()` (only while connected). -100  can indicate disconnection.
+    ///
     public private(set) lazy var rssiPublisher: AnyPublisher<Int, Never> = _makeRSSIPublisher()
 
     /// Average of the last 5 seconds of signal strength, as pushed from an active `MetaWearScanner` or from `CBPeripheralDelegate` about every 5 seconds by automatic calls to `updateRSSI()`. -100 can indicate disconnection.
+    ///
     public private(set) lazy var rssiMovingAveragePublisher: AnyPublisher<Int,Never> = _makeRSSIAveragePublisher()
 
     /// Most recent signal strength and advertisement packet data, while the `MetaWearScanner` is active.
+    ///
     public let advertisementReceived: AnyPublisher<(rssi: Int, advertisementData: [String:Any]), Never>
 
     /// Last advertisement packet data received.
+    ///
     public var advertisementData: [String : Any] {
         get { Self._adQueue.sync { _adData } }
     }
@@ -116,34 +141,28 @@ public class MetaWear: NSObject {
 
     // MARK: - Device Identity
 
-    /// The MAC address (available after first connection) is a 6-byte unique identifier for a MetaWear and any Bluetooth device (e.g., F1:4A:45:90:AC:9D).
+    /// MAC address, model, serial, firmware, hardware details. **Populated after connection, but the MAC address may be available immediately for remembered devices.**
     ///
-    /// To maximize privacy, Apple obfuscates MAC addresses by replacing them with an auto-generated `CBUUID`. While stable locally, it differs between a user's phones and computers. As such, we make the MAC available via our own MetaSensor SDKs and via the Bluetooth Ad packet for easy and fast retrieval in iOS.
+    /// To maximize privacy, Apple obfuscates MAC addresses by replacing them with an auto-generated `UUID`. While stable locally, that id differs between a user's phones and computers. The MAC address exposed here enables recognizing devices across computers.
     ///
-    public internal(set) var mac: String?
+    public internal(set) var info: MetaWear.DeviceInformation
 
-    /// Model, serial, firmware, hardware, and manufacturer details (available after first connection)
-    public internal(set) var info: MetaWear.DeviceInformation?
+    /// Local machine's unique CoreBluetooth identifier for this device.
+    ///
+    public var localBluetoothID: CBPeripheralIdentifier { peripheral.identifier }
 
-    /// Builds a table of the board's modules
-    public func detectModules() -> MWPublisher<[MWModules.ID:MWModules]> {
-        self.publishWhenConnected()
-            .first()
-            .map { MWModules.detect(in: $0.board) }
-            .mapToMWError()
-            .erase(subscribeOn: self.apiAccessQueue)
-    }
-
-    /// Latest advertised name. Note: The CBPeripheral.name property might be cached.
+    /// Latest advertised name, which may might be cached on iOS. We recommend storing names in shared metadata, for example via `MetaWearStore` iCloud sync.
+    ///
     public var name: String {
         return Self._adQueue.sync {
             let adName = _adData[CBAdvertisementDataLocalNameKey] as? String
             return adName ?? peripheral.name ?? Self.defaultName
         }
     }
+    /// "MetaWear"
     public static let defaultName = "MetaWear"
 
-    /// Validate a candidate rename of this MetaWear device
+    /// Validate a candidate rename of this MetaWear device.
     /// - Parameter proposed: desired new name
     /// - Returns: Validity of the new name
     ///
@@ -157,7 +176,21 @@ public class MetaWear: NSObject {
     public static let _maxNameLength = 26
     public static let _validNameCharacters = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_- ")
 
+    /// Builds a dictionary of the board's sensors and specifics on its sensors' exact hardware. Useful when managing a MetaWear fleet with differing capabilities. (Requires connection.)
+    ///
+    /// - Returns: When connected, a dictionary where keys are available sensors and values are additional details on those sensors's hardware
+    ///
+    public func describeModules() -> MWPublisher<[MWModules.ID:MWModules]> {
+        self.publishWhenConnected()
+            .first()
+            .map { MWModules.detect(in: $0.board) }
+            .mapToMWError()
+            .erase(subscribeOn: self.bleQueue)
+    }
+
+
     // MARK: - Internal Properties
+
     /// When executing a test suite serially using a shared scanner against the same device, beware that MetaWear device instances are shared between your tests. You may need to set this to zero for certain tests where you are evaluating connection and disconnection behavior from a disconnected starting state. This is incremented by disconnect calls to interrupt an ongoing or the next scheduled connect request.
     public var _connectInterrupts: Int = 0
 
@@ -166,7 +199,7 @@ public class MetaWear: NSObject {
     fileprivate var _connectionStateSubject = CurrentValueSubject<CBPeripheralState,Never>(.disconnected)
     fileprivate var _connectSubjects: [PassthroughSubject<MetaWear, MWError>] = []
     fileprivate var _disconnectSubjects: [PassthroughSubject<MetaWear, MWError>] = []
-    fileprivate var _readCharacteristicSubjects: [CBCharacteristic: [PassthroughSubject<Data, MWError>]] = [:]
+    internal var _readCharacteristicSubjects: [CBCharacteristic: [PassthroughSubject<Data, MWError>]] = [:]
     fileprivate var _rssi: CurrentValueSubject<Int,Never> = .init(-100)
 
     // CBCharacteristics discovery + device setup
@@ -193,24 +226,31 @@ public class MetaWear: NSObject {
     fileprivate var _refreshables = [String:AnyCancellable]()
     fileprivate var _rssiRefreshSources = 0
 
-    /// Please use `MetaWearScanner` to initialize MetaWears properly. To subclass the scanner, you may need to use this initializer.
+    /// Please use ``MetaWearScanner`` to initialize MetaWears properly.
+    /// To subclass the scanner, you may need to use this initializer.
     ///
     /// - Parameters:
     ///   - peripheral: Discovered `CBPeripheral`
     ///   - scanner: Scanner that discovered the peripheral
+    ///   - mac: MAC address if known
     ///
-    public init(peripheral: CBPeripheral, scanner: MetaWearScanner) {
+    public init(peripheral: CBPeripheral,
+                scanner: MetaWearScanner,
+                mac: MACAddress? = nil) {
         self.peripheral = peripheral
         self.scanner = scanner
         self._refreshTimer = Self._makeFiveSecondRefresher(scanner.bleQueue)
 
-        self.connectionState = _connectionStateSubject.erase(subscribeOn: scanner.bleQueue)
+        self.connectionStatePublisher = _connectionStateSubject.erase(subscribeOn: scanner.bleQueue)
 
         self.advertisementReceived = self._adReceivedSubject
             .subscribe(on: Self._adQueue)
             .receive(on: scanner.bleQueue)
             .share()
             .eraseToAnyPublisher()
+
+        // Populate MAC if known
+        self.info = .init(mac: mac ?? UserDefaults.MetaWear.getMAC(for: peripheral.identifier))
 
         super.init()
         self.peripheral.delegate = self
@@ -221,7 +261,6 @@ public class MetaWear: NSObject {
                                              on_disconnect: _onDisconnect)
         self.board = mbl_mw_metawearboard_create(&connection)
         mbl_mw_metawearboard_set_time_for_response(self.board, 0)
-        self.mac = UserDefaults.MetaWear.getMac(for: self)
     }
 }
 
@@ -229,53 +268,60 @@ public class MetaWear: NSObject {
 
 public extension MetaWear {
 
-    /// Connect to this MetaWear and initialize the C++ library.
+    /// Connect to this MetaWear and, if needed, initializes the C++ library.
     ///
     /// Enqueues a connection request to the parent MetaWearScanner.
     /// For connection state changes, subscribe to `connectionState` or
     /// use the `connect() -> MWPublisher` variant.
     ///
     func connect() {
-        apiAccessQueue.async { [weak self] in
-            guard let self = self, self.isConnectedAndSetup == false else { return }
+        bleQueue.async { [weak self] in
+
+            // Only if not connected/connecting
+            guard let self = self, self.connectionState != .connected else { return }
+
+            // Cancel attempt if a disconnect request was received very recently
             guard self._connectInterrupts == 0 else {
                 self._connectInterrupts = 0
                 return
             }
-            self.scanner?.connect(self)
+
+            self.scanner.connect(self)
             self._connectionStateSubject.send(.connecting)
         }
     }
 
-    /// Connect to this MetaWear and initialize the C++ library.
+    /// Connects to this MetaWear, initializes the C++ library if needed,
+    /// and publishes this MetaWear if successful or an error upon failure.
     ///
     /// This publisher enqueues a connection request to the
     /// scanner that discovered it. It behaves as follows:
-    /// - on connection (or if already), sends a reference to self
+    /// - on connection (or if already connected), sends a reference to self
     /// - on disconnect, completes without error
     /// - on a setup fault, completes with error
-    /// - if you cancel the `AnyCancellable`, attempts device disconnect
-    /// - subscribes and sends on the `apiAccessQueue`
+    /// - if you cancel or complete, disconnects the device
+    /// - subscribes and sends on the ``bleQueue``
     ///
     /// Internally, this is an erased `PassthroughSubject`
     /// that is cached for `CBPeripheralDelegate` methods
     /// to call as setup progresses.
     ///
-    /// - Returns: On the `apiAccessQueue` an error, device reference (success), or completion on error-less disconnect
+    /// - Returns: On the ``bleQueue`` an error, device reference (success), or completion on error-less disconnect
     ///
     func connectPublisher() -> MWPublisher<MetaWear> {
-        MetaWear._buildConnectPublisher(self, isConnectedAndSetup)
+        MetaWear._buildConnectPublisher(self, self.connectionState == .connected)
             .handleEvents(receiveCancel: { [weak self] in
                 self?.disconnect()
             })
             .share()
-            .erase(subscribeOn: apiAccessQueue)
+            .erase(subscribeOn: bleQueue)
     }
 
-    /// Cancels a current connection, an ongoing connection attempt, or the next connection attempt. In the latter case, this method is idempotent (i.e., only the next connection attempt is cancelled).
+    /// Cancels a current connection, an ongoing connection attempt, or the next connection attempt.
+    /// This method is idempotent (i.e., only the next connection attempt is cancelled).
     ///
     func disconnect() {
-        apiAccessQueue.async { [self] in
+        bleQueue.async { [self] in
             let state = _connectionStateSubject.value
             self._connectionStateSubject.send(state == .disconnected ? .disconnected : .disconnecting)
 
@@ -284,66 +330,33 @@ public extension MetaWear {
                 _connectInterrupts += 1
 
             } else {
-                scanner?.cancelConnection(self)
+                scanner.cancelConnection(self)
                 _connectInterrupts = 0
             }
         }
     }
-}
 
-// MARK: - Public API (Reconnection to Known Devices)
-
-public extension MetaWear {
-
-    /// Before reconnecting to a device, restores data for Cpp library by deserializing data you previously saved to the `uniqueURL`. You are responsible for writing data.
+    /// Remove this device from the local persistent table loaded by ``MetaWearScanner``.
     ///
-    func stateLoadFromUniqueURL() {
-        if let data = try? Data(contentsOf: uniqueURL()) {
-            stateDeserialize([UInt8](data))
+    func forget() {
+        UserDefaults.MetaWear.forgetLocalDevice(localBluetoothID)
+        if self.connectionState == .connected { disconnect() }
+    }
+
+    /// Add this device to a local persisted table loaded by ``MetaWearScanner``.
+    /// MetaWears are automatically added to this list upon connection.
+    ///
+    func remember() {
+        guard info.mac.isEmpty == false else {
+            connect() // Stores itself
+            return
         }
-    }
-
-    /// Dump all MetaWearCpp library state (prior to disconnection).
-    ///
-    func stateSerialize() -> [UInt8] {
-        var count: UInt32 = 0
-        let start = mbl_mw_metawearboard_serialize(board, &count)
-        let data = Array(UnsafeBufferPointer(start: start, count: Int(count)))
-        mbl_mw_memory_free(start)
-        return data
-    }
-
-    /// Restore MetaWearCpp library state, must be called before `connectAndSetup()`.
-    ///
-    func stateDeserialize(_ _data: [UInt8]) {
-        var data = _data
-        mbl_mw_metawearboard_deserialize(board, &data, UInt32(data.count))
-    }
-
-    /// Create a file name unique to this device, based on its `CBPeripheral` identifier UUID. The returned URL is inside the user's Application Support directory, within a subfolder: `com.mbientlab.devices`.
-    ///
-    func uniqueURL() -> URL {
-        var url = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("com.mbientlab.devices", isDirectory: true)
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        url.appendPathComponent(peripheral.identifier.uuidString + ".file")
-        return url
-    }
-
-    /// Stops logging, deletes recorded logs and macros, tears down the board and disconnects.
-    ///
-    func resetToFactoryDefaults() {
-        mbl_mw_logging_stop(board)
-        mbl_mw_metawearboard_tear_down(board)
-        mbl_mw_logging_clear_entries(board)
-        mbl_mw_macro_erase_all(board)
-        mbl_mw_debug_reset_after_gc(board) //05
-        mbl_mw_debug_disconnect(board) //06
+        UserDefaults.MetaWear.rememberLocalDevice(localBluetoothID, info.mac)
     }
 }
 
-// MARK; - Public API (Publishers to Kickoff Reads/Writes/Logs/Streams of Board Signals)
+
+// MARK - Public API (Publishers to Kickoff Reads/Writes/Logs/Streams of Board Signals)
 
 public extension MetaWear {
 
@@ -352,37 +365,39 @@ public extension MetaWear {
     func publish() -> MWPublisher<MetaWear> {
         Just(self)
             .setFailureType(to: MWError.self)
-            .erase(subscribeOn: self.apiAccessQueue)
+            .erase(subscribeOn: bleQueue)
     }
 
-    /// Publishes if connected and setup at start, failing if not
+    /// Publishes if connected and setup at start, failing if not.
     ///
     func publishIfConnected() -> MWPublisher<MetaWear> {
-        isConnectedAndSetup
+        connectionState == .connected
         ? Just(self)
             .setFailureType(to: MWError.self)
-            .erase(subscribeOn: self.apiAccessQueue)
+            .erase(subscribeOn: bleQueue)
         : Fail(
             outputType: MetaWear.self,
             failure: MWError.operationFailed(
                 "Connected MetaWear required. Currently: \(peripheral.state.debugDescription)"
             ))
-            .erase(subscribeOn: self.apiAccessQueue)
+            .erase(subscribeOn: bleQueue)
     }
 
-    /// Publishes after connection and setup
+    /// Publishes after connection and setup.
     ///
     func publishWhenConnected() -> AnyPublisher<MetaWear,Never> {
         _connectionStateSubject
             .compactMap { $0 == .connected ? self : nil }
+            .subscribe(on: bleQueue)
             .eraseToAnyPublisher()
     }
 
-    /// Publishes after disconnection
+    /// Publishes after disconnection.
     ///
     func publishWhenDisconnected() -> AnyPublisher<MetaWear,Never> {
         _connectionStateSubject
             .compactMap { $0 == .disconnected ? self : nil }
+            .subscribe(on: bleQueue)
             .eraseToAnyPublisher()
     }
 
@@ -403,68 +418,50 @@ public extension MetaWear {
 }
 
 
-// MARK: - Public API (Device Information)
+// MARK: - Public API (Reconnection to Known Devices)
 
 public extension MetaWear {
 
-    /// Requests refreshed information about this MetaWear, such as its battery percentage, serial number, model, manufacturer, and hardware and firmware versions.
+    /// Before reconnecting to a device, restores data for C++ library by deserializing data you previously saved to the `uniqueURL`. You are responsible for writing data.
     ///
-    /// - Parameters:
-    ///   - characteristic: Type-safe preset for `MetaWear` device information.
-    ///
-    /// - Returns: A completing publisher for cast data supplied by the `CoreBluetooth` framework. Requests are queued for fulfillment by the `CBPeripheralDelegate` `peripheral(:didUpdateValueFor:error:)` method.
-    ///
-    func read<T>(_ characteristic: MetaWear.ServiceCharacteristic<T>) -> MWPublisher<T> {
-        if T.self == MetaWear.DeviceInformation.self {
-            return MetaWear.DeviceInformation.publisher(for: self)
-                .map { $0 as! T }.eraseToAnyPublisher() // Compiler workaround
-                .eraseToAnyPublisher()
-
-        } else {
-            return _readData(service: characteristic.service.cbuuid, characteristic: characteristic.characteristic.cbuuid)
-                .map { characteristic.parse($0) }
-                .eraseToAnyPublisher()
+    func stateLoadFromUniqueURL() {
+        if let data = try? Data(contentsOf: uniqueURL()) {
+            stateDeserialize([UInt8](data))
         }
     }
 
-    /// Request a refreshed value for the target service and characteristic.
+    /// Dump all MetaWearC++ library state (prior to disconnection).
     ///
-    /// - Parameters:
-    ///   - serviceUUID: See `CBUUID` static presets for MetaWear service options.
-    ///   - characteristicUUID: See `CBUUID` static presets for MetaWear characteristic options.
-    ///
-    /// - Returns: A completing publisher for data supplied by the `CoreBluetooth` framework. Requests are queued for fulfillment by the `CBPeripheralDelegate` `peripheral(:didUpdateValueFor:error:)` method.
-    ///
-    func _readData(service: CBUUID, characteristic: CBUUID) -> MWPublisher<Data> {
-        _getCharacteristic(service, characteristic)
-            .publisher
-            .flatMap { [weak self] characteristic -> AnyPublisher<Data,MWError> in
-                let subject = PassthroughSubject<Data, MWError>()
-                self?._readCharacteristicSubjects[characteristic, default: []].append(subject)
-                self?.peripheral.readValue(for: characteristic)
-                return subject.eraseToAnyPublisher()
-            }
-            .erase(subscribeOn: apiAccessQueue)
+    func stateSerialize() -> [UInt8] {
+        var count: UInt32 = 0
+        let start = mbl_mw_metawearboard_serialize(board, &count)
+        let data = Array(UnsafeBufferPointer(start: start, count: Int(count)))
+        mbl_mw_memory_free(start)
+        return data
     }
 
-    /// **Returns synchronously on the calling queue. Call only from `apiAccessQueue`.** Retrieves a characteristic contained in the most recently refreshed list of `CBService`.
+    /// Restore MetaWearC++ library state, must be called before `connectAndSetup()`.
     ///
-    /// - Parameters:
-    ///   - serviceUUID: See `CBUUID` static presets for MetaWear service options.
-    ///   - characteristicUUID: See `CBUUID` static presets for MetaWear characteristic options.
-    /// - Returns: On the calling queue. The characteristic or failure for `CBUUID` input that are invalid or not found.
+    func stateDeserialize(_ _data: [UInt8]) {
+        var data = _data
+        mbl_mw_metawearboard_deserialize(board, &data, UInt32(data.count))
+    }
+
+    /// Creates a file name unique to this device, based on its `CBPeripheral` identifier UUID. The returned URL is inside the user's Application Support directory, within a subfolder: `com.mbientlab.devices`.
     ///
-    func _getCharacteristic(_ serviceUUID: CBUUID,_ characteristicUUID: CBUUID) -> Result<CBCharacteristic, MWError> {
-        guard let service = self.peripheral.services?.first(where: { $0.uuid == serviceUUID })
-        else { return .failure(.operationFailed("Service not found")) }
-
-        guard let characteristic = service.characteristics?.first(where: { $0.uuid == characteristicUUID })
-        else { return .failure(.operationFailed("Characteristics not found")) }
-
-        return .success(characteristic)
+    func uniqueURL() -> URL {
+        var url = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("com.mbientlab.devices", isDirectory: true)
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        url.appendPathComponent(peripheral.identifier.uuidString + ".file")
+        return url
     }
 }
 
+// ########################################################### //
+//                        END OF PUBLIC API                    //
+// ########################################################### //
 
 // MARK: - Internals - Conformance to `CBPeripheralDelegate` for device setup
 
@@ -598,6 +595,7 @@ extension MetaWear: CBPeripheralDelegate {
 
 }
 
+
 // MARK: - Internals (Connection w/ `MetaWearScanner` as `CBCentralManagerDelegate`)
 
 internal extension MetaWear {
@@ -640,7 +638,7 @@ internal extension MetaWear {
             self._adData = advertisementData
 
             if let services = advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] {
-                self.apiAccessQueue.async {
+                self.bleQueue.async {
                     self.isMetaBoot = services.contains(.metaWearDfuService)
                 }
             }
@@ -656,17 +654,6 @@ internal extension MetaWear {
 
 private extension MetaWear {
 
-    func _didDiscoverCharacteristicsForMetaBoot() {
-        read(.allDeviceInformation)
-            .sink { completion in
-                guard case let .failure(error) = completion else { return }
-                self._invokeConnectionHandlers(error: error, cancelled: false)
-            } receiveValue: { info in
-                self.info = info
-            }
-            .store(in: &_subsDiscovery)
-    }
-
     func _setupCppSDK_start() {
         mbl_mw_metawearboard_initialize(board, bridge(obj: self)) { (context, board, errorCode) in
             let device: MetaWear = bridge(ptr: context!)
@@ -676,62 +663,62 @@ private extension MetaWear {
                 device._setupCppSDK_didFail("Board initialization failed: \(errorCode)")
                 return
             }
-
-            // Grab `DeviceInformation`
-            let rawInfo = mbl_mw_metawearboard_get_device_information(device.board)
-            device.info  = rawInfo!.pointee.convert(for: device)
-            mbl_mw_memory_free(UnsafeMutableRawPointer(mutating: rawInfo))
-
             device._setupCppSDK_finalize()
         }
     }
 
     func _setupCppSDK_finalize() {
-        guard mac == nil else {
-            _setupCppSDK_didSucceed()
-            return
-        }
-
         _setupMacToken?.cancel()
         _setupMacToken = self
             .publish()
-            .read(.macAddress)
-            .map(\.value)
+            .read(.deviceInformation)
             .sink { [weak self] completion in
                 switch completion {
                     case .finished: return
                     case .failure(let error):
                         self?._setupCppSDK_didFail(error.chainableDescription)
                 }
-            } receiveValue: { [weak self] macString in
+            } receiveValue: { [weak self] info in
                 guard let self = self else { return }
-                self.mac = macString
-                UserDefaults.MetaWear.setMac(macString, for: self)
+                self.info = info
+                UserDefaults.MetaWear.rememberLocalDevice(self.peripheral.identifier, info.mac)
                 self._setupCppSDK_didSucceed()
             }
     }
 
     func _setupCppSDK_didSucceed() {
-        apiAccessQueue.async { [weak self] in
+        bleQueue.async { [weak self] in
             let didInterrupt = (self?._connectInterrupts ?? 1) > 0
             self?._invokeConnectionHandlers(error: nil, cancelled: didInterrupt)
         }
     }
 
     func _setupCppSDK_didFail(_ msg: String) {
-        apiAccessQueue.async { [weak self] in
+        bleQueue.async { [weak self] in
             let error = MWError.operationFailed(msg)
             self?._invokeConnectionHandlers(error: error, cancelled: false)
             self?.disconnect()
         }
     }
 
+#warning("Is reading MAC going to be an issue?")
+    func _didDiscoverCharacteristicsForMetaBoot() {
+        // Setup for MetaBoot
+        self.publish().read(.deviceInformation)
+            .sink { completion in
+                guard case let .failure(error) = completion else { return }
+                self._invokeConnectionHandlers(error: error, cancelled: false)
+            } receiveValue: { info in
+                self.info = info
+            }
+            .store(in: &_subsDiscovery)
+    }
+
     /// Complete connection-related pipelines upon a cancel request or an error during device setup methods (e.g., in `CBCharacteristic` discovery). If connection is successful, move the pipelines into the disconnect promise queue.
     ///
     func _invokeConnectionHandlers(error: Error?, cancelled: Bool) {
-        assert(DispatchQueue.isBleQueue)
+        assert(DispatchQueue.isOnBleQueue())
         if cancelled == false && error == nil {
-            self.isConnectedAndSetup = true
             self._connectionStateSubject.send(.connected)
         }
         // Clear out the connectionSources array now because we use the
@@ -756,9 +743,8 @@ private extension MetaWear {
     /// Terminate connection-related pipelines or read promises upon a disconnect request or event or an error during setup methods.
     ///
     func _invokeDisconnectionHandlers(error: Error?) {
-        assert(DispatchQueue.isBleQueue)
+        assert(DispatchQueue.isOnBleQueue())
 
-        isConnectedAndSetup = false
         _connectionStateSubject.send(.disconnected)
 
         // Inform the C++ SDK
@@ -817,7 +803,7 @@ private extension MetaWear {
                 guard let self = weakSelf else { return }
                 subject?.send(self)
             })
-            .erase(subscribeOn: weakSelf?.apiAccessQueue ?? .global())
+            .erase(subscribeOn: weakSelf?.bleQueue ?? .global())
     }
 
     static func _buildConnectPublisher_StartNew(_ weakSelf: MetaWear?)  -> AnyPublisher<MetaWear,MWError> {
@@ -825,7 +811,7 @@ private extension MetaWear {
         weakSelf?._connectSubjects.append(subject)
         if weakSelf?._connectSubjects.endIndex == 1 {
             weakSelf?._connectionStateSubject.send(.connecting)
-            weakSelf?.scanner?.connect(weakSelf)
+            weakSelf?.scanner.connect(weakSelf)
         }
 
         return subject.eraseToAnyPublisher()
@@ -899,14 +885,9 @@ fileprivate func _writeGattChar(context: UnsafeMutableRawPointer?,
     if let charToWrite = device._getCBCharacteristic(characteristicPtr) {
         let data = Data(bytes: valuePtr!, count: Int(length))
         let type: CBCharacteristicWriteType = writeType == MBL_MW_GATT_CHAR_WRITE_WITH_RESPONSE ? .withResponse : .withoutResponse
-        if DispatchQueue.isBleQueue {
+        DispatchQueue.onBleQueue(device.bleQueue) {
             device._writeQueue.append((data: data, characteristic: charToWrite, type: type))
             device._writeIfNeeded()
-        } else {
-            device.apiAccessQueue.async {
-                device._writeQueue.append((data: data, characteristic: charToWrite, type: type))
-                device._writeIfNeeded()
-            }
         }
     }
 }
@@ -952,12 +933,12 @@ fileprivate func _onDisconnect(context: UnsafeMutableRawPointer?,
 
 // MARK: - Internal (Signal Strength)
 
-private extension MetaWear {
+internal extension MetaWear {
 
     /// Any RSSI update from Scanner or an explicit request (by user or via the refresher timer).
     ///
     func _updateRSSIValues(RSSI: NSNumber) {
-        self.apiAccessQueue.async { [weak self] in
+        self.bleQueue.async { [weak self] in
             self?._rssi.send(RSSI.intValue)
         }
 
@@ -994,11 +975,11 @@ private extension MetaWear {
         guard _rssiRefreshSources == 1 else { return }
         _refreshables["rssi"] = _refreshTimer
             .sink { [weak self] date in
-                guard self?.isConnectedAndSetup == true else { return }
+                guard self?.connectionState == .connected else { return }
                 Self._adQueue.sync {
                     /// Only update if there isn't a recently refreshed value
                     guard (self?._rssiHistory.value.last?.0.distance(to: date) ?? 5) > 4 else { return }
-                    self?.apiAccessQueue.async { [weak self] in
+                    self?.bleQueue.async { [weak self] in
                         self?.updateRSSI()
                     }
                 }
@@ -1021,7 +1002,7 @@ private extension MetaWear {
             .handleEvents(receiveCancel: { [weak self] in
                 self?._stopRefreshingRSSI()
             })
-            .erase(subscribeOn: apiAccessQueue)
+            .erase(subscribeOn: bleQueue)
     }
 
     func _makeRSSIAveragePublisher() -> AnyPublisher<Int,Never> {
@@ -1035,7 +1016,7 @@ private extension MetaWear {
             .handleEvents(receiveCancel: { [weak self] in
                 self?._stopRefreshingRSSI()
             })
-            .erase(subscribeOn: apiAccessQueue)
+            .erase(subscribeOn: bleQueue)
     }
 
     static func _makeFiveSecondRefresher(_ queue: DispatchQueue) -> AnyPublisher<Date,Never> {

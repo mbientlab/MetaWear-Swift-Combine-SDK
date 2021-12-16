@@ -29,7 +29,7 @@ public extension MWMacro {
         public func command(board: MWBoard) {
             let subject = _MWStatusSubject()
             mbl_mw_macro_end_record(board, bridge(obj: subject)) { _, _, value in
-                print("Recored commands \(value)")
+                print("Recorded commands \(value)")
             }
         }
     }
