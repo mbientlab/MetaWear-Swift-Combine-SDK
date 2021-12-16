@@ -143,10 +143,10 @@ public protocol MWLoggable: MWDataConvertible {
 ///
 public protocol MWStreamable: MWDataConvertible {
 
-    /// Obtains a reference to the module's streamable signal.
-    func streamSignal(board: MWBoard) throws -> MWDataSignal?
     /// Commands to customize the stream.
     func streamConfigure(board: MWBoard)
+    /// Obtains a reference to the module's already-configured streamable signal.
+    func streamSignal(board: MWBoard) throws -> MWDataSignal?
     /// Commands before starting the stream.
     func streamStart(board: MWBoard)
     /// Called after unsubscribing from the data signal.
