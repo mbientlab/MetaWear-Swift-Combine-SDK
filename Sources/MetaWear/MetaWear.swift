@@ -176,7 +176,7 @@ public class MetaWear: NSObject {
     public static let _maxNameLength = 26
     public static let _validNameCharacters = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_- ")
 
-    /// Builds a dictionary of the board's sensors and specifics on its sensors' exact hardware. Useful when managing a MetaWear fleet with differing capabilities.
+    /// Builds a dictionary of the board's sensors and specifics on its sensors' exact hardware. Useful when managing a MetaWear fleet with differing capabilities. (Requires connection.)
     ///
     /// - Returns: When connected, a dictionary where keys are available sensors and values are additional details on those sensors's hardware
     ///
