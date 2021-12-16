@@ -1,12 +1,14 @@
 // Copyright 2021 MbientLab Inc. All rights reserved. See LICENSE.MD.
 
 import Foundation
+import Combine
 import MetaWearCpp
 
 public struct MWMacro {
     private init() { }
 }
 
+/// The most convenient way to record a macro is using the Combine operators `.macro(executeOnBoot:actions:)` and, if needed, later running manually via `macroExecute()`.
 public extension MWMacro {
 
     /// Start recording any subsequent commands into a macro.
@@ -22,15 +24,21 @@ public extension MWMacro {
         }
     }
 
-    /// Calling the Publisher method on MWBoard provides a callback with the commands recorded.
-    struct StopRecording: MWCommand {
+    /// Call via .command or via .macro Combine operators.
+    struct StopRecording: MWCommandOutcome {
         public init() { }
+        public typealias DataType = MWMacroIdentifier
 
-        public func command(board: MWBoard) {
-            let subject = _MWStatusSubject()
-            mbl_mw_macro_end_record(board, bridge(obj: subject)) { _, _, value in
-                print("Recorded commands \(value)")
+        public func command(device: MetaWear) -> MWPublisher<(result: MWMacroIdentifier, metawear: MetaWear)> {
+            let subject = PassthroughSubject<UInt8,MWError>()
+            mbl_mw_macro_end_record(device.board, bridge(obj: subject)) { context, _, value in
+                let _subject: PassthroughSubject<UInt8,MWError> = bridge(ptr: context!)
+                _subject.send(.init(value))
+                _subject.send(completion: .finished)
             }
+            return Publishers.Zip(_JustMW(device), subject)
+                .map { ($1, $0) }
+                .erase(subscribeOn: device.bleQueue)
         }
     }
 }
@@ -38,7 +46,7 @@ public extension MWMacro {
 
 
 // MARK: - Public Presets
-public extension MWCommand where Self == MWMacro.StopRecording {
+public extension MWCommandOutcome where Self == MWMacro.StopRecording {
     static func macroEndRecording() -> Self {
         Self.init()
     }

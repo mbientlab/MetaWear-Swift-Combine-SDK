@@ -6,7 +6,7 @@ import MetaWearCpp
 
 public extension Publisher where Output == MetaWear {
 
-    /// Completes upon issuing the command to the MetaWear (on the `apiAccessQueue`)
+    /// Completes upon issuing the command to the MetaWear (on the `bleQueue`)
     /// - Returns: MetaWear
     ///
     func command<C: MWCommand>(_ command: C) -> MWPublisher<MetaWear> {
@@ -19,6 +19,15 @@ public extension Publisher where Output == MetaWear {
                     })
                     .erase(subscribeOn: metaWear.bleQueue)
             }
+            .eraseToAnyPublisher()
+    }
+
+    /// Completes upon issuing the command to the MetaWear (on the `bleQueue`)
+    /// - Returns: MetaWear
+    ///
+    func command<C: MWCommandOutcome>(_ command: C) -> MWPublisher<(result: C.DataType, metawear: MetaWear)> {
+        mapToMWError()
+            .flatMap { command.command(device: $0) }
             .eraseToAnyPublisher()
     }
 }
@@ -72,11 +81,11 @@ public extension Publisher where Output == MetaWear {
     /// - Parameters:
     ///   - executeOnBoot: Execute this macro eagerly on reboot or when commanded
     ///   - actions: Actions that form the macro
-    /// - Returns: An integer that identifies the recorded macro
+    /// - Returns: An integer that identifies the recorded macro for later execution if needed
     ///
     func macro(executeOnBoot: Bool,
-               actions: @escaping (MWPublisher<MetaWear>) -> MWPublisher<MetaWear>
-    ) -> MWPublisher<MWMacroIdentifier> {
+               actions: @escaping (MWPublisher<MetaWear>) -> MWPublisher<MetaWear> // Easy closure API
+    ) -> MWPublisher<MWMacroIdentifier> {                                          // Return type
         mapToMWError()
             .flatMap { metawear -> MWPublisher<MWMacroIdentifier> in
                 mbl_mw_macro_record(metawear.board, executeOnBoot ? 1 : 0)
@@ -118,13 +127,13 @@ public extension MWBoard {
     /// When pointing to a board, ends macro recordings. Combine wrapper for `mbl_mw_macro_end_record`.
     /// - Returns: Identifier for the recorded macro
     ///
-    func macroEndRecording() -> PassthroughSubject<Int32,MWError> {
+    func macroEndRecording() -> PassthroughSubject<MWMacroIdentifier,MWError> {
 
-        let subject = PassthroughSubject<Int32,MWError>()
+        let subject = PassthroughSubject<MWMacroIdentifier,MWError>()
 
         mbl_mw_macro_end_record(self, bridge(obj: subject)) { (context, board, value) in
-            let _subject: PassthroughSubject<Int32,MWError> = bridge(ptr: context!)
-            _subject.send(value)
+            let _subject: PassthroughSubject<MWMacroIdentifier,MWError> = bridge(ptr: context!)
+            _subject.send(.init(value))
             _subject.send(completion: .finished)
         }
 

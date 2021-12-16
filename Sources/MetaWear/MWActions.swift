@@ -249,6 +249,13 @@ public protocol MWCommand {
     func command(board: MWBoard)
 }
 
+/// A command that returns a value.
+///
+public protocol MWCommandOutcome {
+    associatedtype DataType
+    /// Obtains are reference to the readable data signal.
+    func command(device: MetaWear) -> MWPublisher<(result: DataType, metawear: MetaWear)>
+}
 
 // MARK: - Internal Defaults (DRY)
 
