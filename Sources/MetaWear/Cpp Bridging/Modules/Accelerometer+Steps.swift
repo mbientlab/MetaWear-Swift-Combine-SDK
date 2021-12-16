@@ -130,6 +130,7 @@ public extension MWStepCounter {
         configureAccelerometerForStepping(board)
         switch MWAccelerometer.Model(board: board) {
             case .bmi160:
+                mbl_mw_acc_bmi160_enable_step_counter(board)
                 mbl_mw_acc_bmi160_set_step_counter_mode(board, (sensitivity ?? .normal).cppEnumValue)
                 // No 20-step trigger config method
                 mbl_mw_acc_bmi160_write_step_counter_config(board)
@@ -194,8 +195,12 @@ extension MWAccelerometer {
 
     /// Step sensitivity available on BMI160 (e.g., MetaMotion RL devices only)
     public enum StepCounterSensitivity: String, CaseIterable, IdentifiableByRawValue {
+
+        /// Balanced between false positives and false negatives, recommended for most applications
         case normal
+        /// Few false negatives but eventually more false positives, recommended for light weighted people
         case sensitive
+        // Few false positives but eventually more false negatives
         case robust
 
         /// Raw Cpp constant
