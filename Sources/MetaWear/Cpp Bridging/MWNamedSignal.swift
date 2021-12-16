@@ -8,6 +8,7 @@ public enum MWNamedSignal: Equatable, Hashable {
     case acceleration
     case altitude
     case ambientLight
+    case chargingStatus
     case eulerAngles
     case gravity
     case gyroscope
@@ -24,22 +25,23 @@ public enum MWNamedSignal: Equatable, Hashable {
 
     public var name: String {
         switch self {
-            case .acceleration: return "acceleration"
-            case .altitude: return "altitude"
-            case .ambientLight: return "illuminance"
-            case .eulerAngles: return "euler-angles"
-            case .gravity: return "gravity"
-            case .gyroscope: return "angular-velocity"
-            case .humidity: return "relative-humidity"
-            case .linearAcceleration: return "linear-acceleration"
-            case .magnetometer: return "magnetic-field"
-            case .mechanicalButton: return "switch"
-            case .pressure: return "pressure"
-            case .quaternion: return "quaternion"
-            case .orientation: return "orientation"
-            case .temperature(let source): return "temperature\(source.loggerIndex)"
-            case .custom(let string): print("->>>>", string); return string
-            case .steps: return "steps"
+            case .acceleration:             return "acceleration"
+            case .altitude:                 return "altitude"
+            case .ambientLight:             return "illuminance"
+            case .chargingStatus:           return "charge-status"
+            case .eulerAngles:              return "euler-angles"
+            case .gravity:                  return "gravity"
+            case .gyroscope:                return "angular-velocity"
+            case .humidity:                 return "relative-humidity"
+            case .linearAcceleration:       return "linear-acceleration"
+            case .magnetometer:             return "magnetic-field"
+            case .mechanicalButton:         return "switch"
+            case .pressure:                 return "pressure"
+            case .quaternion:               return "quaternion"
+            case .orientation:              return "orientation"
+            case .temperature(let source):  return "temperature\(source.loggerIndex)"
+            case .custom(let string):       return string
+            case .steps:                    return "steps"
         }
     }
 
@@ -47,6 +49,7 @@ public enum MWNamedSignal: Equatable, Hashable {
         .acceleration,
         .altitude,
         .ambientLight,
+        .chargingStatus,
         .eulerAngles,
         .gravity,
         .gyroscope,
@@ -65,7 +68,7 @@ public enum MWNamedSignal: Equatable, Hashable {
     ]
 
     public init(identifier: String) {
-        print("Logger ", identifier)
+        print("-> Logger ", identifier)
         self = Self.allCases.first(where: { $0.name == identifier }) ?? .custom(identifier)
     }
 }
@@ -74,28 +77,28 @@ public enum MWNamedSignal: Equatable, Hashable {
 
 public extension MWNamedSignal {
 
-
     /// Registry of custom loggables and functions to stop their logging and convert their raw data download into CSV-ready columns. For example, if you define a data processor chain, the `download` publisher will check here to correctly process its data according to your specifications.
     static var customDownloads: [String: MWNamedSignal.DownloadUtilities] = [:]
 
     var downloadUtilities: MWNamedSignal.DownloadUtilities {
         switch self {
             case .acceleration: return .init(loggable: .accelerometer(rate: .hz100, gravity: .g16))
-            case .orientation: return .init(loggable: .orientation)  // Does orientation have any logging issues? Check MetaBase.
-            case .steps: return .init(loggable: .stepDetector(sensitivity: .normal))
-            case .pressure: return .init(loggable: .relativePressure(standby: .ms10, iir: .off, oversampling: .standard))
             case .altitude: return .init(loggable: .absoluteAltitude(standby: .ms10, iir: .off, oversampling: .standard))
-            case .gyroscope: return .init(loggable: .gyroscope(range: .dps1000, freq: .hz100))
-            case .magnetometer: return .init(loggable: .magnetometer(freq: .hz10))
-            case .humidity: return .init(pollable: .humidity())
+            case .ambientLight: return .init(loggable: .ambientLight(rate: .ms1000, gain: .x1, integrationTime: .ms100))
+            case .chargingStatus: return .init(loggable: .chargingStatus)
             case .eulerAngles: return .init(loggable: .sensorFusionEulerAngles(mode: .compass))
             case .gravity: return .init(loggable: .sensorFusionGravity(mode: .compass))
-            case .quaternion: return .init(loggable: .sensorFusionQuaternion(mode: .compass))
+            case .gyroscope: return .init(loggable: .gyroscope(range: .dps1000, freq: .hz100))
+            case .humidity: return .init(pollable: .humidity())
             case .linearAcceleration: return .init(loggable: .sensorFusionLinearAcceleration(mode: .compass))
-            case .temperature: return .init(pollable: MWThermometer(type: .onboard, channel: 0, rate: .hz1))
+            case .magnetometer: return .init(loggable: .magnetometer(freq: .hz10))
             case .mechanicalButton: return .init(loggable: .mechanicalButton())
+            case .orientation: return .init(loggable: .orientation)  // Does orientation have any logging issues? Check MetaBase.
+            case .pressure: return .init(loggable: .relativePressure(standby: .ms10, iir: .off, oversampling: .standard))
+            case .quaternion: return .init(loggable: .sensorFusionQuaternion(mode: .compass))
+            case .steps: return .init(loggable: .stepDetector(sensitivity: .normal))
+            case .temperature: return .init(pollable: MWThermometer(type: .onboard, channel: 0, rate: .hz1))
             case .custom(let id): return Self.customDownloads[id]!
-            default: fatalError()
         }
     }
 

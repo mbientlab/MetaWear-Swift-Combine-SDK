@@ -4,38 +4,6 @@ import Foundation
 import MetaWearCpp
 import Combine
 
-// MARK: - Battery Life
-
-/// Battery life percentage 0 to 100
-public struct MWBatteryLevel: MWDataConvertible, MWReadable {
-    public typealias DataType = Int
-    public typealias RawDataType = MblMwBatteryState
-    public let columnHeadings = ["Epoch", "Battery Percentage"]
-    public func readableSignal(board: MWBoard) throws -> MWDataSignal? {
-        mbl_mw_settings_get_battery_state_data_signal(board)
-    }
-}
-
-extension MWReadable where Self == MWBatteryLevel {
-    public static var batteryLevel: Self { Self() }
-}
-
-
-// MARK: - MAC Address
-
-public struct MWMACAddress: MWDataConvertible, MWReadable {
-    public typealias DataType = String
-    public typealias RawDataType = String
-    public let columnHeadings = ["Epoch", "MAC"]
-    public func readableSignal(board: MWBoard) throws -> MWDataSignal? {
-        mbl_mw_settings_get_mac_data_signal(board)
-    }
-}
-
-extension MWReadable where Self == MWMACAddress {
-    public static var macAddress: Self { Self() }
-}
-
 // MARK: - Log Length
 
 /// Bytes
@@ -51,6 +19,7 @@ public struct MWLogLength: MWDataConvertible, MWReadable {
 extension MWReadable where Self == MWLogLength {
     static var logLength: Self { Self() }
 }
+
 
 // MARK: - Reset Time
 
@@ -74,4 +43,24 @@ public struct MWLastResetTime: MWDataConvertible, MWReadable {
 
 extension MWReadable where Self == MWLastResetTime {
     static var lastResetTime: Self { Self() }
+}
+
+
+// MARK: - MAC Address
+
+/// If already connected to the device, you can simply synchronously
+/// read ``MetaWear/MetaWear/info`` for ``MetaWear/MetaWear/DeviceInformation/mac``.
+public struct MWMACAddress: MWDataConvertible, MWReadable {
+    public typealias DataType = String
+    public typealias RawDataType = String
+    public let columnHeadings = ["Epoch", "MAC"]
+    public func readableSignal(board: MWBoard) throws -> MWDataSignal? {
+        mbl_mw_settings_get_mac_data_signal(board)
+    }
+}
+
+extension MWReadable where Self == MWMACAddress {
+    /// If already connected to the device, you can simply synchronously
+    ///  read ``MetaWear/MetaWear/info`` for ``MetaWear/MetaWear/DeviceInformation/mac``.
+    public static var macAddress: Self { Self() }
 }
