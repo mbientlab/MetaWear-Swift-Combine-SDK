@@ -77,16 +77,6 @@ public class MetaWearSyncStore {
         self.persistChanges(to: loader)
         self.update(for: loader.metawears)
         self.update(for: scanner.discoveredDevicesPublisher)
-
-        _knownDevices.sink { update in
-            print("_known", update.map(\.key))
-        }
-        .store(in: &subs)
-
-        _unknownDevices.sink { update in
-            print("_unknown", update)
-        }
-        .store(in: &subs)
     }
 
     // Internal details
@@ -492,8 +482,6 @@ private extension MetaWearSyncStore {
             .sink { [ weak self] loaded in
                 guard let self = self else { return }
 
-                print(#function, loaded.devices.map(\.name))
-
                 /// Adopt the latest data wholesale (written only by loader + user interaction)
                 self._groups.value = loaded.groups.dictionary()
                 self._knownDevices.value = loaded.devices.dictionary()
@@ -536,10 +524,11 @@ private extension MetaWearSyncStore {
             .dropFirst(1)
             .map { groups, known in MWKnownDevicesLoadable(groups: Array(groups.values), devices: Array(known.values)) }
             .sink { _ in } receiveValue: { [weak self] in
-                print("Persisting", $0.devices.map(\.name))
                 do {
                     try self?.loader.save($0)
-                } catch { NSLog("Metawear Metadata Save Failed: \(error.localizedDescription)") }
+                } catch {
+                    NSLog("Metawear Metadata Save Failed: \(error.localizedDescription)")
+                }
             }
             .store(in: &subs)
     }

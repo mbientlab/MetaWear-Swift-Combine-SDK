@@ -14,38 +14,24 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "MetaWear"
-               BuildableName = "MetaWear"
-               BlueprintName = "MetaWear"
-               ReferencedContainer = "container:">
+               BlueprintIdentifier = "947D58B4276A8800001A1D0B"
+               BuildableName = "SwiftCombineSDKTestHost.app"
+               BlueprintName = "SwiftCombineSDKTestHost (macOS)"
+               ReferencedContainer = "container:SwiftCombineSDKTestHost.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
             buildForTesting = "YES"
-            buildForRunning = "YES"
+            buildForRunning = "NO"
             buildForProfiling = "NO"
             buildForArchiving = "NO"
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "MetaWearTests"
-               BuildableName = "MetaWearTests"
-               BlueprintName = "MetaWearTests"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "MetaWearCpp"
-               BuildableName = "MetaWearCpp"
-               BlueprintName = "MetaWearCpp"
-               ReferencedContainer = "container:">
+               BlueprintIdentifier = "945A9CDC276A8926001A00FD"
+               BuildableName = "MacTests.xctest"
+               BlueprintName = "MacTests"
+               ReferencedContainer = "container:SwiftCombineSDKTestHost.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -60,10 +46,10 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "MetaWearTests"
-               BuildableName = "MetaWearTests"
-               BlueprintName = "MetaWearTests"
-               ReferencedContainer = "container:">
+               BlueprintIdentifier = "945A9CDC276A8926001A00FD"
+               BuildableName = "MacTests.xctest"
+               BlueprintName = "MacTests"
+               ReferencedContainer = "container:SwiftCombineSDKTestHost.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -78,6 +64,16 @@
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "947D58B4276A8800001A1D0B"
+            BuildableName = "SwiftCombineSDKTestHost.app"
+            BlueprintName = "SwiftCombineSDKTestHost (macOS)"
+            ReferencedContainer = "container:SwiftCombineSDKTestHost.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -85,15 +81,16 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <MacroExpansion>
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "MetaWear"
-            BuildableName = "MetaWear"
-            BlueprintName = "MetaWear"
-            ReferencedContainer = "container:">
+            BlueprintIdentifier = "947D58B4276A8800001A1D0B"
+            BuildableName = "SwiftCombineSDKTestHost.app"
+            BlueprintName = "SwiftCombineSDKTestHost (macOS)"
+            ReferencedContainer = "container:SwiftCombineSDKTestHost.xcodeproj">
          </BuildableReference>
-      </MacroExpansion>
+      </BuildableProductRunnable>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

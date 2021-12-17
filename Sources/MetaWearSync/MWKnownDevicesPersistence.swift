@@ -59,7 +59,6 @@ public class MWCloudLoader: MWKnownDevicesPersistence {
     /// When iCloud synchronizes defaults at app startup, this function is called.
     @objc internal func cloudDidChange(_ note: Notification) {
         guard let changedKeys = note.userInfo?[NSUbiquitousKeyValueStoreChangedKeysKey] as? [NSString] else { return }
-        print(#function, changedKeys)
         if changedKeys.contains(.init(string: key)),
            let data = cloud.value(forKey: key) as? Data {
             do {
@@ -70,16 +69,12 @@ public class MWCloudLoader: MWKnownDevicesPersistence {
     }
 
     public func load() throws {
-        print(#function, "start")
         guard let data = local.value(forKey: key) as? Data else { return }
-        print(#function, data.count)
         let loadable = try MWMetadataSaveContainer.decode(loadable: data)
-        print(#function, loadable.devices.map(\.name))
         _loadable.send(loadable)
     }
 
     public func save(_ loadable: MWKnownDevicesLoadable) throws {
-        print(#function, loadable.devices.map(\.name))
         let data = try MWMetadataSaveContainer.encode(metadata: loadable)
         local.set(data, forKey: key)
         cloud.set(data, forKey: key)
