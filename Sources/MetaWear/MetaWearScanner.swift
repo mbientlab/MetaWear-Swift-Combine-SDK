@@ -10,7 +10,7 @@ public extension MetaWearScanner {
 
 /// Start scanning for MetaWear devices without having to understand all of CoreBluetooth. Pipelines return on the scanner's unique `bleQueue`.
 ///
-/// You may prefer to import `MetaWearMetaData` and use the `MetaWearStore` for its iCloud-synced metadata handling, instead of interactive with the scanner directly to obtain MetaWears.
+/// You may prefer to import `MetaWearSync` and use the `MetaWearSyncStore` for its iCloud-synced metadata handling, instead of interactive with the scanner directly to obtain MetaWears.
 ///
 public class MetaWearScanner: NSObject {
 
@@ -45,7 +45,7 @@ public class MetaWearScanner: NSObject {
     /// (from ``centralManagerDidUpdateState(_:)``).
     /// Skips unknown and resetting states changes.
     ///
-    public private(set) var centralManagerDidUpdateState: AnyPublisher<CBManagerState, Never>!
+    public private(set) var bluetoothState: AnyPublisher<CBManagerState, Never>!
 
     /// Whether or not the scanner's CBCentralManager is scanning.
     ///
@@ -69,7 +69,7 @@ public class MetaWearScanner: NSObject {
     /// To start scanning for devices, call ``startScan(higherPerformanceMode:)``
     /// to gather remembered and nearby MetaWears once Bluetooth is powered on.
     ///
-    /// To track Bluetooth state (e.g., authorized or disabled), use ``centralManagerDidUpdateState``.
+    /// To track Bluetooth state (e.g., authorized or disabled), use ``bluetoothState``.
     ///
     public init(restoreIdentifier: String? = nil,
                 showPoweredOffAlert: Bool = true) {
@@ -89,7 +89,7 @@ public class MetaWearScanner: NSObject {
                 .eraseToAnyPublisher()
         }
 
-        self.centralManagerDidUpdateState = didUpdateStateSubject
+        self.bluetoothState = didUpdateStateSubject
             .merge(with: Just(central.state))
             .filtered()
             .erase(subscribeOn: bleQueue)

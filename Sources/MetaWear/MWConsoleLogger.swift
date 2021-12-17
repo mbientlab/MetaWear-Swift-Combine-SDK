@@ -1,27 +1,39 @@
 // Copyright 2021 MbientLab Inc. All rights reserved. See LICENSE.MD.
 
+import Combine
 import CoreBluetooth
 
-/// Handle messages from MetaWear devices
-public protocol MWConsoleLoggerDelegate {
+/// Handles messages from MetaWear devices
+///
+public protocol MWConsoleLoggerDelegate: AnyObject {
     func logWith(_ level: MWConsoleLogger.LogLevel, message: String)
 }
 
 /// Simple logger implementation that prints messages to the console
+///
 public class MWConsoleLogger: MWConsoleLoggerDelegate {
     public static let shared = MWConsoleLogger()
 
+    internal init() {
+        self.didLogPublisher = _didLog.dropFirst().eraseToAnyPublisher()
+    }
+
+    public let didLogPublisher: AnyPublisher<String,Never>
     public var didLog: ((String) -> Void)? = nil
     public var minLevel = LogLevel.info
+    public var printInDebugMode = true
+
     public func logWith(_ level: LogLevel, message: String) {
-        guard level.rawValue >= minLevel.rawValue else {
-            return
-        }
+        guard level.rawValue >= minLevel.rawValue else { return }
+        let composedMessage = "\(level.name) | \(message)"
+        _didLog.send(composedMessage)
+        didLog?(composedMessage)
         #if DEBUG
-        print("\(level) \(message)")
-        didLog?(message)
+        if printInDebugMode { print(composedMessage) }
         #endif
     }
+
+    private let _didLog = CurrentValueSubject<String,Never>("")
 }
 
 public extension MWConsoleLogger {

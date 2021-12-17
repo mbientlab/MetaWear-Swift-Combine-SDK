@@ -1,8 +1,6 @@
 // Copyright 2021 MbientLab Inc. All rights reserved. See LICENSE.MD.
 
-import CoreBluetooth
-import NordicDFU
-import Combine
+import Foundation
 
 public extension MWFirmwareServer {
     /// Describes location of a firmware file
@@ -49,31 +47,5 @@ public extension MWFirmwareServer {
 
             self.firmwareURL = customUrl
         }
-    }
-}
-
-internal extension MWFirmwareServer.Build {
-
-    func getNordicFirmware() -> AnyPublisher<DFUFirmware,Error> {
-        let task = firmwareURL.isFileURL
-        ? Just(firmwareURL).setFailureType(to: Error.self).eraseToAnyPublisher()
-        : MWFirmwareServer.downloadAsync(url: firmwareURL)
-
-        return task
-            .tryMap { fileUrl -> DFUFirmware in
-                var selectedFirmware: DFUFirmware?
-
-                if fileUrl.pathExtension.caseInsensitiveCompare("zip") == .orderedSame {
-                    selectedFirmware = DFUFirmware(urlToZipFile: fileUrl)
-                } else {
-                    selectedFirmware = DFUFirmware(urlToBinOrHexFile: fileUrl, urlToDatFile: nil, type: .application)
-                }
-
-                guard let firmware = selectedFirmware else {
-                    throw MWError.operationFailed("invalid dfu file chosen '\(fileUrl.lastPathComponent)'")
-                }
-                return firmware
-            }
-            .eraseToAnyPublisher()
     }
 }

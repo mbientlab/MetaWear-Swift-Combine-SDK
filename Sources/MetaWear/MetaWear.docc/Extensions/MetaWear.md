@@ -4,7 +4,7 @@
 
 ### Actions
 
-Reading sensor data and issuing many commands to a MetaWear are asynchronous operations. Publishers below start a `Combine` pipeline that offers operators like `read`, `stream`, `log`, `logDownload`, and `command`.
+Reading sensor data and issuing many commands to a MetaWear are asynchronous operations. Publishers below start a `Combine` pipeline that offers operators like `read`, `stream`, `log`, `downloadLogs`, `optionallyLog`, `command`, and `macro`.
 
 - ``publishWhenConnected()``
 - ``publishWhenDisconnected()``
@@ -62,7 +62,7 @@ A device's state, including all sensor configurations, loggers, and active downl
 ### Infrequently Used APIs
 
 - ``describeModules()``
-- ``advertisementReceived``
+- ``advertisementDataPublisher``
 - ``advertisementData``
 - ``board``
 - ``isMetaBoot``

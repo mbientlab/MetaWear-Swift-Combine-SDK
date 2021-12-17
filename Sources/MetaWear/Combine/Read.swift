@@ -60,7 +60,7 @@ public extension Publisher where Output == MetaWear {
     ///
     /// - Returns: Pipeline on the BLE queue with the cast data. Fails if not connected.
     ///
-    func read<E:MWReadableExtended>(_ readable: E) -> MWPublisher<E.DataType> {
+    func read<E:MWReadableMerged>(_ readable: E) -> MWPublisher<E.DataType> {
         mapToMWError()
             .flatMap(readable.read)
             .eraseToAnyPublisher()

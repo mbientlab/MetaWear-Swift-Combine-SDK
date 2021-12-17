@@ -61,7 +61,7 @@ public extension MWLED {
             self.period = period
         }
 
-        public init(pattern: MWLED.FlashPattern) {
+        public init(pattern: MWLED.Flash.Pattern) {
             self.color = pattern.color
             self.intensity = pattern.intensity
             self.repetitions = pattern.repetitions
@@ -135,19 +135,19 @@ public extension MWCommand where Self == MWLED.Flash {
         Self.init(color: color, intensity: intensity, repetitions: repetitions, duration: duration, period: period)
     }
 
-    static func ledFlash(_ pattern: MWLED.FlashPattern) -> Self {
+    static func ledFlash(_ pattern: MWLED.Flash.Pattern) -> Self {
         Self.init(pattern: pattern)
     }
 }
 
-public extension MWLED {
+public extension MWLED.Flash {
 
     /// A one-time LED flash pattern.
     ///
     /// Duration specifies the length of a flash in milliseconds (e.g., 400).
     /// Period specifies the spacing between the start of flashes (e.g., 800).
     ///
-    struct FlashPattern: Equatable, Hashable {
+    struct Pattern: Equatable, Hashable {
 
         /// RGB color to mimic
         public var color: MWLED.MBLColor
@@ -215,7 +215,7 @@ public extension MWLED {
 
 // MARK: - Flash Pattern Presets
 
-public extension MWLED.FlashPattern {
+public extension MWLED.Flash.Pattern {
 
     /// Color blindness accommodating unique flash patterns for identifying devices in groups.
     enum Presets: Int, IdentifiableByRawValue, CaseIterable {
@@ -230,7 +230,7 @@ public extension MWLED.FlashPattern {
         case eight
         case nine
 
-        public var pattern: MWLED.FlashPattern {
+        public var pattern: MWLED.Flash.Pattern {
             switch self {
                 case .zero: return .init(color: .cyan, intensity: 1, repetitions: 2, duration: 300, period: 800)
                 case .one: return .init(color: .orange, intensity: 1, repetitions: 2, duration: 300, period: 800)
@@ -249,13 +249,13 @@ public extension MWLED.FlashPattern {
 
 // MARK: - Flash Emulator
 
-public extension MWLED.FlashPattern {
+public extension MWLED.Flash.Pattern {
 
     /// Load your own pattern and call `emulate` to recreate the MetaWear's LED behavior
     /// in a SwiftUI view or by subscribing to the `ledIsOnPublisher`.
     class Emulator: ObservableObject {
 
-        @Published public var pattern: MWLED.FlashPattern
+        @Published public var pattern: MWLED.Flash.Pattern
         public var ledIsOn: Bool { _ledSubject.value }
         public private(set) lazy var ledIsOnPublisher = _ledSubject.share().eraseToAnyPublisher()
 
@@ -278,14 +278,14 @@ public extension MWLED.FlashPattern {
             }
         }
 
-        public init(_ pattern: MWLED.FlashPattern) {
+        public init(_ pattern: MWLED.Flash.Pattern) {
             self.pattern = pattern
             _objectWillChange = self._ledSubject.sink { [weak self] _ in
                 self?.objectWillChange.send()
             }
         }
 
-        public convenience init(preset: MWLED.FlashPattern.Presets) {
+        public convenience init(preset: MWLED.Flash.Pattern.Presets) {
             self.init(preset.pattern)
         }
 

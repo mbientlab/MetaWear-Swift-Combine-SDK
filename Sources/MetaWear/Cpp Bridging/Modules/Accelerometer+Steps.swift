@@ -38,7 +38,7 @@ extension MWLoggable where Self == MWStepCounter {
 
 // MARK: - Signals
 
-/// Requires counting steps by counting each closure returned as one step
+/// Emits each time a step is detected, leaving summation to you.
 public struct MWStepDetector: MWStreamable, MWLoggable {
 
     public typealias DataType = Int
@@ -62,7 +62,7 @@ public struct MWStepDetector: MWStreamable, MWLoggable {
 
 }
 
-/// Reports steps detected in ~20 step intervals.
+/// Emits steps detected in 20 step intervals.
 public struct MWStepCounter: MWStreamable, MWLoggable {
 
     public typealias DataType = Int

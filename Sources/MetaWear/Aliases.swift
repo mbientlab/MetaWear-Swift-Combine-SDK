@@ -57,7 +57,7 @@ public typealias Download<D>             = (data: D, percentComplete: Double)
 /// A 6-byte unique identifier for a MetaWear and any Bluetooth device (e.g., F1:4A:45:90:AC:9D)
 public typealias MACAddress              = String
 
-/// While stable locally, Apple identifies CoreBluetooth peripherals via a UUID that differs between a user's phones and computers. ``MetaWear/MetaWear/info`` exposes the stable MAC address, as does our advertising packet when seen via Android.
+/// While stable locally, Apple identifies CoreBluetooth peripherals via a UUID that differs between a user's phones and computers. Once connected, a MetaWear's `MetaWear/MetaWear/info`` property exposes the stable MAC address, as does our advertising packet when seen via Android.
 public typealias CBPeripheralIdentifier  = UUID
 
 public extension CBPeripheralIdentifier {

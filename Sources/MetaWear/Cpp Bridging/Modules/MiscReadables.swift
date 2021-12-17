@@ -40,8 +40,7 @@ extension MWReadable where Self == MWLastResetTime {
 
 // MARK: - MAC Address
 
-/// If already connected to the device, you can simply synchronously
-/// read ``MetaWear/MetaWear/info`` for ``MetaWear/MetaWear/DeviceInformation/mac``.
+/// After connection or if remembered, a MetaWear's ``MetaWear/MetaWear/info`` property exposes the stable MAC address.
 public struct MWMACAddress: MWDataConvertible, MWReadable {
     public typealias DataType = String
     public typealias RawDataType = String
@@ -52,7 +51,6 @@ public struct MWMACAddress: MWDataConvertible, MWReadable {
 }
 
 extension MWReadable where Self == MWMACAddress {
-    /// If already connected to the device, you can simply synchronously
-    ///  read ``MetaWear/MetaWear/info`` for ``MetaWear/MetaWear/DeviceInformation/mac``.
+    /// After connection or if remembered, a MetaWear's ``MetaWear/MetaWear/info`` property exposes the stable MAC address.
     public static var macAddress: Self { Self() }
 }

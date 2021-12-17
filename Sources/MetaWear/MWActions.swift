@@ -234,7 +234,7 @@ public protocol MWReadable: MWDataConvertible {
 
 /// A read command that coalesces multiple operations into one output.
 ///
-public protocol MWReadableExtended {
+public protocol MWReadableMerged {
     associatedtype DataType
     /// Obtains are reference to the readable data signal.
     func read(from device: MetaWear) -> MWPublisher<DataType>
@@ -242,16 +242,15 @@ public protocol MWReadableExtended {
 
 // MARK: - Command
 
-/// Issues a command to the MetaWear, such as recording a macro
-/// or resetting to factory defaults.
+/// Issues a command, such as recording a macro or resetting to factory defaults.
 ///
 public protocol MWCommand {
     func command(board: MWBoard)
 }
 
-/// A command that returns a value.
+/// Issues a command that returns a value.
 ///
-public protocol MWCommandOutcome {
+public protocol MWCommandWithResponse {
     associatedtype DataType
     /// Obtains are reference to the readable data signal.
     func command(device: MetaWear) -> MWPublisher<(result: DataType, metawear: MetaWear)>

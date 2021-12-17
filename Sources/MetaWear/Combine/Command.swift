@@ -25,7 +25,7 @@ public extension Publisher where Output == MetaWear {
     /// Completes upon issuing the command to the MetaWear (on the `bleQueue`)
     /// - Returns: MetaWear
     ///
-    func command<C: MWCommandOutcome>(_ command: C) -> MWPublisher<(result: C.DataType, metawear: MetaWear)> {
+    func command<C: MWCommandWithResponse>(_ command: C) -> MWPublisher<(result: C.DataType, metawear: MetaWear)> {
         mapToMWError()
             .flatMap { command.command(device: $0) }
             .eraseToAnyPublisher()

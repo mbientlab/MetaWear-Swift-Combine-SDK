@@ -27,7 +27,7 @@ public struct MWFactoryReset: MWCommand {
 /// both the board and the struct's internal state. The board itself is not reset,
 /// so any configuration changes will be preserved.
 ///
-public struct MWResetActivities: MWCommand {
+public struct MWActivitiesReset: MWCommand {
     /// Removes all data processors, loggers, timers, and recorded events from
     /// both the board and the struct's internal state. The board itself is not reset,
     /// so any configuration changes will be preserved.
@@ -56,10 +56,10 @@ public struct MWRestart: MWCommand {
 
 public extension MWCommand where Self == MWFactoryReset {
     /// Wipes any data and settings from the MetaWear.
-    static var factoryReset: Self { Self() }
+    static var resetFactoryDefaults: Self { Self() }
 }
 
-public extension MWCommand where Self == MWResetActivities {
+public extension MWCommand where Self == MWActivitiesReset {
     /// Removes all data processors, loggers, timers, and recorded events from
     /// both the board and the struct's internal state. The board itself is not reset,
     /// so any configuration changes will be preserved.

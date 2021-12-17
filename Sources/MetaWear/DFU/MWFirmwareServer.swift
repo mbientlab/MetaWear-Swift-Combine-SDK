@@ -2,7 +2,7 @@
 
 import CoreBluetooth
 import Combine
-import NordicDFU
+@_exported import NordicDFU
 import MetaWearCpp
 
 /// Interface with the MbientLab firmware server
@@ -403,5 +403,31 @@ extension MetaWear: LoggerDelegate {
         }()
 
         logDelegate?.logWith(newLevel, message: message)
+    }
+}
+
+internal extension MWFirmwareServer.Build {
+
+    func getNordicFirmware() -> AnyPublisher<DFUFirmware,Error> {
+        let task = firmwareURL.isFileURL
+        ? Just(firmwareURL).setFailureType(to: Error.self).eraseToAnyPublisher()
+        : MWFirmwareServer.downloadAsync(url: firmwareURL)
+
+        return task
+            .tryMap { fileUrl -> DFUFirmware in
+                var selectedFirmware: DFUFirmware?
+
+                if fileUrl.pathExtension.caseInsensitiveCompare("zip") == .orderedSame {
+                    selectedFirmware = DFUFirmware(urlToZipFile: fileUrl)
+                } else {
+                    selectedFirmware = DFUFirmware(urlToBinOrHexFile: fileUrl, urlToDatFile: nil, type: .application)
+                }
+
+                guard let firmware = selectedFirmware else {
+                    throw MWError.operationFailed("invalid dfu file chosen '\(fileUrl.lastPathComponent)'")
+                }
+                return firmware
+            }
+            .eraseToAnyPublisher()
     }
 }

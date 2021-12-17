@@ -68,9 +68,9 @@ import Combine
 ///     }
 /// ```
 ///
-/// - Tip: Only use the serial ``bleQueue`` to read `MetaWear` properties and place
-/// calls into the MetaWear C++ library. All SDK publishers subscribe and output on
-/// the `bleQueue` unless stated. Beware that a Combine operator like `.prefix(untilOutputFrom:)`
+/// - Tip: Only use the serial ``bleQueue`` to place calls into the MetaWear C++ library.
+/// All SDK publishers subscribe and output on the `bleQueue` unless stated.
+/// Beware that a Combine operator like `.prefix(untilOutputFrom:)`
 /// will switch cancellation and receipt to the exogenous publisher.
 ///
 public class MetaWear: NSObject {
@@ -92,7 +92,7 @@ public class MetaWear: NSObject {
 
     /// Receives device activity
     ///
-    public var logDelegate: MWConsoleLoggerDelegate?
+    public weak var logDelegate: MWConsoleLoggerDelegate?
 
     /// Pass to MetaWear C++ functions
     ///
@@ -151,7 +151,7 @@ public class MetaWear: NSObject {
     ///
     public var localBluetoothID: CBPeripheralIdentifier { peripheral.identifier }
 
-    /// Latest advertised name, which may might be cached on iOS. We recommend storing names in shared metadata, for example via `MetaWearStore` iCloud user defaults sync.
+    /// Latest advertised name, which may might be cached on iOS. We recommend storing names in shared metadata, for example via `MetaWearSyncStore` iCloud user defaults sync.
     ///
     @objc dynamic public var name: String {
         return Self._adQueue.sync {

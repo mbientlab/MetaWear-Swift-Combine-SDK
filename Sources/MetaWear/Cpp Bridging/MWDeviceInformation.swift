@@ -36,7 +36,7 @@ public extension MetaWear {
 
 // MARK: - Public Publisher API
 
-extension MetaWear.DeviceInformation: MWReadableExtended {
+extension MetaWear.DeviceInformation: MWReadableMerged {
 
     public typealias DataType = MetaWear.DeviceInformation
 
@@ -62,7 +62,7 @@ extension MetaWear.DeviceInformation: MWReadableExtended {
     }
 }
 
-public extension MWReadableExtended where Self == MetaWear.DeviceInformation {
+public extension MWReadableMerged where Self == MetaWear.DeviceInformation {
     static var deviceInformation: Self { Self(mac: "") }
 }
 

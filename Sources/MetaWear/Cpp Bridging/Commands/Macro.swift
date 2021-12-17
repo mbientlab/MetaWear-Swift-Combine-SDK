@@ -25,7 +25,7 @@ public extension MWMacro {
     }
 
     /// Call via .command or via .macro Combine operators.
-    struct StopRecording: MWCommandOutcome {
+    struct StopRecording: MWCommandWithResponse {
         public init() { }
         public typealias DataType = MWMacroIdentifier
 
@@ -60,7 +60,7 @@ public extension MWCommand where Self == MWMacro.Record {
     }
 }
 
-public extension MWCommandOutcome where Self == MWMacro.StopRecording {
+public extension MWCommandWithResponse where Self == MWMacro.StopRecording {
     /// Returns the identifier for the recorded macro.
     static var macroStartRecording: Self { Self() }
 }

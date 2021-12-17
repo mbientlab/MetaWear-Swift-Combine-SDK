@@ -8,7 +8,7 @@ public typealias MWKnownDevice = (mw: MetaWear?, meta: MetaWear.Metadata)
 
 /// Stores all groups, known devices, and unknown devices merged from persistence and MetaWearScanner/CoreBluetooth. Retrieves devices from the scanner if detected. While each Apple device provides a Bluetooth accessory with a unique identifier, those UUIDs are not stable between a user's devices. This store maps stable MetaWear identifiers to those UUIDs so that metadata changes, such as a device's name or grouping, on any user device will synchronize between devices.
 ///
-public class MetaWearStore {
+public class MetaWearSyncStore {
 
     /// Loads persisted device metadata and requests those devices
     /// from CoreBluetooth (after the linked scanner is powered on).
@@ -102,7 +102,7 @@ public class MetaWearStore {
 
 // MARK: - Public API - Subscribe to specific items
 
-public extension MetaWearStore {
+public extension MetaWearSyncStore {
 
     /// Receive updates when the device's Metadata changes or the scanner discovers the device nearby.
     ///
@@ -179,7 +179,7 @@ public extension MetaWearStore {
 
 // MARK: - Public API - Retrieve Items
 
-public extension MetaWearStore {
+public extension MetaWearSyncStore {
 
     /// Retrieve a reference for a device by MAC address.
     ///
@@ -296,7 +296,7 @@ public extension MetaWearStore {
 
 // MARK: - Public API - Edit Items
 
-public extension MetaWearStore {
+public extension MetaWearSyncStore {
 
     /// Add a MetaWear grouping
     ///
@@ -356,7 +356,7 @@ public extension MetaWearStore {
 
 // MARK: - Public API - Add / Remove
 
-public extension MetaWearStore {
+public extension MetaWearSyncStore {
 
     /// Removes this device from memory, including its presence in any groups,
     /// across all iCloud-synced devices. Emptied groups will be disbanded.
@@ -435,7 +435,7 @@ public extension MetaWearStore {
 
 // MARK: - Internal Details
 
-private extension MetaWearStore {
+private extension MetaWearSyncStore {
 
     /// Receives updates from `MetaWearScanner` when its device map changes with devices
     /// locally persisted or presently discovered. This method updates `_knownDevices`

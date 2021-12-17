@@ -113,7 +113,7 @@ public extension Publisher where Output == MetaWear {
     /// You can also get an `MWData` array output using `_logDownloadData()`.
     /// - Returns: Publishes percent complete. At 100% complete, publishes all logged data.
     ///
-    func logsDownload() -> MWPublisher<Download<[MWDataTable]>> {
+    func downloadLogs() -> MWPublisher<Download<[MWDataTable]>> {
         _logDownloadData()
             .map { ($0.map(MWDataTable.init), $1) } 
             .eraseToAnyPublisher()
@@ -167,7 +167,7 @@ public extension Publisher where Output == MetaWear {
     /// Downloads only the specific logger signal that you specify, ignoring all others.
     /// - Returns: Publishes percent complete. At 100% complete, publishes all logged data.
     ///
-    func logDownload<L: MWLoggable>(_ loggable: L)
+    func downloadLog<L: MWLoggable>(_ loggable: L)
     -> MWPublisher<Download<[Timestamped<L.DataType>]>> {
         let shared = self.mapToMWError().share()
         return shared

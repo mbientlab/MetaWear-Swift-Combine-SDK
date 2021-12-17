@@ -25,8 +25,8 @@ public struct MWBuzzer: MWCommand {
     }
 }
 
-/// In the MMR+ model, the coin vibration motor provides haptic feedback by vibrating using the haptic module.
-/// The haptic module does not provide PWM (pulse-width modulation) capability.
+/// In the MMR+ model, the coin vibration motor provides haptic feedback.
+/// It does not provide pulse-width modulation capability.
 ///
 public struct MWHapticMotor: MWCommand {
 

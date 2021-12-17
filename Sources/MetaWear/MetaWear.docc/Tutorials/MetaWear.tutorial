@@ -1,7 +1,7 @@
 @Tutorials(name: "MetaWear") {
     @Intro(title: "From Zero to Machine Learning") {
         
-        Stream, log, configure, and connect to MetaWear wearable sensors with or without C++ expertise. Get started by building the demo app _Streamy_ with only basic `Swift` and `SwiftUI` experience.
+        [Not completed](uhoh.com) Stream, log, configure, and connect to MetaWear wearable sensors with or without C++ expertise. Get started by building the demo app _Streamy_ with only basic `Swift` and `SwiftUI` experience.
         
         @Image(source: streamyIcon.png, alt: "Icon for the demo app Streamy with a MetaWear sensor on top of binary code.")
     }
@@ -9,30 +9,34 @@
     @Chapter(name: "Discover & Connect") {
         @Image(source: streamyIcon.png, alt: ".")
         
-        Find, connect, and manage nearby devices.
+        Find and connect to nearby devices.
         
         @TutorialReference(tutorial: "doc:Finding-Nearby-Devices")
         @TutorialReference(tutorial: "doc:Connecting-To-A-MetaWear")
         @TutorialReference(tutorial: "doc:Renaming-Devices")
     }
     
-    @Chapter(name: "Read the Accelerometer") {
+    @Chapter(name: "Stream the Accelerometer") {
         @Image(source: streamyIcon.png, alt: ".")
         
         Configure and read the accelerometer.
         
         @TutorialReference(tutorial: "doc:Finding-Nearby-Devices")
-        @TutorialReference(tutorial: "doc:Connecting-To-A-MetaWear")
-        @TutorialReference(tutorial: "doc:Renaming-Devices")
     }
 
-    @Chapter(name: "Understanding Combine") {
+    @Chapter(name: "Train a CoreML Model") {
         @Image(source: streamyIcon.png, alt: ".")
         
-        Explore Combine operators and resources.
+        Train your own machine learning model.
         
         @TutorialReference(tutorial: "doc:Finding-Nearby-Devices")
-        @TutorialReference(tutorial: "doc:Connecting-To-A-MetaWear")
-        @TutorialReference(tutorial: "doc:Renaming-Devices")
+    }
+    
+    @Chapter(name: "Show Rep Counts by Machine Learning") {
+        @Image(source: streamyIcon.png, alt: ".")
+        
+        Train your own machine learning model.
+        
+        @TutorialReference(tutorial: "doc:Finding-Nearby-Devices")
     }
 }
