@@ -1,5 +1,7 @@
 # MetaWear Swift Combine SDK Beta
 
+For license and copyright, see LICENSE.md.
+
 For detailed documentation and quick start guides, we use 
 Xcode's native DocC format. Build it via Control + Shift + Cmd + D.
 

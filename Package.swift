@@ -26,6 +26,20 @@ let package = Package(
         .target(
             name: "MetaWearCpp",
             path: "Sources/MetaWearCpp",
+            exclude: [
+                "./bindings",
+                "./c-binding-generator",
+                "./src/metawear/generator",
+                "./config.mk",
+                "./cppdocs",
+                "./Doxyfile",
+                "./LICENSE.md",
+                "./Makefile",
+                "./metawear_src.tar",
+                "./project_version.mk",
+                "./README.md",
+                "./test",
+            ],
             publicHeadersPath: "./src",
             cxxSettings: [
                 .headerSearchPath("./src")
