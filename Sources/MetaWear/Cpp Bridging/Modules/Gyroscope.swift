@@ -181,8 +181,8 @@ public extension MWGyroscope {
         /// Raw Cpp constant
         public var int8Value: UInt8 {
             switch self {
-                case .bmi270: return MBL_MW_MODULE_GYRO_TYPE_BMI270
-                case .bmi160: return MBL_MW_MODULE_GYRO_TYPE_BMI160
+                case .bmi270: return UInt8(MBL_MW_MODULE_GYRO_TYPE_BMI270)
+                case .bmi160: return UInt8(MBL_MW_MODULE_GYRO_TYPE_BMI160)
             }
         }
 
@@ -198,8 +198,8 @@ public extension MWGyroscope {
         }
 
         public init?(board: OpaquePointer?) {
-            let accelerometer = mbl_mw_metawearboard_lookup_module(board, MWModules.ID.accelerometer.cppValue)
-            self.init(value: accelerometer)
+            let gyroscope = mbl_mw_metawearboard_lookup_module(board, MWModules.ID.gyroscope.cppValue)
+            self.init(value: gyroscope)
         }
     }
 

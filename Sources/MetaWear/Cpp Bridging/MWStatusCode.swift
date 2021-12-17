@@ -24,14 +24,14 @@ public enum MWStatusCode: String, CaseIterable {
 
     public var cppValue: Int {
         switch self {
-            case .ok: return STATUS_OK
-            case .errorUnsupportedProcessor: return STATUS_ERROR_UNSUPPORTED_PROCESSOR
-            case .errorTimeout: return STATUS_ERROR_TIMEOUT
-            case .errorEnableNotify: return STATUS_ERROR_ENABLE_NOTIFY
-            case .errorSerializationFormat: return STATUS_ERROR_SERIALIZATION_FORMAT
-            case .warningInvalidProcessorType: return STATUS_WARNING_INVALID_PROCESSOR_TYPE
-            case .warningInvalidResponse: return STATUS_WARNING_INVALID_RESPONSE
-            case .warningUnexpectedSensorData: return STATUS_WARNING_UNEXPECTED_SENSOR_DATA
+            case .ok: return MBL_MW_STATUS_OK
+            case .errorUnsupportedProcessor: return MBL_MW_STATUS_ERROR_UNSUPPORTED_PROCESSOR
+            case .errorTimeout: return MBL_MW_STATUS_ERROR_TIMEOUT
+            case .errorEnableNotify: return MBL_MW_STATUS_ERROR_ENABLE_NOTIFY
+            case .errorSerializationFormat: return MBL_MW_STATUS_ERROR_SERIALIZATION_FORMAT
+            case .warningInvalidProcessorType: return MBL_MW_STATUS_WARNING_INVALID_PROCESSOR_TYPE
+            case .warningInvalidResponse: return MBL_MW_STATUS_WARNING_INVALID_RESPONSE
+            case .warningUnexpectedSensorData: return MBL_MW_STATUS_WARNING_UNEXPECTED_SENSOR_DATA
         }
     }
 

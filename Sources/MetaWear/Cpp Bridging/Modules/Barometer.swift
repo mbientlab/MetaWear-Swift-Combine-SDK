@@ -321,8 +321,8 @@ public extension MWBarometer {
         /// Raw Cpp constant
         public var int8Value: UInt8 {
             switch self {
-                case .bmp280: return MetaWearCpp.MBL_MW_MODULE_BARO_TYPE_BMP280
-                case .bme280: return MetaWearCpp.MBL_MW_MODULE_BARO_TYPE_BME280
+                case .bmp280: return UInt8(MBL_MW_MODULE_BARO_TYPE_BMP280)
+                case .bme280: return UInt8(MBL_MW_MODULE_BARO_TYPE_BME280)
             }
         }
 

@@ -226,9 +226,9 @@ extension MWAccelerometer {
         /// Raw Cpp constant
         public var int8Value: UInt8 {
             switch self {
-                case .bmi160:   return MBL_MW_MODULE_ACC_TYPE_BMI160
-                case .bmi270:   return MBL_MW_MODULE_ACC_TYPE_BMI270
-                case .bma255:   return MBL_MW_MODULE_ACC_TYPE_BMA255
+                case .bmi160:   return UInt8(MBL_MW_MODULE_ACC_TYPE_BMI160)
+                case .bmi270:   return UInt8(MBL_MW_MODULE_ACC_TYPE_BMI270)
+                case .bma255:   return UInt8(MBL_MW_MODULE_ACC_TYPE_BMA255)
 //                case .mma8452q: return MBL_MW_MODULE_ACC_TYPE_MMA8452Q
             }
         }

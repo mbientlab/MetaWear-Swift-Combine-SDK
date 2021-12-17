@@ -60,7 +60,13 @@ class DeviceTests: XCTestCase {
             .illuminance : .illuminance,
             .magnetometer : .magnetometer,
             .thermometer : .thermometer([.onDie, .onboard, .external, .bmp280]),
-            .sensorFusion : .sensorFusion
+            .sensorFusion : .sensorFusion,
+            .mechanicalSwitch : .mechanicalSwitch,
+            .led : .led,
+            .gpio : .gpio,
+            .haptic : .haptic,
+            .iBeacon : .iBeacon,
+            .i2c : .i2c
         ]
 
         connectNearbyMetaWear(timeout: .download) { metawear, exp, subs in
@@ -83,7 +89,13 @@ class DeviceTests: XCTestCase {
             .gyroscope : .gyroscope(.bmi160),
             .magnetometer : .magnetometer,
             .thermometer : .thermometer([.onDie, .onboard, .external, .bmp280]),
-            .sensorFusion : .sensorFusion
+            .sensorFusion : .sensorFusion,
+            .mechanicalSwitch : .mechanicalSwitch,
+            .led : .led,
+            .gpio : .gpio,
+            .haptic : .haptic,
+            .iBeacon : .iBeacon,
+            .i2c : .i2c
         ]
 
         connectNearbyMetaWear(timeout: .download) { metawear, exp, subs in

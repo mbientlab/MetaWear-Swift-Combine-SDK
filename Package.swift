@@ -29,11 +29,11 @@ let package = Package(
             exclude: [
                 "./bindings",
                 "./c-binding-generator",
-                "./src/generator",
+                "./src/metawear/generator",
                 "./config.mk",
                 "./cppdocs",
                 "./Doxyfile",
-                "./LICSENSE.md",
+                "./LICENSE.md",
                 "./Makefile",
                 "./metawear_src.tar",
                 "./project_version.mk",
