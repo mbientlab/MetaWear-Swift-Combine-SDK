@@ -17,7 +17,7 @@ extension MWStreamable where Self == MWAccelerometer {
     ///   - rate: Sampling frequency (if nil, device uses last setting or a default)
     ///   - gravity: Range of detection
     /// - Returns: Accelerometer module configuration
-    public static func accelerometer(rate: Self.SampleFrequency? = nil, gravity: Self.GravityRange? = nil) -> Self {
+    public static func accelerometer(rate: Self.SampleFrequency, gravity: Self.GravityRange) -> Self {
         Self(rate: rate, gravity: gravity)
     }
 }
@@ -32,7 +32,7 @@ extension MWLoggable where Self == MWAccelerometer {
     ///   - rate: Sampling frequency (if nil, device uses last setting or a default)
     ///   - gravity: Range of detection
     /// - Returns: Accelerometer module configuration
-    public static func accelerometer(rate: Self.SampleFrequency? = nil, gravity: Self.GravityRange? = nil) -> Self {
+    public static func accelerometer(rate: Self.SampleFrequency, gravity: Self.GravityRange) -> Self {
         Self(rate: rate, gravity: gravity)
     }
 }
@@ -46,11 +46,10 @@ public struct MWAccelerometer: MWLoggable, MWStreamable {
     public typealias RawDataType = MblMwCartesianFloat
     public let signalName: MWNamedSignal = .acceleration
 
-    public var gravity: GravityRange? = nil
-    public var rate: SampleFrequency? = nil
-    public var needsConfiguration: Bool { gravity != nil || rate != nil }
+    public var gravity: GravityRange
+    public var rate: SampleFrequency
 
-    public init(rate: SampleFrequency?, gravity: GravityRange?) {
+    public init(rate: SampleFrequency, gravity: GravityRange) {
         self.gravity = gravity
         self.rate = rate
     }
@@ -66,10 +65,9 @@ public extension MWAccelerometer {
     }
 
     func streamConfigure(board: MWBoard) {
-        guard needsConfiguration else { return }
         guard let model = Model(board: board) else { return }
-        if let range = gravity { mbl_mw_acc_bosch_set_range(board, range.cppEnumValue) }
-        if let rate = rate { mbl_mw_acc_set_odr(board, rate.supported(by: model).cppOdrValue) }
+        mbl_mw_acc_bosch_set_range(board, gravity.cppEnumValue)
+        mbl_mw_acc_set_odr(board, rate.supported(by: model).cppOdrValue)
         mbl_mw_acc_bosch_write_acceleration_config(board)
     }
 

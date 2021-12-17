@@ -5,6 +5,8 @@ import Foundation
 
 public struct MWDataTable {
 
+    /// Maximum decimal places used for string formatting
+    public static var stringDecimalDigits = 4
     public let source: MWNamedSignal
     public let headerRow: [String]
     /// Outer: Row. Inner: Data columns, starting with epoch.
@@ -14,7 +16,7 @@ public struct MWDataTable {
     public func makeCSV(delimiter: String = ",") -> String {
         rows.reduce(into: makeRow(row: headerRow)) { csv, row in
             csv.append(makeRow(row: row))
-        }
+        }.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     internal func makeRow(row: [String], delimiter: String = ",") -> String {

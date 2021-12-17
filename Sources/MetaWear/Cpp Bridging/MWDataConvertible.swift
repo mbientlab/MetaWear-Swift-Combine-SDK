@@ -296,9 +296,8 @@ public extension SIMD4 where Scalar == Float {
 }
 
 public extension String {
-    static var metaWearStringDecimalDigits = 4
     init(mwDecimals: CVarArg) {
-        self.init(format: "%1.\(String.metaWearStringDecimalDigits)", mwDecimals)
+        self.init(format: "%1.\(MWDataTable.stringDecimalDigits)f", mwDecimals)
     }
 
     init(int: Double) {
