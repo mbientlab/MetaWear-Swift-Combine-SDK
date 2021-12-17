@@ -212,6 +212,13 @@ fileprivate enum MWModulesDTO1: Codable {
     case thermometer([Thermometer])
     case sensorFusion
 
+    case mechanicalSwitch
+    case led
+    case gpio
+    case iBeacon
+    case haptic
+    case i2c
+
     init(model: MWModules) {
         switch model {
             case .barometer(let model): self = .barometer(.init(model: model))
@@ -222,6 +229,13 @@ fileprivate enum MWModulesDTO1: Codable {
             case .illuminance: self = .illuminance
             case .thermometer(let models): self = .thermometer(models.map(MWModulesDTO1.Thermometer.init(model:)))
             case .sensorFusion: self = .sensorFusion
+
+            case .mechanicalSwitch: self = .mechanicalSwitch
+            case .led: self = .led
+            case .gpio: self = .gpio
+            case .iBeacon: self = .iBeacon
+            case .haptic: self = .haptic
+            case .i2c: self = .i2c
         }
     }
 
@@ -235,6 +249,13 @@ fileprivate enum MWModulesDTO1: Codable {
             case .illuminance: return .illuminance
             case .thermometer(let models): return .thermometer(models.map(\.model))
             case .sensorFusion: return .sensorFusion
+
+            case .mechanicalSwitch: return .mechanicalSwitch
+            case .led: return .led
+            case .gpio: return .gpio
+            case .iBeacon: return .iBeacon
+            case .haptic: return .haptic
+            case .i2c: return .i2c
         }
     }
 
