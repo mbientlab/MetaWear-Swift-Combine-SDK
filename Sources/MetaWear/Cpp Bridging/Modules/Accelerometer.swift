@@ -247,7 +247,7 @@ extension MWAccelerometer {
         }
 
         public init?(board: OpaquePointer?) {
-            let accelerometer = mbl_mw_metawearboard_lookup_module(board, MBL_MW_MODULE_ACCELEROMETER)
+            let accelerometer = mbl_mw_metawearboard_lookup_module(board, MWModules.ID.accelerometer.cppValue)
             self.init(value: accelerometer)
         }
     }

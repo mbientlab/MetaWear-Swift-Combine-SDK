@@ -338,7 +338,7 @@ public extension MWBarometer {
         }
 
         public init?(board: OpaquePointer?) {
-            let device = mbl_mw_metawearboard_lookup_module(board, MBL_MW_MODULE_BAROMETER)
+            let device = mbl_mw_metawearboard_lookup_module(board, MWModules.ID.barometer.cppValue)
             self.init(value: device)
         }
     }

@@ -146,7 +146,7 @@ internal extension MWSensorFusion {
 
     static func configure(board: MWBoard, mode: Mode) {
         var mode = mode
-        let hasMagnetometer = MWModules.lookup(in: board, MBL_MW_MODULE_MAGNETOMETER) != nil
+        let hasMagnetometer = MWModules.lookup(in: board, .magnetometer) != nil
         if mode == .ndof, hasMagnetometer == false { mode = .imuplus }
         mbl_mw_sensor_fusion_set_mode(board, mode.cppMode)
         mbl_mw_sensor_fusion_set_acc_range(board, MBL_MW_SENSOR_FUSION_ACC_RANGE_16G)

@@ -25,7 +25,7 @@ public extension MWLED {
 
     struct Off: MWCommand {
         public func command(board: MWBoard) {
-            guard MWModules.lookup(in: board, MBL_MW_MODULE_LED) != nil else { return }
+            guard MWModules.lookup(in: board, .led) != nil else { return }
             mbl_mw_led_stop_and_clear(board)
         }
     }
@@ -70,7 +70,7 @@ public extension MWLED {
         }
 
         public func command(board: MWBoard) {
-            guard MWModules.lookup(in: board, MBL_MW_MODULE_LED) != nil else { return }
+            guard MWModules.lookup(in: board, .led) != nil else { return }
             let scaledIntensity = CGFloat(intensity) * 31.0
             let rtime = duration / 2
             let ftime = duration / 2
