@@ -60,7 +60,7 @@ public class MWCloudLoader: MWKnownDevicesPersistence {
     @objc internal func cloudDidChange(_ note: Notification) {
         guard let changedKeys = note.userInfo?[NSUbiquitousKeyValueStoreChangedKeysKey] as? [NSString] else { return }
         if changedKeys.contains(.init(string: key)),
-           let data = cloud.value(forKey: key) as? Data {
+           let data = cloud.data(forKey: key){
             do {
                 let loadable = try MWMetadataSaveContainer.decode(loadable: data)
                 _loadable.send(loadable)
@@ -69,7 +69,7 @@ public class MWCloudLoader: MWKnownDevicesPersistence {
     }
 
     public func load() throws {
-        guard let data = local.value(forKey: key) as? Data else { return }
+        guard let data = local.data(forKey: key) else { return }
         let loadable = try MWMetadataSaveContainer.decode(loadable: data)
         _loadable.send(loadable)
     }
