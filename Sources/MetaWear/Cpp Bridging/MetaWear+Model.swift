@@ -7,7 +7,10 @@ public extension MetaWear {
 
     /// Marketed model name for this MetaWear.
     ///
-    enum Model: Int, Equatable, CaseIterable, IdentifiableByRawValue {
+    /// - Warning: Do not depend on `Codable` conformance for persistence.
+    ///            Use for in-memory drag and drop only.
+    ///
+    enum Model: Int, Equatable, CaseIterable, IdentifiableByRawValue, Codable {
         case unknown = -1
         case wearR, wearRG, wearRPRO, wearC, wearCPRO, environment, detector, health, tracker, motionR, motionRL, motionC, motionS
 

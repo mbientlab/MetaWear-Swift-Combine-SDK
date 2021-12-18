@@ -217,7 +217,10 @@ extension MWAccelerometer {
         }
     }
 
-    public enum Model: String, CaseIterable, IdentifiableByRawValue {
+    /// - Warning: Do not depend on `Codable` conformance for persistence.
+    ///            Use for in-memory drag and drop only.
+    ///
+    public enum Model: String, CaseIterable, IdentifiableByRawValue, Codable {
         case bmi160
         case bmi270
         case bma255
