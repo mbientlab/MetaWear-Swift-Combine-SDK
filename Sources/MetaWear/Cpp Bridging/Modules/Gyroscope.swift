@@ -174,7 +174,10 @@ public extension MWGyroscope {
         public var label: String { "\(rawValue) Hz" }
     }
 
-    enum Model: String, CaseIterable, IdentifiableByRawValue {
+    /// - Warning: Do not depend on `Codable` conformance for persistence.
+    ///            Use for in-memory drag and drop only.
+    ///
+    enum Model: String, CaseIterable, IdentifiableByRawValue, Codable {
         case bmi270
         case bmi160
 

@@ -314,7 +314,10 @@ public extension MWBarometer {
         }
     }
 
-    enum Model: String, CaseIterable, IdentifiableByRawValue {
+    /// - Warning: Do not depend on `Codable` conformance for persistence.
+    ///            Use for in-memory drag and drop only.
+    ///
+    enum Model: String, CaseIterable, IdentifiableByRawValue, Codable {
         case bmp280
         case bme280
 

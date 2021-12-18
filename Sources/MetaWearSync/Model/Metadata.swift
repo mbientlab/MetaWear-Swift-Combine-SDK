@@ -5,7 +5,12 @@ import MetaWear
 
 public extension MetaWear {
 
-    struct Metadata: Identifiable {
+    /// Basic semi-permanent identifying information for a MetaWear across Apple devices.
+    ///
+    /// - Warning: Do not depend on `Codable` conformance for persistence.
+    ///            Use for in-memory drag and drop only.
+    ///
+    struct Metadata: Identifiable, Codable {
         /// Identified by MAC address
         public var id: String { mac }
         public var mac: MACAddress

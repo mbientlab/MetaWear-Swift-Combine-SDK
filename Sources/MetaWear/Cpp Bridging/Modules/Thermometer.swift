@@ -114,7 +114,10 @@ public extension MWPollable where Self == MWThermometer {
 
 public extension MWThermometer {
 
-    enum Source: String, CaseIterable, IdentifiableByRawValue {
+    /// - Warning: Do not depend on `Codable` conformance for persistence.
+    ///            Use for in-memory drag and drop only.
+    ///
+    enum Source: String, CaseIterable, IdentifiableByRawValue, Codable {
         case onDie
         case onboard
         case external

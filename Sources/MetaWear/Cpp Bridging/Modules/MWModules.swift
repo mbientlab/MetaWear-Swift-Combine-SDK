@@ -5,7 +5,10 @@ import MetaWearCpp
 
 /// - Tip: Use the `id` property as a dictionary key that ignores associated values.
 ///
-public enum MWModules: Equatable, Identifiable {
+/// - Warning: Do not depend on `Codable` conformance for persistence.
+///            Use for in-memory drag and drop only.
+///
+public enum MWModules: Equatable, Identifiable, Codable {
 
     case accelerometer(MWAccelerometer.Model)
     case barometer(MWBarometer.Model)
@@ -97,7 +100,11 @@ public enum MWModules: Equatable, Identifiable {
     public static let NA = MBL_MW_MODULE_TYPE_NA
 
     /// Use for creating a dictionary keyed regardless of associated values.
-    public enum ID: String, Equatable, Hashable, IdentifiableByRawValue, CaseIterable {
+    ///
+    /// - Warning: Do not depend on `Codable` conformance for persistence.
+    ///            Use for in-memory drag and drop only.
+    ///
+    public enum ID: String, Equatable, Hashable, IdentifiableByRawValue, CaseIterable, Codable {
         case accelerometer
         case barometer
         case gyroscope
