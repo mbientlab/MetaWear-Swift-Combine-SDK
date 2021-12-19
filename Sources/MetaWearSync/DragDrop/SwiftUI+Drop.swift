@@ -1,8 +1,8 @@
 // Copyright 2021 MbientLab Inc. All rights reserved. See LICENSE.MD.
 
-import Foundation
 import UniformTypeIdentifiers
 import SwiftUI
+import MetaWear
 
 
 /// For lists of MetaWear devices that support grouping,
@@ -128,6 +128,35 @@ public extension DropInfo {
     }
 }
 
+public extension Array where Element == DraggableMetaWear.Item {
+
+    /// Extracts remembered devices, preserving order
+    func rememberedDevices(excluding: Set<MACAddress> = []) -> [(metadata: MetaWear.Metadata, localID: CBPeripheralIdentifier?)] {
+        reduce(into: [(metadata: MetaWear.Metadata, localID: CBPeripheralIdentifier?)](), { result, item in
+            guard case .remembered(meta: let meta, localID: let id) = item,
+                  excluding.contains(meta.mac) == false
+            else { return }
+            result.append((meta, id))
+        })
+    }
+
+    /// Extracts groups, preserving order
+    func groups() -> [MetaWear.Group] {
+        reduce(into: [MetaWear.Group](), { result, item in
+            guard case .group(let group) = item else { return }
+            result.append(group)
+        })
+    }
+
+    /// Extracts unknown devices, preserving order
+    func unknownDevices() -> [CBPeripheralIdentifier] {
+        reduce(into: [CBPeripheralIdentifier](), { result, item in
+            guard case .unknown(let id) = item else { return }
+            result.append(id)
+        })
+    }
+}
+
 // MARK: - SwiftUI Drop w/ Binding
 
 extension Array where Element == NSItemProvider {
@@ -155,4 +184,3 @@ extension Array where Element == NSItemProvider {
         return draggables.isEmpty ? nil : draggables
     }
 }
-
