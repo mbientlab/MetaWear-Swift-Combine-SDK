@@ -9,20 +9,20 @@ public struct MWMetadataSaveContainer: Codable {
     public var versionSentinel = 1
     public let data: Data
 
-    public init(metadata: [MetaWear.Metadata], encoder: JSONEncoder) throws {
-        let dto = metadata.map(MWMetadataDTO1.init)
+    public init(loadable: MWKnownDevicesLoadable, encoder: JSONEncoder = .init()) throws {
+        let dto = MWKnownDevicesLoadableDTO1(model: loadable)
         self.data = try encoder.encode(dto)
     }
 
-    static func encode(metadata: MWKnownDevicesLoadable) throws -> Data {
-        let encoder = JSONEncoder()
-        let container = MWKnownDevicesLoadableDTO1(model: metadata)
-        return try encoder.encode(container)
+    public init(data: Data, decoder: JSONDecoder = .init()) throws {
+        self = try decoder.decode(MWMetadataSaveContainer.self, from: data)
     }
 
-    static func decode(loadable: Data) throws -> MWKnownDevicesLoadable {
-        try JSONDecoder().decode(MWKnownDevicesLoadableDTO1.self, from: loadable).asModel()
+    public func load(_ decoder: JSONDecoder = .init()) throws -> MWKnownDevicesLoadable {
+        guard versionSentinel == 1 else { throw CocoaError(.coderValueNotFound) }
+        return try decoder.decode(MWKnownDevicesLoadableDTO1.self, from: data).asModel()
     }
+
 }
 
 fileprivate struct MWKnownDevicesLoadableDTO1: Codable {

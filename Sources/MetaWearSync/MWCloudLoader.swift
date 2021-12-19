@@ -21,6 +21,9 @@ public class MWCloudLoader: MWKnownDevicesPersistence {
     private let key = UserDefaults.MetaWear.Keys.syncedMetadata
     private let _loadable = PassthroughSubject<MWKnownDevicesLoadable, Never>()
 
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
+
     public init(local: UserDefaults = UserDefaults.MetaWear.suite,
                 cloud: NSUbiquitousKeyValueStore) {
         self.local = local
@@ -42,12 +45,13 @@ extension MWCloudLoader {
 
     public func load() throws {
         guard let data = local.data(forKey: key) else { return }
-        let loadable = try MWMetadataSaveContainer.decode(loadable: data)
+        let loadable = try MWMetadataSaveContainer(data: data, decoder: decoder).load()
         _loadable.send(loadable)
     }
 
     public func save(_ loadable: MWKnownDevicesLoadable) throws {
-        let data = try MWMetadataSaveContainer.encode(metadata: loadable)
+        let container = try MWMetadataSaveContainer(loadable: loadable, encoder: encoder)
+        let data = try encoder.encode(container)
         local.set(data, forKey: key)
         cloud.set(data, forKey: key)
     }
@@ -59,7 +63,7 @@ extension MWCloudLoader {
         if changedKeys.contains(.init(string: key)),
            let data = cloud.data(forKey: key){
             do {
-                let loadable = try MWMetadataSaveContainer.decode(loadable: data)
+                let loadable = try MWMetadataSaveContainer(data: data).load()
                 _loadable.send(loadable)
             } catch { NSLog("MetaWear Metadata Cloud Decoding Failed: \(error.localizedDescription)") }
         }
