@@ -5,22 +5,27 @@ import UniformTypeIdentifiers
 import SwiftUI
 
 
-/// Convenience for SwiftUI drag and drop support for grouped lists of MetaWear devices
+/// For lists of MetaWear devices that support grouping,
+/// this provides a default implementation of `DropDelegate`.
 ///
-public protocol MetaWearDropTargetVM: AnyObject, DropDelegate {
+public protocol MWDropTargetVM: AnyObject, DropDelegate {
 
-    /// Outcome of the proposed drop to reflect in the UI
+    /// Outcome of the proposed drop to reflect in your UI
     ///
     var dropOutcome: DraggableMetaWear.DropOutcome { get }
-
-    /// Called on the main queue after a drop exit (empty array) or
-    /// concurrently with validation (populated array).
-    ///
-    func updateDropOutcome(for drop: [DraggableMetaWear.Item])
 
     /// Background queue used with a DispatchGroup during drop decoding
     ///
     var dropQueue: DispatchQueue { get }
+
+    /// Called on the main queue in response to drop validation (likely with a populated array)
+    /// and after a drop exit (always with an empty array).
+    ///
+    func updateDropOutcome(for drop: [DraggableMetaWear.Item])
+
+    /// Called on the `dropQueue` for allowed, non-empty drops (i.e., `dropOutcome` != `noDrop`)
+    ///
+    func receiveDrop(_ drop: [DraggableMetaWear.Item], intent: DraggableMetaWear.DropOutcome)
 
 }
 
@@ -37,26 +42,10 @@ public extension DraggableMetaWear {
 
 // MARK: - SwiftUI Drop Delegate Convenience Implementation
 
-public extension MetaWearDropTargetVM {
+public extension MWDropTargetVM {
 
-    /// Create an `NSItemProvider` from the representation you provide (or an empty non-initiating container if you pass nil).
-    ///
-    func makeDraggableMetaWearProvider(_ item: DraggableMetaWear.Item?) -> NSItemProvider {
-        guard let item = item else { return .init() }
-        let draggable = DraggableMetaWear(item: item)
-        let provider = NSItemProvider()
-        provider.registerObject(draggable, visibility: .ownProcess)
-        provider.registerObject(NSString(string: draggable.plainText), visibility: .all)
-        provider.registerDataRepresentation(forTypeIdentifier: UTType.data.identifier, visibility: .all) { block in
-            draggable.loadData(
-                withTypeIdentifier: DraggableMetaWear.UTtype.identifier,
-                forItemProviderCompletionHandler: block
-            )
-        }
-        return provider
-    }
-
-    /// Asynchronously parse the drop and update the `dropOutcome` state
+    /// Once at drop kickoff, asynchronously parses the drop's contents
+    /// and calls `updateDropOutcome(for:)` to update state for this proposed drop
     ///
     func validateDrop(info: DropInfo) -> Bool {
         dropQueue.async { [weak self] in
@@ -68,15 +57,46 @@ public extension MetaWearDropTargetVM {
         return info.willLoadMetaWears()
     }
 
-    /// Update the `dropOutcome` state
+    /// Called repeatedly as the mouse moves, this checks the current `dropOutcome`
+    /// and updates the mouse cursor's icon representing this drop operation
+    ///
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        var op: DropOperation = .move
+        switch dropOutcome {
+            case .noDrop: op = .cancel
+            case .deleteFromGroup: op = .move
+            case .addToGroup: op = .copy
+            case .newGroup: op = .copy
+        }
+        return .init(operation: op)
+    }
+
+    /// Called upon mouse exit or drop completion. Send an
+    /// empty array to `updateDropOutcome(for:)` with the
+    /// expectation that `dropOutcome` will be set to `noDrop`.
     ///
     func dropExited(info: DropInfo) {
         self.updateDropOutcome(for: [])
     }
+
+    /// Called once when the user releases the mouse.
+    /// Accepts or reject the proposed drop based on current `.dropOutcome` state.
+    ///
+    func performDrop(info: DropInfo) -> Bool {
+        let cachedOutcome = dropOutcome
+        let allowDrop = cachedOutcome != .noDrop
+        if allowDrop {
+            dropQueue.async { [weak self] in
+                guard let metawears = info.loadMetaWears() else { return }
+                self?.receiveDrop(metawears.map(\.item), intent: cachedOutcome)
+            }
+        }
+        return allowDrop
+    }
+
 }
 
-
-// MARK: - SwiftUI Drop Delegate
+// MARK: - SwiftUI Drop Delegate Helpers
 
 public extension DropInfo {
 
