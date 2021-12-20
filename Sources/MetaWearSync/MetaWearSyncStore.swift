@@ -272,7 +272,10 @@ public extension MetaWearSyncStore {
     /// on a device subject to ``forget(locally:)`` this session
     ///
     func deviceIsCloudSynced(mac: MACAddress) -> Bool {
-        guard mac.isEmpty == false, mac.contains("Unkown") == false else { return false }
+        guard mac.isEmpty == false,
+                mac.contains("Unknown") == false
+        else { return false }
+
         var isSyncedInKnownDevices = false
         bleQueue.sync {
             isSyncedInKnownDevices = _knownDevices.value[mac] != nil

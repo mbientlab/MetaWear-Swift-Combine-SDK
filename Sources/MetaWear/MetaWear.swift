@@ -254,11 +254,12 @@ public class MetaWear: NSObject {
 
         super.init()
         self.peripheral.delegate = self
-        var connection = MblMwBtleConnection(context: bridge(obj: self),
-                                             write_gatt_char: _writeGattChar,
-                                             read_gatt_char: _readGattChar,
-                                             enable_notifications: _enableNotifications,
-                                             on_disconnect: _onDisconnect)
+        var connection = MblMwBtleConnection(
+            context: bridge(obj: self),
+            write_gatt_char: _writeGattChar,
+            read_gatt_char: _readGattChar,
+            enable_notifications: _enableNotifications,
+            on_disconnect: _onDisconnect)
         self.board = mbl_mw_metawearboard_create(&connection)
         mbl_mw_metawearboard_set_time_for_response(self.board, 0)
     }
