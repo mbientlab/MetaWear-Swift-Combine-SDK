@@ -4,15 +4,6 @@ import Foundation
 import MetaWear
 import Combine
 
-/// Contract for saving and loading MetaWears for the ``MetaWearSyncStore``.
-///
-public protocol MWKnownDevicesPersistence: AnyObject {
-    func load() throws
-    func save(_ loadable: MWKnownDevicesLoadable) throws
-    var metawears: AnyPublisher<MWKnownDevicesLoadable, Never> { get }
-}
-
-
 /// Container for metadata for MetaWear devices and groups.
 ///
 public struct MWKnownDevicesLoadable {
@@ -23,4 +14,10 @@ public struct MWKnownDevicesLoadable {
         self.groups = groups
         self.devices = devices
     }
+}
+
+/// Versioning container for persistence
+///
+extension MWKnownDevicesLoadable: VersionedContainerLoadable {
+   public typealias Container = MWKnownDevicesContainer
 }

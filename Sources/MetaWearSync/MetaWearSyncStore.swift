@@ -53,10 +53,15 @@ public class MetaWearSyncStore {
 
     /// Call `.load()` to asynchronously load persisted MetaWear metadata
     /// and enqueue a request for those devices once the MetaWearScanner is
-    ///  active. Be sure to connect to unknown devices through the store so
-    ///   they may be properly registered.
+    /// active. Be sure to connect to unknown devices through the store so
+    /// they may be properly registered.
     ///
-    public init(scanner: MetaWearScanner, loader: MWKnownDevicesPersistence) {
+    /// - Parameters:
+    ///   - scanner: A `MetaWearScanner` you retain (defaults to the singelton `.sharedRestore`)
+    ///   - loader: Object that asynchronously provides and saves device metadata (defaults to ``MetaWeariCloudSyncLoader`` ``MetaWeariCloudSyncLoader/sharedDefault``, which wraps metadata in a versioned container stored as Data in iCloud and local UserDefaults)
+    ///
+    public init(scanner: MetaWearScanner = .sharedRestore,
+                loader: MWLoader<MWKnownDevicesLoadable> = MetaWeariCloudSyncLoader.sharedDefault) {
         self.scanner = scanner
         self.loader = loader
         self._groups = .init([:])
@@ -74,13 +79,13 @@ public class MetaWearSyncStore {
             .shareOnMain()
 
         self.persistChanges(to: loader)
-        self.update(for: loader.metawears)
+        self.update(for: loader.loaded)
         self.update(for: scanner.discoveredDevicesPublisher)
     }
 
     // Internal details - see Helpers directory
     internal unowned let scanner:   MetaWearScanner
-    internal unowned let loader:    MWKnownDevicesPersistence
+    internal unowned let loader:    MWLoader<MWKnownDevicesLoadable>
     internal var subs             = Set<AnyCancellable>()
     internal let _groups:           Subject<[UUID : MetaWear.Group]>
     internal let _knownDevices:     Subject<[MACAddress : MetaWear.Metadata]>

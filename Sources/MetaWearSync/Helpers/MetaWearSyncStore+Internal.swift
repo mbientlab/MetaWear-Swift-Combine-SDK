@@ -99,7 +99,7 @@ internal extension MetaWearSyncStore {
 
     /// Mirrors changes to metadata for persistence.
     ///
-    func persistChanges(to loader: MWKnownDevicesPersistence) {
+    func persistChanges(to loader: MWLoader<MWKnownDevicesLoadable>) {
         Publishers.CombineLatest(_groups, _knownDevices)
         // Otherwise blanks or local will overwrite cloud immediately
             .dropFirst(1)
