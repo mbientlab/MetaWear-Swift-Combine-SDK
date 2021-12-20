@@ -14,6 +14,11 @@ public struct MWKnownDevicesLoadable {
         self.groups = groups
         self.devices = devices
     }
+
+    public init() {
+        self.groups = []
+        self.devices = []
+    }
 }
 
 /// Versioning container for persistence

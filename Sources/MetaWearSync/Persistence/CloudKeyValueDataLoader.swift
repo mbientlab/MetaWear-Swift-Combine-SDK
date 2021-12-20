@@ -3,7 +3,7 @@
 import Foundation
 import Combine
 
-public class MWCloudKeyValueDataLoader<Loadable: VersionedContainerLoadable>: MWLoader<Loadable> {
+open class MWCloudKeyValueDataLoader<Loadable: VersionedContainerLoadable>: MWLoader<Loadable> {
 
     private let _loaded = PassthroughSubject<Loadable,Never>()
 
@@ -39,7 +39,7 @@ public class MWCloudKeyValueDataLoader<Loadable: VersionedContainerLoadable>: MW
 
     public override func load() throws {
         let data = cloud.data(forKey: key) ?? local.data(forKey: key)
-        guard let data = data else { return }
+        guard let data = data, data.isEmpty == false else { return }
         let loadable = try Loadable.Container(data: data, decoder: decoder).load(decoder)
         _loaded.send(loadable)
     }

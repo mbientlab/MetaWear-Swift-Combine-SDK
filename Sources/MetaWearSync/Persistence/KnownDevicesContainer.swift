@@ -6,25 +6,29 @@ import MetaWear
 /// Versioning container to save and migrate MetaWear Metadata across SDK versions
 ///
 public struct MWKnownDevicesContainer: Codable, MWVersioningContainer {
+    fileprivate typealias DTO = MWKnownDevicesLoadableDTO1
     public typealias Loadable = MWKnownDevicesLoadable
     public var versionSentinel = 1
-    public let data: Data
+    public var data: Data = .init()
 
     public init(data: Data, decoder: JSONDecoder) throws {
+        guard data.isEmpty == false else { return }
         self = try decoder.decode(Self.self, from: data)
     }
 
     public func load(_ decoder: JSONDecoder) throws -> Loadable {
+        guard data.isEmpty == false else { return .init() }
         guard versionSentinel == 1 else { throw CocoaError(.coderValueNotFound) }
-        return try decoder.decode(MWKnownDevicesLoadableDTO1.self, from: data).asModel()
+        return try decoder.decode(DTO.self, from: data).asModel()
     }
 
     public static func encode(_ loadable: Loadable, _ encoder: JSONEncoder) throws -> Data {
-        Data()
+        let container = try Self.init(loadable: loadable, encoder: encoder)
+        return try encoder.encode(container)
     }
 
     private init(loadable: Loadable, encoder: JSONEncoder) throws {
-        let dto = MWKnownDevicesLoadableDTO1(model: loadable)
+        let dto = DTO(model: loadable)
         self.data = try encoder.encode(dto)
     }
 
