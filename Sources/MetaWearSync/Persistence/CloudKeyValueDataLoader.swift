@@ -38,8 +38,7 @@ open class MWCloudKeyValueDataLoader<Loadable: VersionedContainerLoadable>: MWLo
     }
 
     public override func load() throws {
-        let data = cloud.data(forKey: key) ?? local.data(forKey: key)
-        guard let data = data, data.isEmpty == false else { return }
+        let data = cloud.data(forKey: key) ?? local.data(forKey: key) ?? Data()
         let loadable = try Loadable.Container(data: data, decoder: decoder).load(decoder)
         _loaded.send(loadable)
     }
