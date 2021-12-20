@@ -1,13 +1,12 @@
 // Copyright 2021 MbientLab Inc. All rights reserved. See LICENSE.MD.
 
-import UniformTypeIdentifiers
 import SwiftUI
 import MetaWear
-
 
 /// For lists of MetaWear devices that support grouping,
 /// this provides a default implementation of `DropDelegate`.
 ///
+@available(iOS 13.4, macOS 11, *)
 public protocol MWDropTargetVM: AnyObject, DropDelegate {
 
     /// Outcome of the proposed drop to reflect in your UI
@@ -42,6 +41,7 @@ public extension DraggableMetaWear {
 
 // MARK: - SwiftUI Drop Delegate Convenience Implementation
 
+@available(iOS 13.4, macOS 11, *)
 public extension MWDropTargetVM {
 
     /// Once at drop kickoff, asynchronously parses the drop's contents
@@ -97,7 +97,7 @@ public extension MWDropTargetVM {
 }
 
 // MARK: - SwiftUI Drop Delegate Helpers
-
+@available(iOS 13.4, macOS 11, *)
 public extension DropInfo {
 
     func willLoadMetaWears() -> Bool {
@@ -171,7 +171,7 @@ extension Array where Element == NSItemProvider {
 
         forEach {
             group.enter()
-            $0.loadItem(forTypeIdentifier: UTType.draggableMetaWearItem.identifier, options: nil) { coding, error in
+            $0.loadItem(forTypeIdentifier: DraggableMetaWear.identifierString, options: nil) { coding, error in
                 do {
                     let data = coding as? Data ?? Data()
                     let item = try NSKeyedUnarchiver.unarchivedObject(ofClass: DraggableMetaWear.self, from: data)

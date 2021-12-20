@@ -3,26 +3,31 @@
 import Foundation
 import MetaWear
 
-// MARK: - Data
-
-public struct MWMetadataSaveContainer: Codable {
+/// Versioning container to save and migrate MetaWear Metadata across SDK versions
+///
+public struct MWKnownDevicesContainer: Codable, MWVersioningContainer {
+    public typealias Loadable = MWKnownDevicesLoadable
     public var versionSentinel = 1
     public let data: Data
 
-    public init(metadata: [MetaWear.Metadata], encoder: JSONEncoder) throws {
-        let dto = metadata.map(MWMetadataDTO1.init)
+    public init(data: Data, decoder: JSONDecoder) throws {
+        self = try decoder.decode(Self.self, from: data)
+    }
+
+    public func load(_ decoder: JSONDecoder) throws -> Loadable {
+        guard versionSentinel == 1 else { throw CocoaError(.coderValueNotFound) }
+        return try decoder.decode(MWKnownDevicesLoadableDTO1.self, from: data).asModel()
+    }
+
+    public static func encode(_ loadable: Loadable, _ encoder: JSONEncoder) throws -> Data {
+        Data()
+    }
+
+    private init(loadable: Loadable, encoder: JSONEncoder) throws {
+        let dto = MWKnownDevicesLoadableDTO1(model: loadable)
         self.data = try encoder.encode(dto)
     }
 
-    static func encode(metadata: MWKnownDevicesLoadable) throws -> Data {
-        let encoder = JSONEncoder()
-        let container = MWKnownDevicesLoadableDTO1(model: metadata)
-        return try encoder.encode(container)
-    }
-
-    static func decode(loadable: Data) throws -> MWKnownDevicesLoadable {
-        try JSONDecoder().decode(MWKnownDevicesLoadableDTO1.self, from: loadable).asModel()
-    }
 }
 
 fileprivate struct MWKnownDevicesLoadableDTO1: Codable {

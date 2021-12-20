@@ -1,7 +1,6 @@
 // Copyright 2021 MbientLab Inc. All rights reserved. See LICENSE.MD.
 
 import Foundation
-import UniformTypeIdentifiers
 import SwiftUI
 
 // MARK: - SwiftUI Item Provider
@@ -27,9 +26,9 @@ public extension NSItemProvider {
         registerObject(draggable, visibility: visibility)
         registerObject(NSString(string: draggable.plainText), visibility: plainTextVisibility)
 
-        registerDataRepresentation(forTypeIdentifier: UTType.data.identifier, visibility: plainTextVisibility) { block in
+        registerDataRepresentation(forTypeIdentifier: "public.data", visibility: plainTextVisibility) { block in
             draggable.loadData(
-                withTypeIdentifier: DraggableMetaWear.UTtype.identifier,
+                withTypeIdentifier: DraggableMetaWear.identifierString,
                 forItemProviderCompletionHandler: block
             )
         }

@@ -245,7 +245,7 @@ public extension MWSensorFusion {
         }
     }
 
-    enum OutputType: Int, CaseIterable, IdentifiableByRawValue {
+    enum OutputType: String, CaseIterable, IdentifiableByRawValue {
         case eulerAngles
         case gravity
         case linearAcceleration

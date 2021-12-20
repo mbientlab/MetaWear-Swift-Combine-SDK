@@ -6,15 +6,17 @@ import UniformTypeIdentifiers
 
 // MARK: - Draggable Types
 
+fileprivate let UTTypePlainText = "public.plain-text"
+
+@available(iOS 14, macOS 11, *)
 public extension UTType {
-    static let draggableMetaWearItem = UTType(exportedAs:DraggableMetaWear.identifierString, conformingTo: .plainText)
+    static let draggableMetaWearItem = UTType(exportedAs: DraggableMetaWear.identifierString, conformingTo: .data)
 }
 
 public extension DraggableMetaWear {
     static let identifierString = "com.mbientlabs.metawear.item"
-    static let UTtype = UTType.draggableMetaWearItem
-    static let writableTypeIdentifiersForItemProvider = [UTType.draggableMetaWearItem, .plainText].map(\.identifier)
-    static let readableTypeIdentifiersForItemProvider = [UTType.draggableMetaWearItem, .plainText].map(\.identifier)
+    static let writableTypeIdentifiersForItemProvider = [identifierString, UTTypePlainText]
+    static let readableTypeIdentifiersForItemProvider = [identifierString, UTTypePlainText]
 }
 
 extension DraggableMetaWear: NSItemProviderWriting {
@@ -22,9 +24,9 @@ extension DraggableMetaWear: NSItemProviderWriting {
     public func loadData(withTypeIdentifier typeIdentifier: String, forItemProviderCompletionHandler completionHandler: @escaping (Data?, Error?) -> Void) -> Progress? {
 
         switch typeIdentifier {
-            case Self.UTtype.identifier:
+            case DraggableMetaWear.identifierString:
                 completionHandler(try? NSKeyedArchiver.archivedData(withRootObject: self, requiringSecureCoding: true), nil)
-            case UTType.plainText.identifier:
+            case UTTypePlainText:
                 completionHandler(plainText.data(using: .utf8), nil)
             default: completionHandler(nil, CocoaError(.coderInvalidValue))
         }
@@ -47,7 +49,7 @@ extension DraggableMetaWear: NSItemProviderReading {
 #if os(macOS)
 import AppKit
 public extension DraggableMetaWear {
-    static let pasteboardType = NSPasteboard.PasteboardType(rawValue: UTtype.identifier)
+    static let pasteboardType = NSPasteboard.PasteboardType(rawValue: DraggableMetaWear.identifierString)
     static func readableTypes(for pasteboard: NSPasteboard) -> [NSPasteboard.PasteboardType] { [pasteboardType, .string] }
 }
 
