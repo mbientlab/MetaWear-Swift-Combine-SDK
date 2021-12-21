@@ -96,8 +96,9 @@ public extension MWNamedSignal {
             case .linearAcceleration: return .init(loggable: .sensorFusionLinearAcceleration(mode: .compass))
             case .magnetometer: return .init(loggable: .magnetometer(freq: .hz10))
             case .mechanicalButton: return .init(loggable: .mechanicalButton)
-            case .motion: return .init(loggable: .motionActivityClassification)
-            case .orientation: return .init(loggable: .orientation)  // Does orientation have any logging issues? Check MetaBase.
+            case .motion: fatalError("C++ library is being rewritten to support logging.")
+//                return .init(loggable: .motionActivityClassification)
+            case .orientation: return .init(loggable: .orientation)
             case .pressure: return .init(loggable: .relativePressure(standby: .ms10, iir: .off, oversampling: .standard))
             case .quaternion: return .init(loggable: .sensorFusionQuaternion(mode: .compass))
             case .steps: return .init(loggable: .stepDetector(sensitivity: .normal))

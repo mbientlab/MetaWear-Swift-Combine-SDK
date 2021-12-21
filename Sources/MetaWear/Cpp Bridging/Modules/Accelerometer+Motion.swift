@@ -13,11 +13,11 @@ extension MWStreamable where Self == MWMotion.Activity {
     public static var motionActivityClassification: Self { Self() }
 }
 
-extension MWLoggable where Self == MWMotion.Activity {
-    /// The BMI270 can detect simple user activities (unknown, still, walking, running)
-    /// and send an interrupt if those are changed, e.g. from walking to running.
-    public static var motionActivityClassification: Self { Self() }
-}
+//extension MWLoggable where Self == MWMotion.Activity {
+//    /// The BMI270 can detect simple user activities (unknown, still, walking, running)
+//    /// and send an interrupt if those are changed, e.g. from walking to running.
+//    public static var motionActivityClassification: Self { Self() }
+//}
 
 
 extension MWStreamable where Self == MWMotion.Significant {
@@ -27,12 +27,12 @@ extension MWStreamable where Self == MWMotion.Significant {
     public static var motionSignificant: Self { Self() }
 }
 
-extension MWLoggable where Self == MWMotion.Significant {
-    /// The BMI270 can detect motions including walking, biking, sitting in a moving car, coach or train, etc.
-    /// Situations that don't typically trigger include phone in pocket while stationary or
-    /// phone at rest on a table which is in normal office use.
-    public static var motionSignificant: Self { Self() }
-}
+//extension MWLoggable where Self == MWMotion.Significant {
+//    /// The BMI270 can detect motions including walking, biking, sitting in a moving car, coach or train, etc.
+//    /// Situations that don't typically trigger include phone in pocket while stationary or
+//    /// phone at rest on a table which is in normal office use.
+//    public static var motionSignificant: Self { Self() }
+//}
 
 
 extension MWStreamable where Self == MWMotion.AnyMotion {
@@ -40,10 +40,10 @@ extension MWStreamable where Self == MWMotion.AnyMotion {
     public static var motionAny: Self { Self() }
 }
 
-extension MWLoggable where Self == MWMotion.AnyMotion {
-    /// The BMI270 uses the slope between two acceleration signals to detect changes in motion.
-    public static var motionAny: Self { Self() }
-}
+//extension MWLoggable where Self == MWMotion.AnyMotion {
+//    /// The BMI270 uses the slope between two acceleration signals to detect changes in motion.
+//    public static var motionAny: Self { Self() }
+//}
 
 
 extension MWStreamable where Self == MWMotion.NoMotion {
@@ -51,10 +51,10 @@ extension MWStreamable where Self == MWMotion.NoMotion {
     public static var motionNone: Self { Self() }
 }
 
-extension MWLoggable where Self == MWMotion.NoMotion {
-    /// Detect when there is no motion for a certain amount of time.
-    public static var motionNone: Self { Self() }
-}
+//extension MWLoggable where Self == MWMotion.NoMotion {
+//    /// Detect when there is no motion for a certain amount of time.
+//    public static var motionNone: Self { Self() }
+//}
 
 
 // MARK: - Signals
