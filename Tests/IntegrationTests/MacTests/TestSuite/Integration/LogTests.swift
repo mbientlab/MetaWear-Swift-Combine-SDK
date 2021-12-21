@@ -212,11 +212,17 @@ extension XCTestCase {
         connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
             let pipline =
             metawear.publish()
+            // Assert there are no loggers active right now
                 ._assertLoggers([], metawear: metawear, file, line)
+            // Act
                 .log(sut)
+            // Assert there is now the logger intended
                 ._assertLoggers([sut.signalName], metawear: metawear, file, line)
+            // Ensure pipeline is idemmnopotent, passed as reference
                 .share()
+            // Let it log
                 .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
+            // Act
                 .downloadLog(sut)
 
             // Assert
@@ -224,11 +230,16 @@ extension XCTestCase {
                     _printProgress(percentComplete)
                     if percentComplete < 1 { XCTAssertTrue(data.isEmpty, file: file, line: line) }
                     guard percentComplete == 1.0 else { return }
+                    // Assert log obtains data
                     XCTAssertGreaterThan(data.endIndex, 0, file: file, line: line)
                 })
+
+            // Skip any updates before complete
+            // Assert no loggers after download completes
                 .drop(while: { $0.percentComplete < 1 })
                 ._assertLoggers([], metawear: metawear, file, line)
 
+            // Assert completes without error. Call .fulfill to end the test before the timeout period.
             if let message = expectFailure {
                 pipline._sinkExpectFailure(&subs, file, line, exp: exp, errorMessage: message)
             } else {
@@ -240,12 +251,18 @@ extension XCTestCase {
     func _testLog2<L1: MWLoggable, L2: MWLoggable>(_ sut1: L1, _ sut2: L2, file: StaticString = #file, line: UInt = #line) {
         connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
             metawear.publish()
+            // Assert there are no loggers active right now
                 ._assertLoggers([], metawear: metawear, file, line)
+            // Act
                 .log(sut1)
                 .log(sut2)
+            // Assert there is now the two loggers intended
                 ._assertLoggers([sut1.signalName, sut2.signalName], metawear: metawear, file, line)
+            // Ensure pipeline is idemmnopotent, passed as reference
                 .share()
+            // Let it log
                 .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
+            // Act
                 .downloadLogs()
 
             // Assert
@@ -253,12 +270,18 @@ extension XCTestCase {
                     _printProgress(percentComplete)
                     if percentComplete < 1 { XCTAssertTrue(tables.isEmpty, file: file, line: line) }
                     guard percentComplete == 1 else { return }
+                    // Assert both logs contain expected data, labeled for that logger
                     XCTAssertEqual(tables.endIndex, 2, file: file, line: line)
                     XCTAssertEqual(Set(tables.map(\.source)), Set([sut1.signalName, sut2.signalName]), file: file, line: line)
                     XCTAssertTrue(tables.allSatisfy({ $0.rows.isEmpty == false }), file: file, line: line)
                 })
+
+            // Skip any updates before complete
+            // Assert no loggers after download completes
                 .drop(while: { $0.percentComplete < 1 })
                 ._assertLoggers([], metawear: metawear, file, line)
+
+            // Assert completes without error. Call .fulfill to end the test before the timeout period.
                 ._sinkNoFailure(&subs, file, line, receiveValue: { _ in exp.fulfill() })
         }
     }

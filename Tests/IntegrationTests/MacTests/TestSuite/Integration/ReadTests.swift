@@ -48,14 +48,18 @@ extension XCTestCase {
         connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
             let sut = makeSUT(metawear)
             metawear
+            // Have a connected MetaWear, so publish right away (would finish with a Failure if not connected)
                 .publish()
+            // Act
                 .read(sut)
                 ._sinkNoFailure(&subs, receiveValue: { _, value in
+                    // Show data in console
                     if R.self == MWThermometer.self, let _sut = sut as? MWThermometer {
                         print("")
                         Swift.print(_sut.type.displayName)
                     }
                     Swift.print("Read", value)
+                    // Did receive data, so end test with success
                     exp.fulfill()
                 })
         }
@@ -67,6 +71,7 @@ extension XCTestCase {
             var suts = try makeSUTs(metawear)
 
             func test() {
+                // Check to see if more scenarios in the queue, if not end the test
                 guard let sut = suts.popLast() else {
                     sub?.cancel()
                     exp.fulfill()
@@ -74,12 +79,15 @@ extension XCTestCase {
                 }
                 sub = metawear
                     .publish()
+                // Act
                     .read(sut)
                     .sink { completion in
+                        // Assert no failure
                         guard case let .failure(error) = completion else { return }
                         XCTFail(error.localizedDescription)
                     } receiveValue: { _, value in
 
+                        // Show data in console
                         if R.self == MWThermometer.self, let _sut = sut as? MWThermometer {
                             Swift.print(_sut.type.displayName)
                         }
@@ -89,10 +97,11 @@ extension XCTestCase {
                         } else {
                             Swift.print("Read", value)
                         }
-
+                        // Did receive data, so move onto the next test scenario in the queue
                         test()
                     }
             }
+            // Kickoff the test scenario queue
             test()
         }
     }

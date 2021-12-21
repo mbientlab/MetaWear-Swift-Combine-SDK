@@ -182,7 +182,9 @@ extension XCTestCase {
             let sutCount = suts.count
 
             func test() {
+                // Reset streamed data point counter for new loop
                 dataCount = 0
+                // Get the next test scenario in the queue, otherwise end the test
                 if suts.endIndex != 0 { print(""); print("Starting #", sutCount - suts.count + 1) }
                 guard let sut = suts.popLast() else {
                     sub?.cancel()
@@ -191,7 +193,9 @@ extension XCTestCase {
                 }
                 sub = metawear
                     .publish()
+                // Act
                     .stream(sut)
+                // Assert no error, receives 5 data points as proof of streaming
                     .sink { completion in
                         guard case let .failure(error) = completion else { return }
                         XCTFail(error.localizedDescription)
@@ -206,6 +210,7 @@ extension XCTestCase {
                     }
 
             }
+            // Kickoff the test scenario queue
             test()
         }
     }
@@ -221,7 +226,9 @@ extension XCTestCase {
 
             sub = metawear
                 .publish()
+            // Act
                 .stream(sut)
+            // Assert no error, receives 5 data points as proof of streaming
                 .sink { completion in
                     guard case let .failure(error) = completion else { return }
                     XCTFail(error.localizedDescription)
@@ -245,14 +252,18 @@ extension XCTestCase {
             var sub: AnyCancellable? = nil
 
             func test() {
+                // Reset streamed data point counter for new loop
                 dataCount = 0
+                // Get the next test scenario in the queue, otherwise end the test
                 guard let mode = modes.popLast() else {
                     exp.fulfill()
                     return
                 }
                 sub = metawear
                     .publish()
+                // Act
                     .stream(sut(mode))
+                // Assert no error, receives 5 data points as proof of streaming
                     .sink { completion in
                         guard case let .failure(error) = completion else { return }
                         XCTFail(error.localizedDescription)
@@ -266,7 +277,7 @@ extension XCTestCase {
                         }
                     }
             }
-
+            // Kickoff the test scenario queue
             test()
         }
     }
