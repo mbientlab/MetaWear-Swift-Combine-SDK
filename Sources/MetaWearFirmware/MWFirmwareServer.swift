@@ -2,6 +2,7 @@
 
 import CoreBluetooth
 import Combine
+import MetaWear
 @_exported import NordicDFU
 import MetaWearCpp
 
@@ -430,4 +431,14 @@ internal extension MWFirmwareServer.Build {
             }
             .eraseToAnyPublisher()
     }
+}
+
+/// Sugar for Just with an Error output.
+func _Just<O>(_ output: O) -> AnyPublisher<O,Error> {
+    Just(output).setFailureType(to: Error.self).eraseToAnyPublisher()
+}
+
+func _Fail<Output>(_ error: MWError) -> AnyPublisher<Output,Error> {
+    Fail(outputType: Output.self, failure: error)
+        .eraseToAnyPublisher()
 }

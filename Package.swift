@@ -8,7 +8,8 @@ let package = Package(
     products: [
         .library(name: "MetaWear", targets: ["MetaWear"]),
         .library(name: "MetaWearCpp", targets: ["MetaWearCpp"]),
-        .library(name: "MetaWearSync", targets: ["MetaWearSync"])
+        .library(name: "MetaWearSync", targets: ["MetaWearSync"]),
+        .library(name: "MetaWearFirmware", targets: ["MetaWearFirmware"])
     ],
     dependencies: [
         .package(
@@ -49,6 +50,11 @@ let package = Package(
                 dependencies: ["MetaWear"],
                 path: "Sources/MetaWearSync"
                ),
+        .target(
+            name: "MetaWearFirmware",
+            dependencies: ["NordicDFU", "MetaWear", "MetaWearCpp"],
+            path: "Sources/MetaWearFirmware"
+        ),
         .testTarget(name: "MetaWearTests", dependencies: ["MetaWear", "MetaWearCpp"])
     ],
     cxxLanguageStandard: .cxx11

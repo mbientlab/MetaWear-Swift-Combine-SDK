@@ -6,6 +6,7 @@ This SDK abstracts `CoreBluetooth` and our MetaWear C/C++ API using concise `Com
 
 * `MetaWearSync`  —  track groups of MetaWears across Apple devices using iCloud key-value storage
 * `MetaWearCpp`  —  mix our C/C++ API with `Combine` publishers for additional flexibility
+* `MetaWearFirmware`   —  update firmware over Bluetooth
 
 ![MetaMotion S.](metamotion.png)
 
@@ -17,7 +18,7 @@ Beyond this guide, you can ramp up with an interactive <doc:/tutorials/MetaWear>
 #### 1. Entitlements
 For each target in your project, go to the **Signing & Capabilities** tab. For macOS, go to *App Sandbox* and check **Bluetooth**. For iOS, add *Background Modes* and check **Uses Bluetooth LE accessories**. 
 
-Optionally, for `MetaWearSync`, add *iCloud* and check **Key value storage**. If your plan to update MetaWear firmware in your app, for macOS in *App Sandbox* check **Outgoing Connections**.
+Optionally, for `MetaWearSync`, add *iCloud* and check **Key value storage**. If your plan to update MetaWear firmware in your app using `MetaWearFirmware`, for macOS in *App Sandbox* check **Outgoing Connections**.
 
 
 For all platforms, go to the **Info** tab and add and provide a message for:
@@ -193,7 +194,6 @@ Streaming data arrives in Swift types, such as `SIMD3<Float>`. Logs download in 
 - ``MWRestart``
 
 ### Utilities
-- ``MWFirmwareServer``
 - ``MWConsoleLogger``
 - ``MWConsoleLoggerDelegate``
 
