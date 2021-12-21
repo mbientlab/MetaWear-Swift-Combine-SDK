@@ -6,7 +6,7 @@ import MetaWear
 /// For lists of MetaWear devices that support grouping,
 /// this provides a default implementation of `DropDelegate`.
 ///
-@available(iOS 13.4, macOS 11, *)
+@available(iOS 14.0, macOS 11, *)
 public protocol MWDropTargetVM: AnyObject, DropDelegate {
 
     /// Outcome of the proposed drop to reflect in your UI
@@ -41,7 +41,7 @@ public extension DraggableMetaWear {
 
 // MARK: - SwiftUI Drop Delegate Convenience Implementation
 
-@available(iOS 13.4, macOS 11, *)
+@available(iOS 14.0, macOS 11, *)
 public extension MWDropTargetVM {
 
     /// Once at drop kickoff, asynchronously parses the drop's contents
@@ -97,17 +97,26 @@ public extension MWDropTargetVM {
 }
 
 // MARK: - SwiftUI Drop Delegate Helpers
-@available(iOS 13.4, macOS 11, *)
+@available(iOS 14.0, macOS 11, *)
 public extension DropInfo {
 
     func willLoadMetaWears() -> Bool {
-        hasItemsConforming(to: [DraggableMetaWear.pasteboardType.rawValue])
+#if os(macOS)
+        let type = DraggableMetaWear.pasteboardType.rawValue
+#else
+        let type = DraggableMetaWear.identifierString
+#endif
+        return hasItemsConforming(to: [type])
     }
 
     /// Call on a background queue!
     ///
     func loadMetaWears() -> [DraggableMetaWear]? {
+#if os(macOS)
         let type = DraggableMetaWear.pasteboardType.rawValue
+#else
+        let type = DraggableMetaWear.identifierString
+#endif
         guard hasItemsConforming(to: [type]) else { return nil }
         let providers = itemProviders(for: [type])
         let group = DispatchGroup()

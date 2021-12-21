@@ -79,7 +79,7 @@ private extension DraggableMetaWear {
 #if canImport(UniformTypeIdentifiers)
 import UniformTypeIdentifiers
 
-@available(iOS 13.4, macOS 11, *)
+@available(iOS 14.0, macOS 11, *)
 public extension UTType {
     static let draggableMetaWear = UTType(exportedAs: DraggableMetaWear.identifierString, conformingTo: .data)
 }
