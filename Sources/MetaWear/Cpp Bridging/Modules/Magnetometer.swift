@@ -22,7 +22,11 @@ public struct MWMagnetometer: MWStreamable, MWLoggable {
 public extension MWMagnetometer {
 
     func streamSignal(board: MWBoard) throws -> MWDataSignal? {
-        mbl_mw_mag_bmm150_get_b_field_data_signal(board)
+        mbl_mw_mag_bmm150_stop(board)
+        Thread.sleep(forTimeInterval: TimeInterval(0.2))
+        // The workaround above wakes the slow-to-boot magnetometer,
+        // ensuring it functions as expected on a cold boot.
+        return mbl_mw_mag_bmm150_get_b_field_data_signal(board)
     }
 
     func streamConfigure(board: MWBoard) {
