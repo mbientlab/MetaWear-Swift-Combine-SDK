@@ -25,7 +25,10 @@ Epoch,X,Y,Z
             (date, SIMD3<Float>(-0.044006348, 0.0045776367, 1.0289917)),
             (date, SIMD3<Float>(-0.044799805, 0.0065307617, 1.029419)),
         ]
-        let sut = MWDataTable(streamed: streamableData, .accelerometer(rate: .hz100, gravity: .g16))
+        let sut = MWDataTable(streamed: streamableData,
+                              .accelerometer(rate: .hz100, gravity: .g16),
+                              startDate: date
+        )
         let result = sut.makeCSV()
 
         XCTAssertEqual(exp.count, result.count)

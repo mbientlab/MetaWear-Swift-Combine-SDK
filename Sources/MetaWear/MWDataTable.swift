@@ -23,21 +23,27 @@ public struct MWDataTable {
         row.joined(separator: delimiter).appending("\n")
     }
 
-    public init(download: MWData.LogDownload) {
+    public init(download: MWData.LogDownload, startDate: Date) {
         self.source = download.logger
         let utilities = download.logger.downloadUtilities
         self.headerRow = utilities.columnHeadings
         self.rows = utilities.convertRawDataToCSVColumns(download.data)
     }
 
-    public init<S: MWStreamable>(streamed: [(time: Date, value: S.DataType)], _ streamable: S) {
+    public init<S: MWStreamable>(streamed: [(time: Date, value: S.DataType)],
+                                 _ streamable: S,
+                                 startDate: Date
+    ) {
         self.source = streamable.signalName
         let utilties = source.downloadUtilities
         self.headerRow = utilties.columnHeadings
         self.rows = streamed.map(streamable.asColumns)
     }
 
-    public init<P: MWPollable>(streamed: [(time: Date, value: P.DataType)], _ streamable: P) {
+    public init<P: MWPollable>(streamed: [(time: Date, value: P.DataType)],
+                               _ streamable: P,
+                               startDate: Date
+    ) {
         self.source = streamable.signalName
         let utilties = source.downloadUtilities
         self.headerRow = utilties.columnHeadings
