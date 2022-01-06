@@ -10,8 +10,15 @@ import Foundation
 /// a callback.
 ///
 public struct MWData {
+
+    /// MetaWears "tick" to track time, but lack any sort of calendar. This is a directly translated "tick" date into the local time.
+    ///
     public let timestamp: Date
+
+    /// Raw data of the type specified in ``typeId``.
     let data: Array<UInt8>
+
+    /// Raw data type for the bytes in the ``data`` array.
     let typeId: MblMwDataTypeId
 
     public func valueAs<T>() -> T {
@@ -40,16 +47,20 @@ public extension MWData {
 // MARK: - Move from C++
 
 extension MblMwData {
+
     public func copy() -> MWData {
         let arrayPtr = value.bindMemory(to: UInt8.self, capacity: Int(length))
         return MWData(timestamp: timestamp,
                       data: .init(UnsafeBufferPointer(start: arrayPtr, count: Int(length))),
                       typeId: type_id)
     }
+
+    /// Directly translates the `epoch` value into a calendar date.
+    ///
     public var timestamp: Date {
         let date = Date(timeIntervalSince1970: Double(epoch) / 1000.0)
-        let milliseconds = epoch%1000
-        return Calendar.current.date(byAdding: .nanosecond, value: Int(milliseconds), to: date)!
+        let nanosecondsRemainder = Int(epoch % 1000)
+        return Calendar.current.date(byAdding: .nanosecond, value: nanosecondsRemainder, to: date)!
     }
 
     public func valueAs<T>() -> T {

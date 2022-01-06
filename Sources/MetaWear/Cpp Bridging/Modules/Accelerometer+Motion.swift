@@ -183,7 +183,7 @@ public extension _BoschMotion {
     }
 
     func asColumns(_ datum: Timestamped<Bool>) -> [String] {
-        [datum.time.metaWearCSVDate, datum.value ? "Detected" : "–"]
+        [datum.time.metaWearEpochMS, datum.value ? "Detected" : "–"]
     }
 
     func configureAccelerometer(_ board: MWBoard) {
@@ -273,7 +273,7 @@ extension MWMotion.Activity {
 
         public init(raw: MblMwBoschAnyMotion) {
             self.motionSlopeWasNegative = raw.sign == 0
-#warning("Should this be a Set rather than exclusive?")
+#warning("Change to set")
             if raw.x_axis_active != 0 { self.axisTriggering = .x }
             else if raw.y_axis_active != 0 { self.axisTriggering = .y }
             else if raw.z_axis_active != 0 { self.axisTriggering = .z }

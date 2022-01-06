@@ -11,7 +11,7 @@ class LogTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        TestDevices.useOnly(.metamotionS)
+//        TestDevices.useOnly(.metamotionS)
     }
 
     // MARK: - Single
@@ -50,25 +50,26 @@ class LogTests: XCTestCase {
         _testLog( .mechanicalButton )
     }
 
-    /// Remember to move
-    func test_LogThenDownload_Motion_ActivityClassification() {
-        _testLog( .motionActivityClassification )
-    }
-
-    /// Remember to move
-    func test_LogThenDownload_Motion_Any() {
-        _testLog( .motionAny )
-    }
-
-    /// Remember to move
-    func test_LogThenDownload_Motion_Significant() {
-        _testLog( .motionSignificant )
-    }
-
-    /// Remember to NOT move
-    func test_LogThenDownload_Motion_None() {
-        _testLog( .motionNone )
-    }
+    /// Disabled until C++ library support complete
+//    /// Remember to move
+//    func test_LogThenDownload_Motion_ActivityClassification() {
+//        _testLog( .motionActivityClassification )
+//    }
+//
+//    /// Remember to move
+//    func test_LogThenDownload_Motion_Any() {
+//        _testLog( .motionAny )
+//    }
+//
+//    /// Remember to move
+//    func test_LogThenDownload_Motion_Significant() {
+//        _testLog( .motionSignificant )
+//    }
+//
+//    /// Remember to NOT move
+//    func test_LogThenDownload_Motion_None() {
+//        _testLog( .motionNone )
+//    }
 
     func test_LogThenDownload_Orientation() {
         TestDevices.useOnly(.metamotionRL)
@@ -210,6 +211,9 @@ extension XCTestCase {
 
     func _testLog<L: MWLoggable>(_ sut: L, file: StaticString = #file, line: UInt = #line, expectFailure: String? = nil) {
         connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
+            let start = Date()
+            print("-> Start @", start.timeIntervalSince1970 - 1641432034, start.ISO8601Format())
+
             let pipline =
             metawear.publish()
             // Assert there are no loggers active right now
@@ -221,7 +225,7 @@ extension XCTestCase {
             // Ensure pipeline is idemmnopotent, passed as reference
                 .share()
             // Let it log
-                .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
+                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
             // Act
                 .downloadLog(sut)
 
@@ -243,13 +247,36 @@ extension XCTestCase {
             if let message = expectFailure {
                 pipline._sinkExpectFailure(&subs, file, line, exp: exp, errorMessage: message)
             } else {
-                pipline._sinkNoFailure(&subs, file, line, finished: { exp.fulfill() }, receiveValue: { _ in print(sut.signalName); exp.fulfill() })
+                pipline._sinkNoFailure(&subs, file, line, finished: { exp.fulfill() }, receiveValue: { output in
+
+
+                    let end = Date()
+                    let firstTime = output.data.first!.time
+                    let lastTime = output.data.last!.time
+
+                    print("-> First @", firstTime.timeIntervalSince1970, firstTime, firstTime.metaWearEpochMS, firstTime.debugDescription, firstTime.ISO8601Format(), "elapsed",
+                          start.distance(to: firstTime)
+                    )
+
+                    print("-> Last  @", lastTime.timeIntervalSince1970 - 1641432034, lastTime.ISO8601Format(), "elapsed",
+                          start.distance(to: lastTime)
+                    )
+
+                    print("-> End   @", end.timeIntervalSince1970 - 1641432034, end.ISO8601Format(), "elapsed",
+                          start.distance(to: end))
+
+                    print("-> Total @", start.distance(to: lastTime) - start.distance(to: firstTime))
+
+                    print(sut.signalName); exp.fulfill()
+
+                })
             }
         }
     }
 
     func _testLog2<L1: MWLoggable, L2: MWLoggable>(_ sut1: L1, _ sut2: L2, file: StaticString = #file, line: UInt = #line) {
         connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
+            let date = Date()
             metawear.publish()
             // Assert there are no loggers active right now
                 ._assertLoggers([], metawear: metawear, file, line)
@@ -263,13 +290,24 @@ extension XCTestCase {
             // Let it log
                 .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
             // Act
-                .downloadLogs()
+                .downloadLogs(startDate: date)
 
             // Assert
                 .handleEvents(receiveOutput: { tables, percentComplete in
                     _printProgress(percentComplete)
                     if percentComplete < 1 { XCTAssertTrue(tables.isEmpty, file: file, line: line) }
                     guard percentComplete == 1 else { return }
+
+                    // Assert all dates are unique
+                    tables.forEach { table in
+                        let epochs = Set(table.rows.compactMap(\.first))
+                        let dates = Set(table.rows.map { $0[1] })
+                        let elapses = Set(table.rows.map { $0[2] })
+                        XCTAssertTrue(epochs.count == table.rows.endIndex, table.source.name)
+                        XCTAssertTrue(dates.count == table.rows.endIndex, table.source.name)
+                        XCTAssertTrue(elapses.count == table.rows.endIndex, table.source.name)
+                    }
+
                     // Assert both logs contain expected data, labeled for that logger
                     XCTAssertEqual(tables.endIndex, 2, file: file, line: line)
                     XCTAssertEqual(Set(tables.map(\.source)), Set([sut1.signalName, sut2.signalName]), file: file, line: line)

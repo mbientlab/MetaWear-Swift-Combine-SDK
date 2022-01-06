@@ -68,7 +68,7 @@ DataType    == MWAccelerometer.Orientation {
     }
 
     func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        [datum.time.metaWearCSVDate, datum.value.rawValue]
+        [datum.time.metaWearEpochMS, datum.value.rawValue]
     }
 
     var columnHeadings: [String] { ["Epoch", "Orientation"] }
@@ -83,7 +83,7 @@ DataType    == SIMD3<Float> {
     }
 
     func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        return [datum.time.metaWearCSVDate] + datum.value.stringify()
+        return [datum.time.metaWearEpochMS] + datum.value.stringify()
     }
 
     var columnHeadings: [String] { ["Epoch", "X", "Y", "Z"] }
@@ -98,7 +98,7 @@ DataType    == SIMD4<Float> {
     }
 
     func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        return [datum.time.metaWearCSVDate] + datum.value.stringify()
+        return [datum.time.metaWearEpochMS] + datum.value.stringify()
     }
 
     var columnHeadings: [String] { ["Epoch", "X", "Y", "Z", "W"] }
@@ -113,7 +113,7 @@ DataType    == SIMD3<Float> {
     }
 
     func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        return [datum.time.metaWearCSVDate] + datum.value.stringify()
+        return [datum.time.metaWearEpochMS] + datum.value.stringify()
     }
 
     var columnHeadings: [String] { ["Epoch", "X", "Y", "Z"] }
@@ -128,7 +128,7 @@ DataType    == MWMotion.Activity.AnyMotionTrigger {
     }
 
     func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        return [datum.time.metaWearCSVDate] + datum.value.stringify()
+        return [datum.time.metaWearEpochMS] + datum.value.stringify()
     }
 }
 
@@ -141,7 +141,7 @@ DataType    == MWMotion.Activity.Classification {
     }
 
     func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        [datum.time.metaWearCSVDate, datum.value.label]
+        [datum.time.metaWearEpochMS, datum.value.label]
     }
 }
 
@@ -154,7 +154,7 @@ DataType    == MWChargingStatus.State {
     }
 
     func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        [datum.time.metaWearCSVDate, datum.value.label]
+        [datum.time.metaWearEpochMS, datum.value.label]
     }
 }
 
@@ -167,7 +167,7 @@ DataType    == MWMechanicalButton.State {
     }
 
     func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        [datum.time.metaWearCSVDate, datum.value.label]
+        [datum.time.metaWearEpochMS, datum.value.label]
     }
 }
 
@@ -180,7 +180,7 @@ DataType    == (time: Date, resetID: UInt8) {
     }
 
     func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        [datum.time.metaWearCSVDate, String(datum.value.time.timeIntervalSinceReferenceDate)]
+        [datum.time.metaWearEpochMS, String(datum.value.time.timeIntervalSinceReferenceDate)]
     }
 }
 
@@ -224,37 +224,37 @@ DataType    == Int {
 
 public extension MWDataConvertible where DataType == Int {
     func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        [datum.time.metaWearCSVDate, String(datum.value)]
+        [datum.time.metaWearEpochMS, String(datum.value)]
     }
 }
 
 public extension MWDataConvertible where DataType == Int32 {
     func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        [datum.time.metaWearCSVDate, String(datum.value)]
+        [datum.time.metaWearEpochMS, String(datum.value)]
     }
 }
 
 public extension MWDataConvertible where DataType == Int8 {
     func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        [datum.time.metaWearCSVDate, String(datum.value)]
+        [datum.time.metaWearEpochMS, String(datum.value)]
     }
 }
 
 public extension MWDataConvertible where DataType == Double {
     func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        [datum.time.metaWearCSVDate, String(datum.value)]
+        [datum.time.metaWearEpochMS, String(datum.value)]
     }
 }
 
 public extension MWDataConvertible where DataType == Float {
     func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        [datum.time.metaWearCSVDate, String(datum.value)]
+        [datum.time.metaWearEpochMS, String(datum.value)]
     }
 }
 
 public extension MWDataConvertible where DataType == String {
     func asColumns(_ datum: Timestamped<DataType>) -> [String] {
-        [datum.time.metaWearCSVDate, datum.value]
+        [datum.time.metaWearEpochMS, datum.value]
     }
 }
 
@@ -310,6 +310,10 @@ public extension String {
 }
 
 public extension Date {
-    /// Time interval since 1970
-    var metaWearCSVDate: String { String(mwDecimals: timeIntervalSince1970) }
+
+    /// Time interval since 1970 (ms)
+    ///
+    var metaWearEpochMS: String {
+        String(format: "%1.3f", timeIntervalSince1970)
+    }
 }

@@ -111,11 +111,14 @@ public extension Publisher where Output == MetaWear {
 
     /// Downloads all logs into a `String` format that can convert into a .csv file.
     /// You can also get an `MWData` array output using `_logDownloadData()`.
+    ///
+    /// - Parameter startDate: Time that the logging session started. Used to calculate elapsed time in an output CSV files, potentially synchronized across multiple devices. (A MetaWear ticks time, but lacks a calendar-aware clock.)
+    ///
     /// - Returns: Publishes percent complete. At 100% complete, publishes all logged data.
     ///
-    func downloadLogs() -> MWPublisher<Download<[MWDataTable]>> {
+    func downloadLogs(startDate: Date) -> MWPublisher<Download<[MWDataTable]>> {
         _logDownloadData()
-            .map { ($0.map(MWDataTable.init), $1) } 
+            .map { ($0.map { MWDataTable(download: $0, startDate: startDate) }, $1) }
             .eraseToAnyPublisher()
     }
 
@@ -227,12 +230,12 @@ public extension Publisher where Output == (MetaWear, MWLoggerSignal) {
     ///   - loggerCleanup: Closure to perform to stop the signal being logged
     /// - Returns: Publishes percentage complete, with an empty array of data until 100% (1.0) downloaded
     ///
-    func download<L: MWLoggable>(_ loggable: L)
+    func download<L: MWLoggable>(_ loggable: L, startDate: Date)
     -> MWPublisher<Download<MWDataTable>> {
 
         download(loggable.signalName, loggerCleanup: loggable.loggerCleanup)
             .map { data, percentage -> Download<MWDataTable> in
-                (.init(download: data), percentage)
+                (.init(download: data, startDate: startDate), percentage)
             }
             .eraseToAnyPublisher()
     }
