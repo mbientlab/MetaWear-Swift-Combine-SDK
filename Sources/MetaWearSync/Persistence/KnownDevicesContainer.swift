@@ -35,14 +35,18 @@ public struct MWKnownDevicesContainer: Codable, MWVersioningContainer {
 }
 
 fileprivate struct MWKnownDevicesLoadableDTO1: Codable {
-    var groups: [MWGroupDTO1]
     var devices: [MWMetadataDTO1]
+    var groups: [MWGroupDTO1]
+    var groupsRecovery: [MWGroupDTO1]
     init(model: MWKnownDevicesLoadable) {
         self.groups = model.groups.map(MWGroupDTO1.init(model:))
         self.devices = model.devices.map(MWMetadataDTO1.init(model:))
+        self.groupsRecovery = model.groupsRecovery.map(MWGroupDTO1.init(model:))
     }
     func asModel() -> MWKnownDevicesLoadable {
-        .init(groups: groups.map(\.model), devices: devices.map(\.appModel))
+        .init(devices: devices.map(\.appModel),
+              groups: groups.map(\.model),
+              groupsRecovery: groupsRecovery.map(\.model))
     }
 }
 

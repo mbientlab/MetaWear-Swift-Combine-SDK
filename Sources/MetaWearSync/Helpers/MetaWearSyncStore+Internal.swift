@@ -55,7 +55,7 @@ internal extension MetaWearSyncStore {
             .store(in: &subs)
     }
 
-    /// Updates the `_knownDevices`, `_groups` and `_unknownDevices` maps to reflect
+    /// Updates the `_knownDevices`,  `_unknownDevices`, `_groups`,  and `_groupsRecoverable` maps to reflect
     /// persisted state from a local or cloud source.
     ///
     func update(for loader: AnyPublisher<MWKnownDevicesLoadable, Never>) {
@@ -66,6 +66,7 @@ internal extension MetaWearSyncStore {
                 /// Adopt the latest data wholesale (written only by loader + user interaction)
                 self._groups.value = loaded.groups.dictionary()
                 self._knownDevices.value = loaded.devices.dictionary()
+                self._groupsRecoverable.value  = loaded.groupsRecovery.dictionary()
 
                 /// At this time, `_unknownDevices` may be populated by the `MetaWearScanner` by:
                 /// (a) discovery
@@ -100,10 +101,16 @@ internal extension MetaWearSyncStore {
     /// Mirrors changes to metadata for persistence.
     ///
     func persistChanges(to loader: MWLoader<MWKnownDevicesLoadable>) {
-        Publishers.CombineLatest(_groups, _knownDevices)
+        Publishers.CombineLatest3(_groups, _knownDevices, _groupsRecoverable)
         // Otherwise blanks or local will overwrite cloud immediately
             .dropFirst(1)
-            .map { groups, known in MWKnownDevicesLoadable(groups: Array(groups.values), devices: Array(known.values)) }
+            .map { groups, known, groupsRecoverable -> MWKnownDevicesLoadable in
+                MWKnownDevicesLoadable(
+                    devices: Array(known.values),
+                    groups: Array(groups.values),
+                    groupsRecovery: Array(groupsRecoverable.values)
+                )
+            }
             .sink { _ in } receiveValue: { [weak self] in
                 do {
                     try self?.loader.save($0)

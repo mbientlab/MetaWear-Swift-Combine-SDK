@@ -20,14 +20,12 @@ public class MetaWearSyncStore {
     /// If using iCloud persistence, this will include devices
     /// that this local host might not have encountered. Not sorted.
     ///
-    /// Populated by `MWKnownDevicesPersistence`. Reduced by `forget`.
+    /// Reduced by ``forget(globally:)`` and ``forget(locally:)``.
     ///
     public let knownDevices:     AnyPublisher<[MetaWear.Metadata],Never>
 
     /// Groupings of known devices. A device can be
     /// a member of multiple groups. Not sorted.
-    ///
-    /// Populated by `MWKnownDevicesPersistence`.
     ///
     public let groups:           AnyPublisher<[MetaWear.Group],Never>
 
@@ -35,8 +33,9 @@ public class MetaWearSyncStore {
     ///  local host has not connected to previously. The UUIDs
     ///  are the local CBPeripheral identifier. Not sorted.
     ///
-    /// Populated by `MetaWearScanner` after checking against `knownDevices`.
-    /// Reduced by using `remember` and expanded by using `forget`.
+    /// Populated by ``MetaWearScanner`` after checking against ``knownDevices``.
+    /// Reduced by using ``connectAndRemember(unknown:didAdd:)`` and
+    /// expanded by using ``forget(globally:)`` and ``forget(locally:)``.
     ///
     public let unknownDevices:   AnyPublisher<Set<UUID>,Never>
 
@@ -45,7 +44,13 @@ public class MetaWearSyncStore {
     /// devices that this local host might not have
     /// encountered. Not sorted.
     ///
-    public let ungroupedDevices: AnyPublisher<[MetaWear.Metadata],Never>
+    public let ungroupedDevices:  AnyPublisher<[MetaWear.Metadata],Never>
+
+    /// Deleted groups are stored here. This allows recovery or labeling of data linked to a past
+    /// group ID. When creating a new group with MAC addresses identical to a group stored here,
+    /// this storer will recover the old group.
+    ///
+    public let groupsRecoverable: AnyPublisher<[MetaWear.Group],Never>
 
     /// Queue used by scanner and MetaWears for all Bluetooth operations
     ///
@@ -57,7 +62,7 @@ public class MetaWearSyncStore {
     /// they may be properly registered.
     ///
     /// - Parameters:
-    ///   - scanner: A `MetaWearScanner` you retain (defaults to the singelton `.sharedRestore`)
+    ///   - scanner: A ``MetaWearScanner`` you retain (defaults to the singleton ``.sharedRestore``)
     ///   - loader: Object that asynchronously provides and saves device metadata (defaults to ``MetaWeariCloudSyncLoader`` ``MetaWeariCloudSyncLoader/sharedDefault``, which wraps metadata in a versioned container stored as Data in iCloud and local UserDefaults)
     ///
     public init(scanner: MetaWearScanner = .sharedRestore,
@@ -67,10 +72,12 @@ public class MetaWearSyncStore {
         self._groups = .init([:])
         self._knownDevices = .init([:])
         self._unknownDevices = .init([])
+        self._groupsRecoverable = .init([:])
 
-        self.unknownDevices   = _unknownDevices.shareOnMain()
-        self.knownDevices     = _knownDevices.mapValues().shareOnMain()
-        self.groups           = _groups.mapValues().shareOnMain()
+        self.unknownDevices    = _unknownDevices.shareOnMain()
+        self.knownDevices      = _knownDevices.mapValues().shareOnMain()
+        self.groups            = _groups.mapValues().shareOnMain()
+        self.groupsRecoverable = _groupsRecoverable.mapValues().shareOnMain()
         self.ungroupedDevices = Publishers.CombineLatest(groups, knownDevices)
             .map { groups, known -> [MetaWear.Metadata] in
                 let grouped = groups.allDevicesMACAddresses()
@@ -84,13 +91,14 @@ public class MetaWearSyncStore {
     }
 
     // Internal details - see Helpers directory
-    internal unowned let scanner:   MetaWearScanner
-    internal unowned let loader:    MWLoader<MWKnownDevicesLoadable>
-    internal var subs             = Set<AnyCancellable>()
-    internal let _groups:           Subject<[UUID : MetaWear.Group]>
-    internal let _knownDevices:     Subject<[MACAddress : MetaWear.Metadata]>
-    internal let _unknownDevices:   Subject<Set<UUID>>
-    internal typealias Subject<T> = CurrentValueSubject<T,Never>
+    internal unowned let scanner:    MetaWearScanner
+    internal unowned let loader:     MWLoader<MWKnownDevicesLoadable>
+    internal var subs              = Set<AnyCancellable>()
+    internal let _groups:            Subject<[UUID : MetaWear.Group]>
+    internal var _groupsRecoverable: Subject<[UUID : MetaWear.Group]>
+    internal let _knownDevices:      Subject<[MACAddress : MetaWear.Metadata]>
+    internal let _unknownDevices:    Subject<Set<UUID>>
+    internal typealias Subject<T>  = CurrentValueSubject<T,Never>
 
 }
 
@@ -148,6 +156,38 @@ public extension MetaWearSyncStore {
         let knownDevicesUpdates = scanner.discoveredDevicesPublisher
             .compactMap { [weak self] devices -> (devices: [CBPeripheralIdentifier: MetaWear], group: MetaWear.Group)? in
                 guard let group = self?.getGroup(id: group.id) else { return nil }
+                return (devices, group)
+            }
+            .map { [weak self] devices, group -> [MWKnownDevice] in
+                group.deviceMACs.reduce(into: [MWKnownDevice]()) { result, mac in
+                    guard let metadata = self?._knownDevices.value[mac] else { return }
+                    let localID = metadata.localBluetoothIds.first(where: { devices[$0] != nil })
+                    let metawear = localID != nil ? devices[localID!] : devices.first(where: { $0.value.info.mac == mac && mac.isEmpty == false })?.value
+                    result.append((metawear, metadata))
+                }
+            }
+            .removeDuplicates { prior, new in
+                prior.map(\.mw) == new.map(\.mw)
+            }
+
+        let forcedKnownDevicesKickoff = Just(getDevicesInGroup(group)).merge(with: knownDevicesUpdates)
+
+        return Publishers.CombineLatest(groupUpdates, forcedKnownDevicesKickoff)
+            .map { ($0, $1) }
+            .subscribe(on: bleQueue)
+            .eraseToAnyPublisher()
+    }
+
+    /// Receive updates when the deleted group's identity changes or when the scanner discovers any member devices nearby.
+    ///
+    func publisher(forDeletedGroup group: MetaWear.Group) -> AnyPublisher<(group: MetaWear.Group, devices: [MWKnownDevice]), Never> {
+        let groupUpdates = _groupsRecoverable
+            .compactMap { dict -> MetaWear.Group? in dict[group.id] }
+            .removeDuplicates()
+
+        let knownDevicesUpdates = scanner.discoveredDevicesPublisher
+            .compactMap { [weak self] devices -> (devices: [CBPeripheralIdentifier: MetaWear], group: MetaWear.Group)? in
+                guard let group = self?.getRecoverableGroup(id: group.id) else { return nil }
                 return (devices, group)
             }
             .map { [weak self] devices, group -> [MWKnownDevice] in
@@ -229,7 +269,7 @@ public extension MetaWearSyncStore {
     }
 
     /// Update values for a group of MetaWear(s)
-    /// - Parameter group: Group of MetaWear(s)
+    /// - Parameter group: Group of MetaWear(s), either current or previously  deleted
     /// - Returns: Tuple of a MetaWear instance (if available) and its relevant saved Metadata
     ///
     func getDevicesInGroup(_ group: MetaWear.Group) -> [MWKnownDevice] {
@@ -288,6 +328,12 @@ public extension MetaWearSyncStore {
     func getGroup(id: UUID) -> MetaWear.Group? {
         _groups.value[id]
     }
+
+    /// Get a deleted grouping of MetaWears by the group's id
+    ///
+    func getRecoverableGroup(id: UUID) -> MetaWear.Group? {
+        _groupsRecoverable.value[id]
+    }
 }
 
 
@@ -295,11 +341,16 @@ public extension MetaWearSyncStore {
 
 public extension MetaWearSyncStore {
 
-    /// Add a MetaWear grouping
+    /// Add a MetaWear grouping, recovering any previous grouping that linked the same MAC addresses.
     ///
     func add(group: MetaWear.Group) {
         bleQueue.async { [weak self] in
-            self?._groups.value[group.id] = group
+            if let prior = self?._groupsRecoverable.value.first(where: { $0.value.deviceMACs == group.deviceMACs })?.value {
+                self?._groups.value[prior.id] = prior
+                self?._groupsRecoverable.value.removeValue(forKey: prior.id)
+            } else {
+                self?._groups.value[group.id] = group
+            }
         }
     }
 
@@ -324,7 +375,18 @@ public extension MetaWearSyncStore {
     ///
     func remove(group: UUID) {
         bleQueue.async { [weak self] in
+            if let recovered = self?._groups.value[group] {
+                self?._groupsRecoverable.value[group] = recovered
+            }
             self?._groups.value.removeValue(forKey: group)
+        }
+    }
+
+    /// Permanently delete a group, precluding future restoration.
+    ///
+    func purge(recoverableGroup: UUID) {
+        bleQueue.async { [weak self] in
+            self?._groupsRecoverable.value.removeValue(forKey: recoverableGroup)
         }
     }
 
@@ -375,7 +437,11 @@ public extension MetaWearSyncStore {
                 didEditGroups = true
                 var edited = group
                 edited.deviceMACs.remove(metawear.mac)
-                return edited.deviceMACs.isEmpty ? nil : edited
+
+                if edited.deviceMACs.isEmpty {
+                    self._groupsRecoverable.value[group.id] = group
+                    return nil
+                } else { return edited }
             }
             if didEditGroups { self._groups.value = editedGroups }
         }
