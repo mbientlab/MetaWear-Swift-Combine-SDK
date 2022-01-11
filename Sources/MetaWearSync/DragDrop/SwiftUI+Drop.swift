@@ -49,9 +49,13 @@ public extension MWDropTargetVM {
     ///
     func validateDrop(info: DropInfo) -> Bool {
         dropQueue.async { [weak self] in
-            let draggables = info.loadMetaWears() ?? []
-            DispatchQueue.main.async { [weak self] in
-                self?.updateDropOutcome(for: draggables.map(\.item))
+            guard let dropQueue = self?.dropQueue else { return }
+
+            info.loadMetaWears(on: dropQueue) { [weak self] result in
+                DispatchQueue.main.async { [weak self] in
+                    guard case let .success(draggables) = result else { return }
+                    self?.updateDropOutcome(for: draggables.map(\.item))
+                }
             }
         }
         return info.willLoadMetaWears()
@@ -85,10 +89,18 @@ public extension MWDropTargetVM {
     func performDrop(info: DropInfo) -> Bool {
         let cachedOutcome = dropOutcome
         let allowDrop = cachedOutcome != .noDrop
-        if allowDrop {
-            dropQueue.async { [weak self] in
-                guard let metawears = info.loadMetaWears() else { return }
-                self?.receiveDrop(metawears.map(\.item), intent: cachedOutcome)
+        guard allowDrop else { return allowDrop }
+        dropQueue.async { [weak self] in
+            guard let dropQueue = self?.dropQueue else { return }
+
+            info.loadMetaWears(on: dropQueue) { [weak self] result in
+                switch result {
+                    case .failure(let error):
+                        nslog(error: error, from: Self.self)
+                        self?.receiveDrop([], intent: .noDrop)
+                    case .success(let draggables):
+                        self?.receiveDrop(draggables.map(\.item), intent: cachedOutcome)
+                }
             }
         }
         return allowDrop
@@ -109,31 +121,22 @@ public extension DropInfo {
         return hasItemsConforming(to: [type])
     }
 
-    /// Call on a background queue!
+    /// Asynchronously loads MetaWear drag representations
     ///
-    func loadMetaWears() -> [DraggableMetaWear]? {
+    func loadMetaWears(on queue: DispatchQueue, didLoad: @escaping (Result<[DraggableMetaWear],Error>) -> Void) {
 #if os(macOS)
         let type = DraggableMetaWear.pasteboardType.rawValue
 #else
         let type = DraggableMetaWear.identifierString
 #endif
-        guard hasItemsConforming(to: [type]) else { return nil }
         let providers = itemProviders(for: [type])
-        let group = DispatchGroup()
-        var items: [DraggableMetaWear] = []
-        providers.forEach {
-            group.enter()
-            $0.loadDataRepresentation(forTypeIdentifier: type) { data, error in
-                do {
-                    guard let item = try NSKeyedUnarchiver.unarchivedObject(ofClass: DraggableMetaWear.self, from: data ?? Data())
-                    else { group.leave(); return }
-                    items.append(item)
-                } catch { print(error: error) }
-                group.leave()
+        queue.async {
+            guard let draggables = providers.loadMetaWears() else {
+                didLoad(.failure(MWError.operationFailed("No NSItemProviders matching \(type)")))
+                return
             }
+            didLoad(.success(draggables))
         }
-        group.wait()
-        return items
     }
 }
 
@@ -182,11 +185,11 @@ extension Array where Element == NSItemProvider {
             group.enter()
             $0.loadItem(forTypeIdentifier: DraggableMetaWear.identifierString, options: nil) { coding, error in
                 do {
-                    let data = coding as? Data ?? Data()
-                    let item = try NSKeyedUnarchiver.unarchivedObject(ofClass: DraggableMetaWear.self, from: data)
-                    if let item = item { draggables.append(item) }
-                    group.leave()
-                } catch { group.leave(); print(error: error) }
+                    if let item = try DraggableMetaWear(secureCoding: coding) {
+                        draggables.append(item)
+                    }
+                } catch { nslog(error: error, from: Self.self) }
+                group.leave()
             }
         }
         group.wait()

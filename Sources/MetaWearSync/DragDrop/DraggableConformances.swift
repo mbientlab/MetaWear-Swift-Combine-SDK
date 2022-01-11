@@ -24,11 +24,16 @@ public extension DraggableMetaWear {
 
 extension DraggableMetaWear: NSItemProviderWriting {
 
-    public func loadData(withTypeIdentifier typeIdentifier: String, forItemProviderCompletionHandler completionHandler: @escaping (Data?, Error?) -> Void) -> Progress? {
-
+    @discardableResult public func loadData(withTypeIdentifier typeIdentifier: String, forItemProviderCompletionHandler completionHandler: @escaping (Data?, Error?) -> Void) -> Progress? {
         switch typeIdentifier {
             case DraggableMetaWear.identifierString:
-                completionHandler(try? NSKeyedArchiver.archivedData(withRootObject: self, requiringSecureCoding: true), nil)
+                do {
+                    completionHandler(try NSKeyedArchiver.archivedData(withRootObject: self, requiringSecureCoding: true), nil)
+                } catch {
+                    nslog(error: error, from: Self.self)
+                    completionHandler(nil, error)
+                }
+
             case UTTypePlainText:
                 completionHandler(plainText.data(using: .utf8), nil)
             default: completionHandler(nil, CocoaError(.coderInvalidValue))
@@ -77,7 +82,7 @@ extension DraggableMetaWear: NSPasteboardReading {
             if let item = try NSKeyedUnarchiver.unarchivedObject(ofClass: DraggableMetaWear.self, from: data) {
                 self.init(decoded: item)
             }
-        } catch { print(error: error) }
+        } catch { nslog(error: error, from: Self.self) }
         return nil
     }
 }
@@ -95,18 +100,30 @@ extension DraggableMetaWear: NSSecureCoding {
         do {
             let item = try JSONDecoder().decode(Self.self, from: Data(source))
             self.init(decoded: item)
-        } catch { print(error: error); return nil }
+        } catch { nslog(error: error, from: Self.self); return nil }
     }
 
     public func encode(with coder: NSCoder) {
         do {
             let encoded = try JSONEncoder().encode(self)
             coder.encode(encoded, forKey: "com.mbientlabs.metawear")
-        } catch { print(error: error) }
+        } catch { nslog(error: error, from: Self.self) }
     }
 }
 
-internal func print(error: Error, line: UInt = #line) {
-    print("MetaWearSync DraggableMetaWearItem Error: ", #line, error)
+internal func nslog<S>(error: Error, from: S.Type, line: UInt = #line) {
+    NSLog("MetaWearSync Error: \(from.self) \(line) \(error.localizedDescription)")
+}
+
+public extension DraggableMetaWear {
+
+    convenience init?(secureCoding: NSSecureCoding?) throws {
+        try self.init(secureCodedData: secureCoding as? Data)
+    }
+
+    convenience init?(secureCodedData: Data?) throws {
+        guard let item = try NSKeyedUnarchiver.unarchivedObject(ofClass: DraggableMetaWear.self, from: secureCodedData ?? Data()) else { return nil }
+        self.init(decoded: item)
+    }
 }
 
