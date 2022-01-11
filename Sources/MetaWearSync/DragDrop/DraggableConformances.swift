@@ -2,16 +2,19 @@
 
 import Foundation
 import MetaWear
-import UniformTypeIdentifiers
 
 // MARK: - Draggable Types
 
 fileprivate let UTTypePlainText = "public.plain-text"
 
-@available(iOS 14, macOS 11, *)
+#if canImport(UniformTypeIdentifiers)
+import UniformTypeIdentifiers
+
+@available(iOS 14.0, macOS 11, *)
 public extension UTType {
-    static let draggableMetaWearItem = UTType(exportedAs: DraggableMetaWear.identifierString, conformingTo: .data)
+    static let draggableMetaWear = UTType(exportedAs: DraggableMetaWear.identifierString, conformingTo: .data)
 }
+#endif
 
 public extension DraggableMetaWear {
     static let identifierString = "com.mbientlabs.metawear.item"

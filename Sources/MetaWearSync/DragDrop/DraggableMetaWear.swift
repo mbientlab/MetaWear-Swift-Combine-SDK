@@ -75,12 +75,3 @@ private extension DraggableMetaWear {
         "Local ID: \(unknown.uuidString)"
     }
 }
-
-#if canImport(UniformTypeIdentifiers)
-import UniformTypeIdentifiers
-
-@available(iOS 14.0, macOS 11, *)
-public extension UTType {
-    static let draggableMetaWear = UTType(exportedAs: DraggableMetaWear.identifierString, conformingTo: .data)
-}
-#endif
