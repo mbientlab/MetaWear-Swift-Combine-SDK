@@ -13,6 +13,7 @@ open class MWCloudKeyValueDataLoader<Loadable: VersionedContainerLoadable>: MWLo
 
     private let decoder = JSONDecoder()
     private let encoder = JSONEncoder()
+    private var didRegisterObserver = false
 
     public init(key: String,
                 _ local: UserDefaults,
@@ -21,9 +22,6 @@ open class MWCloudKeyValueDataLoader<Loadable: VersionedContainerLoadable>: MWLo
         self.local = local
         self.cloud = cloud
         super.init(loaded: _loaded.eraseToAnyPublisher())
-
-        NotificationCenter.default.addObserver(self, selector: #selector(cloudDidChange), name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-                                               object: cloud)
     }
 
     deinit { NotificationCenter.default.removeObserver(self) }
@@ -38,6 +36,10 @@ open class MWCloudKeyValueDataLoader<Loadable: VersionedContainerLoadable>: MWLo
     }
 
     public override func load() throws {
+        if didRegisterObserver == false {
+            didRegisterObserver = true
+            NotificationCenter.default.addObserver(self, selector: #selector(cloudDidChange), name: NSUbiquitousKeyValueStore.didChangeExternallyNotification, object: cloud)
+        }
         let data = cloud.data(forKey: key) ?? local.data(forKey: key) ?? Data()
         let loadable = try Loadable.Container(data: data, decoder: decoder).load(decoder)
         _loaded.send(loadable)
