@@ -50,9 +50,10 @@ public extension UserDefaults.MetaWear {
 
     /// Call once to migrate prior CBUUID and MAC storage keys (Bolts SDK) to this SDK.
     /// Retains any devices already in the new SDK (does not overwrite).
+    /// Remove prior keys afterward using ``removePriorSDK()``
     ///
-    static func migrateFromPriorSDK() {
-        let oldSDKExisting = loadAndRemovePriorSDK()
+    static func migrateFromBoltsSDK() {
+        let oldSDKExisting = loadPriorSDK()
         let newSDKExisting = loadLocalDevices()
         let merged = newSDKExisting.merging(oldSDKExisting) { newSDK, _ in newSDK }
         save(devices: merged)
@@ -63,21 +64,26 @@ public extension UserDefaults.MetaWear {
         loadLocalDevices()[id]
     }
 
+    /// Remove objects used by the Bolts SDK
+    static func removePriorSDK() {
+        UserDefaults.standard.removeObject(forKey: "com.mbientlab.rememberedDevices")
+        UserDefaults.standard.dictionaryRepresentation().forEach { element in
+            UserDefaults.standard.removeObject(forKey: element.key)
+        }
+    }
 }
 
 // MARK: - Helpers
 
-fileprivate func loadAndRemovePriorSDK() -> [CBPeripheralIdentifier:MACAddress] {
-    UserDefaults.standard.removeObject(forKey: "com.mbientlab.rememberedDevices")
-
+fileprivate func loadPriorSDK() -> [CBPeripheralIdentifier:MACAddress] {
     let keyPrefix = "com.mbientlab.macstorage."
     let keyPrefixLength = keyPrefix.count
     let devices = UserDefaults.standard.dictionaryRepresentation()
         .reduce(into: [CBPeripheralIdentifier:MACAddress]()) { dict, element in
             guard element.key.hasPrefix(keyPrefix) else { return }
-            print("//////////////", element)
+
             let uuidString = element.key.dropFirst(keyPrefixLength)
-            UserDefaults.standard.removeObject(forKey: element.key)
+
             guard let uuid = UUID(uuidString: String(uuidString)),
                   let mac = element.value as? String
             else { return }
