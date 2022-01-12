@@ -48,16 +48,29 @@ public extension MWDropTargetVM {
     /// and calls `updateDropOutcome(for:)` to update state for this proposed drop
     ///
     func validateDrop(info: DropInfo) -> Bool {
+        #if os(iOS)
         dropQueue.async { [weak self] in
-            guard let dropQueue = self?.dropQueue else { return }
+            let items = info.itemProviders(for: [type])
+                .compactMap(\.teamData)
+                .compactMap(DraggableMetaWear.decode(teamData:))
 
-            info.loadMetaWears(on: dropQueue) { [weak self] result in
-                DispatchQueue.main.async { [weak self] in
-                    guard case let .success(draggables) = result else { return }
-                    self?.updateDropOutcome(for: draggables.map(\.item))
+            DispatchQueue.main.async { [weak self] in
+                self?.updateDropOutcome(for: items)
+            }
+        }
+        #elseif os(macOS)
+        info.loadMetaWears(on: dropQueue) { [weak self] result in
+            DispatchQueue.main.async { [weak self] in
+                switch result {
+                    case .failure(let error):
+                        nslog(error: error, from: Self.self)
+                        self?.updateDropOutcome(for: [])
+                    case .success(let draggables):
+                        self?.updateDropOutcome(for: draggables.map(\.item))
                 }
             }
         }
+        #endif
         return info.willLoadMetaWears()
     }
 
@@ -90,17 +103,13 @@ public extension MWDropTargetVM {
         let cachedOutcome = dropOutcome
         let allowDrop = cachedOutcome != .noDrop
         guard allowDrop else { return allowDrop }
-        dropQueue.async { [weak self] in
-            guard let dropQueue = self?.dropQueue else { return }
-
-            info.loadMetaWears(on: dropQueue) { [weak self] result in
-                switch result {
-                    case .failure(let error):
-                        nslog(error: error, from: Self.self)
-                        self?.receiveDrop([], intent: .noDrop)
-                    case .success(let draggables):
-                        self?.receiveDrop(draggables.map(\.item), intent: cachedOutcome)
-                }
+        info.loadMetaWears(on: dropQueue) { [weak self] result in
+            switch result {
+                case .failure(let error):
+                    nslog(error: error, from: Self.self)
+                    self?.receiveDrop([], intent: .noDrop)
+                case .success(let draggables):
+                    self?.receiveDrop(draggables.map(\.item), intent: cachedOutcome)
             }
         }
         return allowDrop
@@ -113,28 +122,20 @@ public extension MWDropTargetVM {
 public extension DropInfo {
 
     func willLoadMetaWears() -> Bool {
-#if os(macOS)
-        let type = DraggableMetaWear.pasteboardType.rawValue
-#else
-        let type = DraggableMetaWear.identifierString
-#endif
-        return hasItemsConforming(to: [type])
+        hasItemsConforming(to: [type])
     }
 
     /// Asynchronously loads MetaWear drag representations
     ///
     func loadMetaWears(on queue: DispatchQueue, didLoad: @escaping (Result<[DraggableMetaWear],Error>) -> Void) {
-#if os(macOS)
-        let type = DraggableMetaWear.pasteboardType.rawValue
-#else
-        let type = DraggableMetaWear.identifierString
-#endif
         let providers = itemProviders(for: [type])
+        guard providers.isEmpty == false else {
+            didLoad(.failure(MWError.operationFailed("No NSItemProviders matching \(type)")))
+            return
+        }
+
         queue.async {
-            guard let draggables = providers.loadMetaWears() else {
-                didLoad(.failure(MWError.operationFailed("No NSItemProviders matching \(type)")))
-                return
-            }
+            let draggables = providers.loadMetaWears() ?? []
             didLoad(.success(draggables))
         }
     }
@@ -196,3 +197,9 @@ extension Array where Element == NSItemProvider {
         return draggables.isEmpty ? nil : draggables
     }
 }
+
+#if os(macOS)
+fileprivate let type = DraggableMetaWear.pasteboardType.rawValue
+#else
+fileprivate let type = DraggableMetaWear.identifierString
+#endif

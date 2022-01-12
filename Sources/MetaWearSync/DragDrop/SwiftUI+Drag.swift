@@ -32,5 +32,10 @@ public extension NSItemProvider {
                 forItemProviderCompletionHandler: block
             )
         }
+
+        suggestedName = draggable.suggestedName()
+        #if os(iOS)
+        teamData = draggable.makeTeamData()
+        #endif
     }
 }

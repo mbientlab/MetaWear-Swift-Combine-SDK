@@ -28,7 +28,8 @@ extension DraggableMetaWear: NSItemProviderWriting {
         switch typeIdentifier {
             case DraggableMetaWear.identifierString:
                 do {
-                    completionHandler(try NSKeyedArchiver.archivedData(withRootObject: self, requiringSecureCoding: true), nil)
+                    let item = try NSKeyedArchiver.archivedData(withRootObject: self, requiringSecureCoding: true)
+                    completionHandler(item, nil)
                 } catch {
                     nslog(error: error, from: Self.self)
                     completionHandler(nil, error)

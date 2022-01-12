@@ -43,6 +43,32 @@ public final class DraggableMetaWear: NSObject, Codable {
     }
 }
 
+// MARK: - Mid-Drag Identity
+
+public extension DraggableMetaWear {
+
+#if os(iOS)
+    /// macOS allows parsing NSItemProvider contents during a drag, but iOS does not. Instead, an 8KB max Data blob can be stored and decoded during an active drag. This encodes the Item as a flag to gate UI displayed during a drag session.
+    func makeTeamData() -> Data? {
+        try? JSONEncoder().encode(self.item)
+    }
+
+    /// Decode the Item stashed in Data that can be decoding while validating a drag
+    static func decode(teamData: Data) -> Item? {
+        try? JSONDecoder().decode(Item.self, from: teamData)
+    }
+#endif
+
+    /// Useful to label a drop with a group or device name.
+    func suggestedName() -> String {
+        switch item {
+            case .group(let group): return group.name
+            case .remembered(let meta, _): return meta.name
+            case .unknown(let id): return "Unpaired \(id.uuidString)"
+        }
+    }
+}
+
 // MARK: - Plain Text Rep
 
 private extension DraggableMetaWear {
