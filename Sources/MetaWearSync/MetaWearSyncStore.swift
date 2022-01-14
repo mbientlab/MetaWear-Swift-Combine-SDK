@@ -215,6 +215,14 @@ public extension MetaWearSyncStore {
 
 public extension MetaWearSyncStore {
 
+    /// Whether the store has cloud-synced or local devices available.
+    ///
+    func hasDevices() -> Bool {
+        bleQueue.sync {
+            !(_groups.value.isEmpty && _knownDevices.value.isEmpty && _unknownDevices.value.isEmpty)
+        }
+    }
+
     /// Retrieve a reference for a device by MAC address.
     ///
     /// If ``forget(locally:)`` or ``forget(globally:)`` was called
