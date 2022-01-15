@@ -21,7 +21,7 @@ public enum MWNamedSignal: Equatable, Hashable {
     case pressure
     case quaternion
     case steps
-    case temperature(MWThermometer.Source)
+    case temperature
     case custom(String)
 
     public var name: String {
@@ -41,9 +41,9 @@ public enum MWNamedSignal: Equatable, Hashable {
             case .pressure:                 return "pressure"
             case .quaternion:               return "quaternion"
             case .orientation:              return "orientation"
-            case .temperature(let source):  return "temperature\(source.loggerIndex)"
+            case .temperature:              return "temperature"
             case .custom(let string):       return string
-            case .steps:                    return "steps"
+            case .steps:                    return "steps" // Not supported
         }
     }
 
@@ -64,15 +64,32 @@ public enum MWNamedSignal: Equatable, Hashable {
         .pressure,
         .quaternion,
         .steps,
-        .temperature(.onboard),
-        .temperature(.onDie),
-        .temperature(.external),
-        .temperature(.bmp280),
+        .temperature
     ]
 
     public init(identifier: String) {
-        print("-> Logger ", identifier)
-        self = Self.allCases.first(where: { $0.name == identifier }) ?? .custom(identifier)
+
+        // Remove up temperature and [1] index shortcuts
+        var isolatedName = String(identifier.prefix { !"[:".contains($0) })
+        Self.removeTemperatureSuffix(&isolatedName)
+
+        var signal: MWNamedSignal? = nil
+
+        if isolatedName.endIndex == identifier.endIndex || isolatedName == "temperature" {
+            signal = Self.allCases.first(where: { $0.name == isolatedName })
+
+        } else if Self.customDownloads.keys.contains(identifier) {
+            signal = .custom(identifier)
+
+        } else { fatalError("customDownloads id not set for \(identifier)") }
+
+        self = signal!
+    }
+
+    /// Removes source type and any other labeling (e.g., temperature[1]:account?id=0)
+    private static func removeTemperatureSuffix(_ isolatedName: inout String) {
+        guard isolatedName.hasPrefix("temperature") else { return }
+        isolatedName = "temperature"
     }
 }
 
