@@ -28,9 +28,32 @@ public func _datasignal_subscribe(_ signal: OpaquePointer) -> _MWDataSubject {
     return dataStream
 }
 
-public func _datasignal_subscribe_accumulate(_ signal: OpaquePointer) -> _MWDataArraySubject {
+public func _logger_subscribe_accumulate(_ signal: OpaquePointer) -> _MWDataArraySubject {
     let subject = _MWDataArraySubject([])
     mbl_mw_logger_subscribe(signal, bridge(obj: subject)) { _context, dataPtr in
+        let _subject: _MWDataArraySubject = bridge(ptr: _context!)
+        let datum = dataPtr!.pointee.copy()
+        _subject.send(_subject.value + CollectionOfOne(datum))
+    }
+    return subject
+}
+
+
+public func _anonymous_datasignal_subscribe_accumulate(_ signal: OpaquePointer) -> _MWDataArraySubject {
+    let subject = _MWDataArraySubject([])
+    mbl_mw_anonymous_datasignal_subscribe(signal, bridge(obj: subject)) { _context, dataPtr in
+        let _subject: _MWDataArraySubject = bridge(ptr: _context!)
+        let datum = dataPtr!.pointee.copy()
+        print(#function)
+        _subject.send(_subject.value + CollectionOfOne(datum))
+    }
+    return subject
+}
+
+
+public func _datasignal_subscribe_accumulate(_ signal: OpaquePointer) -> _MWDataArraySubject {
+    let subject = _MWDataArraySubject([])
+    mbl_mw_datasignal_subscribe(signal, bridge(obj: subject)) { _context, dataPtr in
         let _subject: _MWDataArraySubject = bridge(ptr: _context!)
         let datum = dataPtr!.pointee.copy()
         _subject.send(_subject.value + CollectionOfOne(datum))

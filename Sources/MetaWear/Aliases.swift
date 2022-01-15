@@ -40,6 +40,9 @@ public typealias MWDataProcessorSignal  = OpaquePointer
 /// logger for a particular data signal
 public typealias MWLoggerSignal         = OpaquePointer
 
+/// References a timer signal
+public typealias MWTimerSignal          = OpaquePointer
+
 // MARK: - Other Aliases
 
 public typealias Timestamped<V>         = (time: Date, value: V)

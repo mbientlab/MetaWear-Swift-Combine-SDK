@@ -8,14 +8,14 @@ import MetaWearCpp
 
 public extension Publisher where Output == (MetaWear, MWDataSignal) {
 
-    /// Creates a timer on the MetaWear that reads the data signal provided.
+    /// Creates a timer on the MetaWear that reads the data signal provided for streaming.
     ///
     /// - Parameters:
     ///   - freq: Time between timer firing events
     /// - Returns: Tuple of the MetaWear, the event-triggered data signal, and the timer
     ///
     func createPollingTimer(freq: MWFrequency)
-    -> MWPublisher<(metawear: MetaWear, counter: MWDataSignal, timer: MWDataSignal)> {
+    -> MWPublisher<(metawear: MetaWear, counter: MWDataSignal, timer: MWTimerSignal)> {
         let upstream = self.mapToMWError().share()
         let counter = upstream.flatMap { _, readableSignal in readableSignal.accounterCreateCount() }
         let timer = upstream.flatMap { metawear, readableSignal in
@@ -39,7 +39,7 @@ public extension Publisher where Output == MetaWear {
 
     /// Creates a timer on the MetaWear that triggers the commands provided.
     /// If you want to read a signal, see `.createPollingTimer` on Publishers
-    /// with an Output of `(MetaWear, MWDataSignal)`.
+    /// with an Output of `(MetaWear, MWTimerSignal)`. Useful for logging pollable events.
     ///
     /// - Parameters:
     ///   - period: Milliseconds between timer firing events
@@ -52,25 +52,22 @@ public extension Publisher where Output == MetaWear {
                           repetitions: UInt16 = .max,
                           immediateFire: Bool = false,
                           recordedEvent commands: @escaping () -> Void
-    ) -> MWPublisher<(metawear: MetaWear, timer: OpaquePointer)> {
-
-        let upstream = self.mapToMWError().share()
-        return upstream.flatMap { mw -> MWPublisher<(metawear: MetaWear, timer: OpaquePointer)> in
-            upstream
-                .zip(mw.board.createTimedEvent(
+    ) -> MWPublisher<MWTimerSignal> {
+        mapToMWError()
+            .flatMap { mw -> MWPublisher<MWTimerSignal> in
+                mw.board.createTimedEvent(
                     period: period,
                     repetitions: repetitions,
                     immediateFire: immediateFire,
-                    recordedEvent: commands),
-                     { ($0, $1) }
+                    recordedEvent: commands
                 ).erase(subscribeOn: mw.bleQueue)
-        }
-        .eraseToAnyPublisher()
+            }
+            .eraseToAnyPublisher()
     }
 
     /// Creates a timer on the MetaWear.
     /// If you want to read a signal, see `stream<P:MWPollable>`
-    /// for an example using a counter to trigger signal reads.
+    /// and `log<P:MWPollable>` for examples of triggering signal reads.
     ///
     /// - Parameters:
     ///   - period: Milliseconds between timer firing events
@@ -81,10 +78,10 @@ public extension Publisher where Output == MetaWear {
     func createTimer(periodMs: UInt32,
                      repetitions: UInt16 = .max,
                      immediateFire: Bool = false
-    ) -> MWPublisher<OpaquePointer> {
+    ) -> MWPublisher<MWTimerSignal> {
 
         mapToMWError()
-            .flatMap { device -> MWPublisher<OpaquePointer> in
+            .flatMap { device -> MWPublisher<MWTimerSignal> in
                 device.board
                     .createTimer(period: periodMs, repetitions: repetitions, immediateFire: immediateFire)
                     .erase(subscribeOn: device.bleQueue)
@@ -102,12 +99,12 @@ public extension MWBoard {
     func createTimer(period: UInt32,
                      repetitions: UInt16 = .max,
                      immediateFire: Bool = false
-    ) -> PassthroughSubject<OpaquePointer, MWError> {
+    ) -> PassthroughSubject<MWTimerSignal, MWError> {
 
-        let subject = PassthroughSubject<OpaquePointer,MWError>()
+        let subject = PassthroughSubject<MWTimerSignal,MWError>()
 
         mbl_mw_timer_create(self, period, repetitions, immediateFire ? 0 : 1, bridge(obj: subject)) { (context, timer) in
-            let _subject: PassthroughSubject<OpaquePointer, MWError> = bridge(ptr: context!)
+            let _subject: PassthroughSubject<MWTimerSignal, MWError> = bridge(ptr: context!)
 
             if let timer = timer {
                 _subject.send(timer)
@@ -124,10 +121,10 @@ public extension MWBoard {
                           repetitions: UInt16 = .max,
                           immediateFire: Bool = false,
                           recordedEvent commands: @escaping () -> Void
-    ) -> AnyPublisher<MWDataSignal, MWError> {
+    ) -> AnyPublisher<MWTimerSignal, MWError> {
 
         createTimer(period: period, repetitions: repetitions, immediateFire: immediateFire)
-            .flatMap { timer -> MWPublisher<OpaquePointer> in
+            .flatMap { timer -> MWPublisher<MWTimerSignal> in
                 mbl_mw_event_record_commands(timer)
                 commands()
                 return Publishers.Zip(_JustMW(timer), timer.eventEndRecording())

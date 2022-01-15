@@ -54,34 +54,32 @@ public extension Publisher where Output == MetaWear {
         .share()
         .eraseToAnyPublisher()
     }
-    /// Starts logging any data signal that can be read by `mbl_mw_datasignal_read` at the intervals specified.
+    /// Starts logging sensors who can only be intermittently read (e.g., thermistors) at the intervals specified.
     /// - Returns: The connected MetaWear or an error if the logging attempt fails.
     ///
-    func log(byPolling readableSignal: MWDataSignal, rate: MWFrequency, overwriting: Bool = false) -> MWPublisher<MetaWear> {
-        mapToMWError()
-            .flatMap { metawear -> MWPublisher<(metawear: MetaWear, countedSensor: MWDataSignal, timer: MWDataSignal)> in
-                mapToMWError()
-                    .zip(readableSignal.accounterCreateCount(),
-                         metawear.board.createTimedEvent(
-                            period: UInt32(rate.periodMs),
-                            repetitions: .max,
-                            immediateFire: false,
-                            recordedEvent: { mbl_mw_datasignal_read(readableSignal) }
-                         )
-                    ) { ($0, $1, $2) }.eraseToAnyPublisher()
-            }
-            .flatMap { o -> MWPublisher<MetaWear> in
-                let device = o.metawear
-                return o.countedSensor
+    func log(byPolling signal: MWDataSignal, rate: MWFrequency, overwriting: Bool = false) -> MWPublisher<MetaWear> {
+        let upstream = self.mapToMWError().share()
+        return upstream
+            .flatMap { metawear -> MWPublisher<MetaWear> in
+                signal
                     .makeLoggerSignal()
-                    .handleEvents(receiveOutput: { [weak device] _ in
-                        guard let device = device else { return }
-                        mbl_mw_logging_start(device.board, overwriting ? 1 : 0)
-                        mbl_mw_timer_start(o.timer)
-                    })
-                    .compactMap { [weak device] _ in device }
-                    .subscribe(on: device.bleQueue)
+                    .compactMap { [weak metawear] _ in metawear }
                     .eraseToAnyPublisher()
+            }
+            .flatMap { metawear -> MWPublisher<MetaWear> in
+                metawear.board
+                    .createTimedEvent(
+                        period: UInt32(rate.periodMs),
+                        repetitions: .max,
+                        immediateFire: false,
+                        recordedEvent: { mbl_mw_datasignal_read(signal) }
+                    )
+                    .handleEvents(receiveOutput: { timer in
+                        mbl_mw_logging_start(metawear.board, overwriting ? 1 : 0)
+                        mbl_mw_timer_start(timer)
+                    })
+                    .compactMap { [weak metawear] _ in metawear }
+                    .erase(subscribeOn: metawear.bleQueue)
             }
             .eraseToAnyPublisher()
     }
@@ -134,7 +132,7 @@ public extension Publisher where Output == MetaWear {
                 // Stop logging + subscribe/store the downloaded feed from each signal
                 let downloads = loggers.reduce(into: [MWNamedSignal:CurrentValueSubject<[MWData], MWError>]()) { dict, logger in
                     logger.id.downloadUtilities.stopModule(metawear.board)
-                    dict[logger.id] = _datasignal_subscribe_accumulate(logger.log)
+                    dict[logger.id] = _anonymous_datasignal_subscribe_accumulate(logger.log)
                 }
                 mbl_mw_logging_stop(metawear.board)
                 mbl_mw_logging_flush_page(metawear.board)
@@ -196,12 +194,12 @@ public extension Publisher where Output == MetaWear{
     func collectAnonymousLoggerSignals() -> MWPublisher<[(id: MWNamedSignal, log: OpaquePointer)]> {
         mapToMWError()
             .flatMap { device -> MWPublisher<[(id: MWNamedSignal, log: OpaquePointer)]> in
-            return device.board
-                .collectAnonymousLoggerSignals()
-                .map { log in log.map { (MWNamedSignal(identifier: $0), $1) } }
-                .erase(subscribeOn: device.bleQueue)
-        }
-        .eraseToAnyPublisher()
+                return device.board
+                    .collectAnonymousLoggerSignals()
+                    .map { log in log.map { (MWNamedSignal(identifier: $0), $1) } }
+                    .erase(subscribeOn: device.bleQueue)
+            }
+            .eraseToAnyPublisher()
     }
 
     /// Wipes logged data.
@@ -209,13 +207,13 @@ public extension Publisher where Output == MetaWear{
     func deleteLoggedEntries() -> MWPublisher<MetaWear> {
         mapToMWError()
             .flatMap { metawear in
-            _JustMW(metawear)
-                .handleEvents(receiveOutput: { metaWear in
-                    mbl_mw_logging_clear_entries(metaWear.board)
-                })
-                .erase(subscribeOn: metawear.bleQueue)
-        }
-        .eraseToAnyPublisher()
+                _JustMW(metawear)
+                    .handleEvents(receiveOutput: { metaWear in
+                        mbl_mw_logging_clear_entries(metaWear.board)
+                    })
+                    .erase(subscribeOn: metawear.bleQueue)
+            }
+            .eraseToAnyPublisher()
     }
 }
 
@@ -268,41 +266,41 @@ public extension Publisher where Output == (MetaWear, MWLoggerSignal) {
 
         mapToMWError()
             .flatMap { metawear, logger -> MWPublisher<Download<MWData.LogDownload>> in
-            // Stop recording
-            loggerCleanup(metawear.board)
-            mbl_mw_logging_stop(metawear.board)
-            mbl_mw_logging_flush_page(metawear.board)
+                // Stop recording
+                loggerCleanup(metawear.board)
+                mbl_mw_logging_stop(metawear.board)
+                mbl_mw_logging_flush_page(metawear.board)
 
-            // Download
-            let data = _datasignal_subscribe_accumulate(logger)
-            var (handler, percentComplete) = _trackDownloadProgress()
-            mbl_mw_logging_download(metawear.board, 25, &handler)
+                // Download
+                let data = _anonymous_datasignal_subscribe_accumulate(logger)
+                var (handler, percentComplete) = _trackDownloadProgress()
+                mbl_mw_logging_download(metawear.board, 25, &handler)
 
-            // Extend OpaquePointer lifetime
-            return Publishers.CombineLatest(_JustMW((metawear, logger)), percentComplete)
-            // Only pass data when 100% downloaded
-                .map { refs, download -> (
-                    refs: (device: MetaWear, log: OpaquePointer),
-                    download: Download<MWData.LogDownload>
-                ) in
-                    let data = download.percentComplete == 1 ? data.value : []
-                    let dataContainer = MWData.LogDownload(logger: loggerName, data: data)
-                    return (refs, (dataContainer, download.percentComplete))
-                }
-            // Clear logger upon completion
-                .handleEvents(receiveOutput: { output in
-                    guard !output.download.data.data.isEmpty && output.download.percentComplete == 1
-                    else { return }
-                    mbl_mw_logger_remove(output.refs.log)
-                    mbl_mw_logging_clear_entries(output.refs.device.board)
-                })
-            // Pass only the download, not references
-                .map(\.download)
-            // Ensure idemmnopotent
-                .share()
-                .erase(subscribeOn: metawear.bleQueue)
-        }
-        .eraseToAnyPublisher()
+                // Extend OpaquePointer lifetime
+                return Publishers.CombineLatest(_JustMW((metawear, logger)), percentComplete)
+                // Only pass data when 100% downloaded
+                    .map { refs, download -> (
+                        refs: (device: MetaWear, log: OpaquePointer),
+                        download: Download<MWData.LogDownload>
+                    ) in
+                        let data = download.percentComplete == 1 ? data.value : []
+                        let dataContainer = MWData.LogDownload(logger: loggerName, data: data)
+                        return (refs, (dataContainer, download.percentComplete))
+                    }
+                // Clear logger upon completion
+                    .handleEvents(receiveOutput: { output in
+                        guard !output.download.data.data.isEmpty && output.download.percentComplete == 1
+                        else { return }
+                        mbl_mw_logger_remove(output.refs.log)
+                        mbl_mw_logging_clear_entries(output.refs.device.board)
+                    })
+                // Pass only the download, not references
+                    .map(\.download)
+                // Ensure idemmnopotent
+                    .share()
+                    .erase(subscribeOn: metawear.bleQueue)
+            }
+            .eraseToAnyPublisher()
     }
 }
 
@@ -385,7 +383,7 @@ public extension MWBoard {
             let _subject: PassthroughSubject<[_AnonymousLogger], MWError> = bridge(ptr: context!)
 
             guard let signals = anonymousSignals else {
-               let status = MWStatusCode(cpp: .init(count))
+                let status = MWStatusCode(cpp: .init(count))
                 if status == .ok {
                     _subject.send([])
                     _subject.send(completion: .finished)
@@ -399,8 +397,11 @@ public extension MWBoard {
 
             var identified = [_AnonymousLogger]()
             for i in (0..<count) {
-                let signal = signals[Int(i)]!
-                let id = mbl_mw_anonymous_datasignal_get_identifier(signal)!
+                guard let signal = signals[Int(i)],
+                      let id = mbl_mw_anonymous_datasignal_get_identifier(signal) else {
+                          NSLog("MetaWear Error: Logger Signal Unknown")
+                          continue
+                      }
                 let idString = String(cString: id)
                 identified.append((idString, signal))
             }

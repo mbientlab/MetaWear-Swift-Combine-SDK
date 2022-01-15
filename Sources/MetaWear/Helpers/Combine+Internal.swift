@@ -57,30 +57,3 @@ public extension Publisher {
         .eraseToAnyPublisher()
     }
 }
-
-
-
-
-// DELETION CANDIDATE:
-
-/// Simpler semantics when building futures, such as
-/// storing a promise-fulfilling closure for a delegate response.
-///
-internal typealias PromiseClosure<Output> = (Result<Output, MWError>) -> Void
-
-internal extension MetaWear {
-
-    func BLELazyFuture<O>(closure: @escaping (PromiseClosure<O>) -> Void ) -> MWPublisher<O> {
-        Deferred {
-            Future<O, MWError> { promise in
-                closure(promise)
-            }
-        }
-        .erase(subscribeOn: self.bleQueue)
-    }
-}
-
-
-func debugPrinter(f: String = #function, line: UInt = #line, p: String) {
-    print(f, line, p)
-}

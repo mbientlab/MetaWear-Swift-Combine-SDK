@@ -32,7 +32,7 @@ public struct MWThermometer: MWReadable, MWPollable {
         self.type = type
         self.channel = channel
         self.pollingRate = rate
-        self.signalName = .temperature(type)
+        self.signalName = .temperature
     }
 
     /// Verifies channel and source alignment before streaming or logging.
@@ -45,7 +45,7 @@ public struct MWThermometer: MWReadable, MWPollable {
         self.type = type
         self.channel = i
         self.pollingRate = rate
-        self.signalName = .temperature(type)
+        self.signalName = .temperature
     }
 
     /// Does not verify that the source is at the specified channel,
@@ -56,29 +56,25 @@ public struct MWThermometer: MWReadable, MWPollable {
         self.type = type
         self.channel = channel
         self.pollingRate = rate
-        self.signalName = .temperature(type)
+        self.signalName = .temperature
     }
 }
 
 public extension MWThermometer {
 
     func readableSignal(board: MWBoard) throws -> MWDataSignal? {
-        print(Self.self, #function)
         return mbl_mw_multi_chnl_temp_get_temperature_data_signal(board, UInt8(channel))
     }
 
     func readConfigure(board: MWBoard) {
-        print(Self.self, #function)
         if type == .external {
             mbl_mw_multi_chnl_temp_configure_ext_thermistor(board, UInt8(channel), dataPin, pulldownPin, UInt8(1))
-        }
-        if type == .bmp280 {
+        } else if type == .bmp280 {
             mbl_mw_baro_bosch_start(board)
         }
     }
 
     func readCleanup(board: MWBoard) {
-        print(Self.self, #function)
         if type == .bmp280 {
             mbl_mw_baro_bosch_stop(board)
         }
