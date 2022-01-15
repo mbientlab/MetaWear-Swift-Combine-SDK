@@ -11,10 +11,74 @@ class LogTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-//        TestDevices.useOnly(.metamotionS)
+        TestDevices.useOnly(.metamotionS)
+    }
+
+    // MARK: - Multiple
+
+    func test_LogThenDownload_TwoSensors_AccelerometerMagnetometer() {
+        _testLog2(
+            .accelerometer(rate: .hz50, gravity: .g2),
+            .magnetometer(freq: .hz25)
+        )
+    }
+
+    // MARK: - Related Reads
+
+    func test_Read_LogLength_WhenCleared() {
+        connectNearbyMetaWear(timeout: .read, useLogger: false) { metawear, exp, subs in
+            // Prepare
+            metawear.publish()
+                .deleteLoggedEntries()
+                .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
+
+            // Act
+                .read(.logLength)
+
+            // Assert
+                ._sinkNoFailure(&subs, receiveValue: {
+                    XCTAssertEqual($0.value, 0)
+                    exp.fulfill()
+                })
+        }
+    }
+
+    func test_Read_LogLength_WhenPopulated() {
+        let log: some MWLoggable = .accelerometer(rate: .hz50, gravity: .g2)
+
+        connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
+            // Prepare
+            metawear.publish()
+                .deleteLoggedEntries()
+                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
+                .log(log)
+                ._assertLoggers([log.signalName], metawear: metawear)
+                .delay(for: 10, tolerance: 0, scheduler: metawear.bleQueue)
+
+            // Act
+                .read(.logLength)
+                .handleEvents(receiveOutput: { output in
+                    XCTAssertGreaterThan(output.value, 1)
+                })
+                .map { _ in metawear }
+                .command(.resetActivities)
+
+            // Assert
+                ._sinkNoFailure(&subs, receiveValue: { _ in  exp.fulfill() })
+        }
     }
 
     // MARK: - Single
+
+    func test_NotLogging() {
+        connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
+            metawear.publish()
+                .collectAnonymousLoggerSignals()
+                ._sinkNoFailure(&subs, finished: {  }, receiveValue: { signals in
+                    XCTAssertEqual(signals.map(\.id), [])
+                })
+        }
+    }
 
     func test_LogThenDownload_Accelerometer() {
         _testLog( .accelerometer(rate: .hz12_5, gravity: .g2) )
@@ -107,7 +171,6 @@ class LogTests: XCTestCase {
 
     // MARK: - Pollable
 
-#warning("Failing -> Crash")
     func test_LogThenDownload_Temperature() throws {
         _testLog(byPolling: {
             try! MWThermometer(type: .onboard, board: $0.board, rate: .init(hz: 1))
@@ -117,60 +180,6 @@ class LogTests: XCTestCase {
     func test_LogThenDownload_Humidity() throws {
         _testLog(byPolling: { _ in .humidity() })
     }
-
-    // MARK: - Multiple
-
-    func test_LogThenDownload_TwoSensors_AccelerometerMagnetometer() {
-        _testLog2(
-            .accelerometer(rate: .hz50, gravity: .g2),
-            .magnetometer(freq: .hz25)
-        )
-    }
-
-    // MARK: - Related Reads
-
-    func test_Read_LogLength_WhenCleared() {
-        connectNearbyMetaWear(timeout: .read, useLogger: false) { metawear, exp, subs in
-            // Prepare
-            metawear.publish()
-                .deleteLoggedEntries()
-                .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
-
-            // Act
-                .read(.logLength)
-
-            // Assert
-                ._sinkNoFailure(&subs, receiveValue: {
-                    XCTAssertEqual($0.value, 0)
-                    exp.fulfill()
-                })
-        }
-    }
-
-    func test_Read_LogLength_WhenPopulated() {
-        let log: some MWLoggable = .accelerometer(rate: .hz50, gravity: .g2)
-
-        connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
-            // Prepare
-            metawear.publish()
-                .deleteLoggedEntries()
-                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
-                .log(log)
-                ._assertLoggers([log.signalName], metawear: metawear)
-                .delay(for: 10, tolerance: 0, scheduler: metawear.bleQueue)
-
-            // Act
-                .read(.logLength)
-                .handleEvents(receiveOutput: { output in
-                    XCTAssertGreaterThan(output.value, 1)
-                })
-                .map { _ in metawear }
-                .command(.resetActivities)
-
-            // Assert
-                ._sinkNoFailure(&subs, receiveValue: { _ in  exp.fulfill() })
-        }
-    }
 }
 
 extension XCTestCase {
@@ -178,44 +187,47 @@ extension XCTestCase {
     func _testLog<P: MWPollable>(byPolling sut: @escaping (MetaWear) -> P, file: StaticString = #file, line: UInt = #line, expectFailure: String? = nil) {
         connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
             let _sut = sut(metawear)
+            let date = Date()
 
-            let pipline =
             metawear.publish()
+            // Assert there are no loggers active right now
                 ._assertLoggers([], metawear: metawear, file, line)
+            // Act Part I
                 .log(byPolling: _sut)
-                .share()
-                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
+            // Assert there is now the logger intended
                 ._assertLoggers([_sut.signalName], metawear: metawear, file, line)
-            //                .share()
-            //                .logsDownload()
-            //
-            //            // Assert
-            //                .handleEvents(receiveOutput: { tables, percentComplete in
-            //                    _printProgress(percentComplete)
-            //                    if percentComplete < 1 { XCTAssertTrue(tables.isEmpty, file: file, line: line) }
-            //                    guard percentComplete == 1.0 else { return }
-            //                    XCTAssertEqual(tables.endIndex, 1, file: file, line: line)
-            //                    XCTAssertEqual(Set(tables.map(\.source)), Set([_sut.loggerName]), file: file, line: line)
-            //                    XCTAssertTrue(tables.allSatisfy({ $0.rows.isEmpty == false }), file: file, line: line)
-            //                })
-            //                .drop(while: { $0.percentComplete < 1 })
-            //                ._assertLoggers([], metawear: metawear, file,  line)
+            // Ensure pipeline is idemmnopotent, passed as reference
+                .share()
+            // Let it log
+                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
+            // Act Part II
+                .downloadLogs(startDate: date)
+            // Assert Part II
+                .handleEvents(receiveOutput: { data, percentComplete in
+                    _printProgress(percentComplete)
+                    if percentComplete < 1 { XCTAssertTrue(data.isEmpty, file: file, line: line) }
+                    guard percentComplete == 1.0 else { return }
+                    // Assert log obtains data
+                    XCTAssertEqual(data.endIndex, 1, file: file, line: line)
+                    XCTAssertGreaterThan(data.first?.rows.endIndex ?? 0, 0, file: file, line: line)
+                    XCTAssertEqual(data.first?.source, _sut.signalName)
+                })
 
-            if let message = expectFailure {
-                pipline._sinkExpectFailure(&subs, file, line, exp: exp, errorMessage: message)
-            } else {
-                pipline._sinkNoFailure(&subs, file, line, finished: { exp.fulfill() }, receiveValue: { _ in print(_sut.signalName); exp.fulfill() })
-            }
+            // Skip any updates before complete
+            // Assert no loggers after download completes
+                .drop(while: { $0.percentComplete < 1 })
+                ._assertLoggers([], metawear: metawear, file, line)
+
+            // Assert completes without error. Call .fulfill to end the test before the timeout period.
+                ._sinkNoFailure(&subs, file, line, receiveValue: { value in print(value); exp.fulfill() })
         }
     }
 
     func _testLog<L: MWLoggable>(_ sut: L, file: StaticString = #file, line: UInt = #line, expectFailure: String? = nil) {
         connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
             let start = Date()
-            print("-> Start @", start.timeIntervalSince1970 - 1641432034, start.ISO8601Format())
 
-            let pipline =
-            metawear.publish()
+            let pipline = metawear.publish()
             // Assert there are no loggers active right now
                 ._assertLoggers([], metawear: metawear, file, line)
             // Act
@@ -236,6 +248,7 @@ extension XCTestCase {
                     guard percentComplete == 1.0 else { return }
                     // Assert log obtains data
                     XCTAssertGreaterThan(data.endIndex, 0, file: file, line: line)
+                    XCTAssertGreaterThan(start.distance(to: data.last!.time), 4)
                 })
 
             // Skip any updates before complete
@@ -247,29 +260,7 @@ extension XCTestCase {
             if let message = expectFailure {
                 pipline._sinkExpectFailure(&subs, file, line, exp: exp, errorMessage: message)
             } else {
-                pipline._sinkNoFailure(&subs, file, line, finished: { exp.fulfill() }, receiveValue: { output in
-
-
-                    let end = Date()
-                    let firstTime = output.data.first!.time
-                    let lastTime = output.data.last!.time
-
-                    print("-> First @", firstTime.timeIntervalSince1970, firstTime, firstTime.metaWearEpochMS, firstTime.debugDescription, firstTime.ISO8601Format(), "elapsed",
-                          start.distance(to: firstTime)
-                    )
-
-                    print("-> Last  @", lastTime.timeIntervalSince1970 - 1641432034, lastTime.ISO8601Format(), "elapsed",
-                          start.distance(to: lastTime)
-                    )
-
-                    print("-> End   @", end.timeIntervalSince1970 - 1641432034, end.ISO8601Format(), "elapsed",
-                          start.distance(to: end))
-
-                    print("-> Total @", start.distance(to: lastTime) - start.distance(to: firstTime))
-
-                    print(sut.signalName); exp.fulfill()
-
-                })
+                pipline._sinkNoFailure(&subs, file, line, finished: { exp.fulfill() }, receiveValue: { output in exp.fulfill() })
             }
         }
     }
