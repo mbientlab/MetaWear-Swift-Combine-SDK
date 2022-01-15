@@ -10,7 +10,7 @@ extension DispatchQueue {
 
     public static func warnIfNotOnBleQueue() {
         guard DispatchQueue.isOnBleQueue() == false else { return }
-        print("A MetaWear library interaction was not performed on the BLE queue. Undefined behavior may occur.")
+        NSLog("A MetaWear library interaction was not performed on the BLE queue. Undefined behavior may occur.")
     }
 
     fileprivate static let bleQueueKey = DispatchSpecificKey<Int>()

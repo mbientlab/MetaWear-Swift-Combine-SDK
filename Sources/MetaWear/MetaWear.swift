@@ -702,7 +702,6 @@ private extension MetaWear {
         }
     }
 
-#warning("Is reading MAC going to be an issue?")
     func _didDiscoverCharacteristicsForMetaBoot() {
         // Setup for MetaBoot
         self.publish().read(.deviceInformation)
