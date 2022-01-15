@@ -71,7 +71,6 @@ public extension MWMotion {
         public init() { }
         public typealias DataType = Classification
         public typealias RawDataType = MblMwAccBoschActivity
-        #warning("What is the logger name?")
         public let signalName: MWNamedSignal = .motion
         public var columnHeadings = ["Date", "Activity"]
     }
@@ -260,30 +259,30 @@ extension MWMotion.Activity {
 
     public struct AnyMotionTrigger: Equatable, Hashable {
         public var motionSlopeWasNegative: Bool
-        public var axisTriggering: Axis
+        public var triggers: Set<Axis>
 
         public enum Axis: String, IdentifiableByRawValue {
             case x, y, z
         }
 
-        public init(motionSlopeWasNegative: Bool, axisTriggering: MWMotion.Activity.AnyMotionTrigger.Axis) {
+        public init(motionSlopeWasNegative: Bool, triggers: Set<MWMotion.Activity.AnyMotionTrigger.Axis>) {
             self.motionSlopeWasNegative = motionSlopeWasNegative
-            self.axisTriggering = axisTriggering
+            self.triggers = triggers
         }
 
         public init(raw: MblMwBoschAnyMotion) {
             self.motionSlopeWasNegative = raw.sign == 0
-#warning("Change to set")
-            if raw.x_axis_active != 0 { self.axisTriggering = .x }
-            else if raw.y_axis_active != 0 { self.axisTriggering = .y }
-            else if raw.z_axis_active != 0 { self.axisTriggering = .z }
-            else { fatalError() }
+            var _triggers = Set<Axis>()
+            if raw.x_axis_active != 0 { _triggers.insert(.x) }
+            if raw.y_axis_active != 0 { _triggers.insert(.y) }
+            if raw.z_axis_active != 0 { _triggers.insert(.z) }
+            self.triggers = _triggers
         }
 
         public func stringify() -> [String] {
             let slope = motionSlopeWasNegative ? "-" : "+"
-            let axis = axisTriggering.rawValue
-            return [slope + " " + axis]
+            let axes = triggers.map(\.rawValue).joined(separator: " ")
+            return [slope + " " + axes]
         }
     }
 
