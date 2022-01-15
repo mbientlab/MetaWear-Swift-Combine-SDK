@@ -42,8 +42,8 @@ public enum MWNamedSignal: Equatable, Hashable {
             case .quaternion:               return "quaternion"
             case .orientation:              return "orientation"
             case .temperature:              return "temperature"
-            case .custom(let string):       return string
             case .steps:                    return "steps" // Not supported
+            case .custom(let string):       return string
         }
     }
 
@@ -75,8 +75,12 @@ public enum MWNamedSignal: Equatable, Hashable {
 
         var signal: MWNamedSignal? = nil
 
-        if isolatedName.endIndex == identifier.endIndex || isolatedName == "temperature" {
+        if (isolatedName.endIndex == identifier.endIndex || isolatedName == "temperature") && identifier.isEmpty == false {
             signal = Self.allCases.first(where: { $0.name == isolatedName })
+
+        } else if identifier.isEmpty && Self.customDownloads[""] == nil {
+            // Workaround
+            signal = .steps
 
         } else if Self.customDownloads.keys.contains(identifier) {
             signal = .custom(identifier)
