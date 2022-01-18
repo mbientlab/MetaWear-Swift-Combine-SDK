@@ -1,5 +1,7 @@
 class KnownDeviceController: ObservableObject {
 
+    var isCloudSynced: Bool { metawear == nil }
+    
     @Published private(set) var rssi: Int
     @Published private(set) var connection: CBPeripheralState
 
@@ -18,14 +20,6 @@ class KnownDeviceController: ObservableObject {
     func onAppear() {
         trackRSSI()
         trackConnection()
-    }
-
-    func connect() {
-        metawear?.connect()
-    }
-
-    func disconnect() {
-        metawear?.disconnect()
     }
 }
 

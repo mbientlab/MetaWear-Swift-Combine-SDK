@@ -7,19 +7,16 @@ class UnknownDeviceController: ObservableObject {
 
     private weak var metawear: MetaWear?
     private weak var sync:     MetaWearSyncStore?
-    private weak var parent:   NearbyDeviceListController?
     private      var rssiSub:  AnyCancellable? = nil
 
     init(id: CBPeripheralIdentifier,
-         sync: MetaWearSyncStore,
-         parent: NearbyDeviceListController) {
+         sync: MetaWearSyncStore) {
         let (device, metadata) = sync.getDevice(byLocalCBUUID: id)
         self.metawear = device
         self.name = metadata?.name ?? device!.name
         self.isCloudSynced = metadata != nil
         self.rssi = metawear.rssi
         self.sync = sync
-        self.parent = parent
     }
 
     func onAppear() {
@@ -32,13 +29,11 @@ class UnknownDeviceController: ObservableObject {
         guard let id = metawear?.localBluetoothID else { return }
         isConnecting = true
 
-        sync?.connectAndRemember(unknown: id, didAdd: { [weak self] (device, _) in
-            guard let parent = self?.parent else { return }
+        sync?.connectAndRemember(unknown: id, didAdd: { (device, _) in
             device?.publishIfConnected()
                 .command(.ledFlash(.Presets.one.pattern))
                 .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
-                .store(in: &parent.childDidAddDeviceSubs)
+               
         })
     }
 }
-

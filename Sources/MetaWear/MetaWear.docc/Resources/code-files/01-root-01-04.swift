@@ -20,8 +20,7 @@ class Root: ObservableObject {
     }
 
     func start() {
-        do { // Load known device metadata (e.g., name, capabilities) from the cloud
-            _ = cloudDefaults.synchronize()
+        do {
             try syncedDevices.load()
 
         } catch { NSLog("Load failure: \(error.localizedDescription)") }

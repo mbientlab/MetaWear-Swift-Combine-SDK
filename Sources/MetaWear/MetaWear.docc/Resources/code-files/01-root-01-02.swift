@@ -1,16 +1,15 @@
 import Foundation
+import MetaWear
 
 class Root: ObservableObject {
 
-    private let localDefaults: UserDefaults
-    private let cloudDefaults: NSUbiquitousKeyValueStore
+    let scanner: MetaWearScanner
 
     init() {
-        self.localDefaults = .standard
-        self.cloudDefaults = .default
+        self.scanner = .sharedRestore
     }
 
     func start() {
-        _ = cloudDefaults.synchronize()
+
     }
 }

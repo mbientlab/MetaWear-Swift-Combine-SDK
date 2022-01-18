@@ -211,7 +211,7 @@ public protocol MWPollable: MWReadable {
 ///
 /// These operators accept `MWReadable` instances constructed by
 /// autocompletion, such as ``MWReadable/thermometer(type:board:)``,
-/// or directly, such as ``MWThermometer/init(type:channel:rate:)``.
+/// or directly, such as ``MWThermometer/init(rate:type:board:)``.
 ///
 /// ```swift
 /// metawear

@@ -1,12 +1,13 @@
+import MetaWear
 import Combine
 
-class NearbyDeviceListController: ObservableObject {
+class DeviceListController: ObservableObject {
 
     @Published private(set) var unknownDevices: [CBPeripheralIdentifier] = []
     @Published private(set) var knownDevices: [MACAddress] = []
 
-    private weak var sync:    MetaWearSyncStore?
     private weak var scanner: MetaWearScanner?
+    private weak var sync:    MetaWearSyncStore?
     private var unknownSub:   AnyCancellable? = nil
 
     init(_ sync: MetaWearSyncStore, _ scanner: MetaWearScanner) {
@@ -21,8 +22,7 @@ extension NearbyDeviceListController {
         scanner?.startScan(higherPerformanceMode: true)
 
         unknownSub = sync?.unknownDevices
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.unknownDevices = $0.sorted() }
+    
     }
 
     func onDisappear() {

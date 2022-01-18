@@ -1,0 +1,77 @@
+@Tutorial(time: 5, projectFiles: "Streamy.zip") {
+    @Intro(title: "Logging Sensor Data") {
+        Configure an arbitrary number of sensors for logging, exporting time-synced data as CSVs in a folder.
+        @Image(source: streamyIcon.png, alt: "Streamy app icon")
+    }
+    
+    @Section(title: "Configure logging commands") {
+        @ContentAndMedia {
+            Issue optional logging commands to a MetaWear.
+            @Image(source: bird-rainbow.png, alt: "Bird art")
+        }
+        
+        @Steps {
+            @Step {
+                Gate buttons that issue commands to the MetaWear until the device is connected.
+                @Code(name: "SensorLogging.swift", file: 03-recording-01-01.swift, previousFile: 03-recording-01-01_mask.swift) 
+            }    
+            @Step {
+                Toggle preferred sensors by vending the Binding a SwiftUI toggle component requires.
+                
+                The accelerometer, gyroscope, and magnetometer can be logged either individually or in a fused mode, which enables logging Euler angles, quaternion, linear acceleration, or gravity.
+                @Code(name: "SensorLogging.swift", file: 03-recording-01-02.swift, previousFile: 03-recording-01-02_mask.swift) 
+            }  
+            
+            @Step {
+                MetaWear sensors can generate data at different rates and settings. This SDK organizes these parameters in a struct that you pass into operators like `stream`, `log`, and `command`. You can  use code completion in those operators to find possible options, too.
+                
+                If you don't know exactly which sensors a MetaWear is equipped with, or say if its Bosch accelerometer only records at a subset of frequencies, look at its MetaWearSync metadata or call ``MetaWear/MetaWear/describeModules()``. Any exceptions are highlighted in documentation, throw Swift errors, or the SDK will handle for you. _MetaBase_ automatically restricts presented options based on legal parameters.
+                
+                @Code(name: "SensorLogging.swift", file: 03-recording-01-03.swift) 
+            }  
+            
+            @Step {
+                The `.optionallyLog` operator will conditionally issue a `.log` command for the provided sensor configuration.
+                
+                For an example of optional streaming commands, see the source code for _MetaBase_.
+                @Code(name: "SensorLogging.swift", file: 03-recording-01-04.swift) 
+            }  
+            
+            @Step {
+                If the command(s) issue without error, cache a timestamp. Later, when downloading data, the SDK uses an anchor date to align timestamps in exported CSV files. This is helpful to simultaneously log from multiple devices, as Bluetooth latency will cause logging to start unevenly.
+                
+                _Streamy_ is barebones, keeping this date in memory. _MetaBase_ persists this via iCloud.
+                @Code(name: "SensorLogging.swift", file: 03-recording-01-05.swift) 
+            }
+        }
+    }
+    
+    @Section(title: "Download data") {
+        @ContentAndMedia {
+            Collect logged data into CSV files.
+            @Image(source: bird-gray-yellow.png, alt: "Bird art")
+        }
+        
+        @Steps {
+            @Step {
+                Issue the `downloadLogs` command using the cached start date. This pipeline will emit progress updates as percentages and, at 100%, also emit the collected data.
+                
+                This percentage is a rough estimate from counting flash storage pages. If the last page was only minimally filled with data, you'll see progress leap to 100%.
+                @Code(name: "SensorLogging.swift", file: 03-recording-02-06.swift, previousFile: 03-recording-02-06_mask.swift) 
+            }    
+            
+            @Step {
+                Once the download completes, translate the received array of ``MetaWear/MWDataTable`` into a CSV-formatted String by calling ``MetaWear/MWDataTable/makeCSV(delimiter:)``. 
+                
+                Use ``MetaWear/MWDataTable/source`` for the sensor's name or to reconstruct String-erased values into a concrete type. (The SDK's `.stream` command returns typed values.) The time-related columns and decimal digits of the output are customizable.
+                @Code(name: "SensorLogging.swift", file: 03-recording-02-07.swift) Î
+            }  
+            
+            @Step {
+                Archive these CSVs as needed.
+                
+                _Streamy_ writes these files to a temp folder. A `FileWrapper` for that folder is embedded in a `FileDocument` to align with a SwiftUI API. _MetaBase_ archives the files to CoreData and iCloud and exports them using AppKit and UIKit APIs.
+            }  
+        }
+    }
+}

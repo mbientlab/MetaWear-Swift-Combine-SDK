@@ -1,27 +1,11 @@
 class SensorLoggingController: ObservableObject {
 
-    let name:                                 String
-    @Published var logGyroscope             = true
-    @Published var logAccelerometer         = true
-
-    @Published private(set) var state:        State = .unknown
-    @Published private(set) var enableCTAs:   Bool
-    private var enableCTAsSub:                AnyCancellable? = nil
-
-    init(mac: MACAddress, sync: MetaWearSyncStore) {
-        let (device, metadata) = sync.getDeviceAndMetadata(mac)!
-        self.metawear = device!
-        self.name = metadata.name
-        self.enableCTAs = device?.connectionState == .connected
-    }
-
-    private var startDate: Date     = .init()
+    @Published private(set) var selectedSensors: Set<MWNamedSignal> = []
     private let accelerometerConfig = MWAccelerometer(rate: .hz100, gravity: .g16)
     private let gyroscopeConfig     = MWGyroscope(rate: .hz100, range: .dps2000)
-
-    private unowned let metawear: MetaWear
-    private var logSub: AnyCancellable? = nil
-    private var downloadSub: AnyCancellable? = nil
+    private var logSub:               AnyCancellable? = nil
+    private var startDate:            Date
+    ...
 
     enum State: Equatable {
         case unknown
@@ -32,46 +16,22 @@ class SensorLoggingController: ObservableObject {
 
 extension SensorLoggingController {
 
-    func onAppear() {
-        metawear.connect()
-
-        enableCTAsSub = metawear.connectionStatePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.enableCTAs = $0 == .connected }
-    }
-
     func log() {
+        guard selectedSensors.isEmpty == false else { return }
+
         logSub = metawear
             .publishWhenConnected()
             .first()
-            .optionallyLog(logGyroscope ? gyroscopeConfig : nil)
-            .optionallyLog(logAccelerometer ? accelerometerConfig : nil)
+            .optionallyLog(selectedSensors.contains(.gyroscope) ? gyroscopeConfig : nil)
+            .optionallyLog(selectedSensors.contains(.acceleration) ? accelerometerConfig : nil)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] completion in
-                switch completion {
-                    case .failure(let error):
-                        self?.state = .loggingError(error.localizedDescription)
-                    case .finished: return
-                }
+                guard case let failure(error) = completion else { return }
+                self?.state = .loggingError(error.localizedDescription)
             } receiveValue: { [weak self] _ in
                 self?.state = .logging
                 self?.startDate = .init()
             }
-
-        metawear.connect()
-    }
-
-    func download() {
-        downloadSub = metawear
-            .publishWhenConnected()
-            .first()
-            .downloadLogs(startDate: startDate)
-            .handleEvents(receiveOutput: { [weak self] (_, percentComplete) in
-                DispatchQueue.main.async { [weak self] in
-                    self?.state = .downloading(percentComplete)
-                }
-            })
-            .drop { $0.percentComplete < 1 }
 
         metawear.connect()
     }

@@ -29,12 +29,8 @@ class UnknownDeviceController: ObservableObject {
         guard let id = metawear?.localBluetoothID else { return }
         isConnecting = true
 
-        sync?.connectAndRemember(unknown: id, didAdd: { (device, _) in
-            device?.publishIfConnected()
-                .command(.ledFlash(.Presets.one.pattern))
-                .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
-               
-        })
+        sync?.connectAndRemember(unknown: id, didAdd: { (device, metadata) in
+
+        }
     }
 }
-

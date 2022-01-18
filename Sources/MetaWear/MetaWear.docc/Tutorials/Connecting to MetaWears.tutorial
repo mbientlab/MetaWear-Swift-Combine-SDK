@@ -1,0 +1,201 @@
+@Tutorial(time: 10, projectFiles: "Streamy.zip") {
+    @Intro(title: "Connecting to MetaWears") {
+        Learn how _Streamy_ finds and manages both nearby and cloud-synced MetaWears.
+        @Image(source: streamyIcon.png, alt: "Streamy app icon")
+    }
+    
+    @Section(title: "List nearby devices") {
+        @ContentAndMedia {
+            List MetaWears by the best available identifier: either a stable MAC address or a locally-unique CoreBluetooth UUID.
+            @Image(source: bird-green-yellow.png, alt: "Bird art")
+        }
+        
+        @Steps {
+            @Step {
+                MetaWears not previously connected can be identified by the `UUID` CoreBluetooth provides. For privacy reasons, Apple randomizes these ids between host machines. Once connected, the MetaWear SDK reads and stores the device's stable MAC address. 
+                
+                By syncing MAC addresses and local UUIDs across iOS and macOS devices, the SDK allows you to stably identify a MetaWear or groupings of MetaWears.
+                @Code(name: "DeviceList.swift", file: 02-connecting-01-01.swift) 
+            }    
+            
+            @Step {
+                Instruct CoreBluetooth to start scanning for new nearby devices and send references to any previously used devices.
+                @Code(name: "DeviceList.swift", file: 02-connecting-01-02.swift) 
+            }    
+            
+            @Step {
+                Scanning consumes energy. Stop scanning when there isn't UI to handle new discoveries. 
+                
+                The `higherPerformanceMode` flag increases the frequency of new discoveries — and energy use. CoreBluetooth calls this flag the `CBCentralManagerScanOptionAllowDuplicatesKey`.
+                @Code(name: "DeviceList.swift", file: 02-connecting-01-03.swift) 
+            }    
+            
+            @Step {
+                Subscribe to a Publisher that streams UUIDs of nearby MetaWears that haven't been used before.
+                
+                This SDK uses the `Combine` framework to reason about asynchronous events and value streams. In Combine, a Publisher emits values over time, either forever or terminating with a success or failure. To subscribe to this stream and hold it memory, Combine publishing pipelines return a token, called an `AnyCancellable`. This is a class you can store individually or in a Set. These tokens terminate and deallocate when the parent object deallocates, when you replace the token, or call `.cancel()`. To learn more, we suggest [Joseph Heck's guide](https://heckj.github.io/swiftui-notes/).
+                @Code(name: "DeviceList.swift", file: 02-connecting-01-04.swift) 
+            }  
+            
+            @Step {
+                This SDK's publishers and objects all start and return work on a serial DispatchQueue to ensure the underlying C/C++ library's proper operation. All SDK objects expose this queue, for example the ``MetaWear/MetaWear/bleQueue`` on a MetaWear.
+                
+                To update UI, use `.receive(on:)` to dispatch the remainder of the pipeline asynchronously to the main queue.
+                @Code(name: "DeviceList.swift", file: 02-connecting-01-05.swift) 
+            }  
+            
+            @Step {
+                Terminate the pipeline with `sink`. Any received updates will be sorted for stability before replacing the local published array.
+                
+                To prevent retain cycles, weakify self and other captured objects in Combine closures.
+                @Code(name: "DeviceList.swift", file: 02-connecting-01-06.swift) 
+            }  
+
+            @Step {
+                Subscribe to updates of previously used MetaWears' metadata, including those only used on other host machines.
+                @Code(name: "DeviceList.swift", file: 02-connecting-01-07.swift) 
+            }  
+            
+            @Step {
+                After sorting each update by the device's name for stability, assign the MAC addresses to the locally published array.
+                @Code(name: "DeviceList.swift", file: 02-connecting-01-08.swift) 
+            }  
+        }
+    }
+    
+    @Section(title: "First connection") {
+        @ContentAndMedia {
+            Provide a name, signal strength, and a connection intent for newly discovered MetaWears.
+            
+            @Image(source: bird-teal.png, alt: "Bird art")
+        }
+        
+        @Steps {
+            @Step {
+                Ask the sync store to vend a reference to a ``MetaWear/MetaWear`` held by ``MetaWear/MetaWearScanner``. 
+                @Code(name: "UnknownDevice.swift", file: 02-connecting-02-01.swift, previousFile: 02-connecting-02-01_mask.swift) 
+            }    
+            
+            @Step {
+                Retrieve a name from metadata, if available, or the MetaWear's Bluetooth advertised name.
+                
+                If using a valid UUID from the current app session, the MetaWear reference will never be nil.
+                @Code(name: "UnknownDevice.swift", file: 02-connecting-02-02.swift) 
+            } 
+            
+            @Step {
+                To smooth out UI after a user asks to "forget" a MetaWear, some metadata will still exist in the ``MetaWear/MetaWear`` instance. You can reflect such state by testing if the sync store provided a metadata object.
+                @Code(name: "UnknownDevice.swift", file: 02-connecting-02-03.swift) 
+            }
+            
+            @Step {
+                Depict signal strength by subscribing to the ``MetaWear/MetaWear/rssiPublisher``.
+                
+                Signal strength updates occur in three scenarios. (1) When ``MetaWear/MetaWearScanner`` is actively scanning. (2) Explicitly by calling ``MetaWear/MetaWear/updateRSSI()``. (3) Implicitly by subscribing to the ``MetaWear/MetaWear/rssiPublisher``, which ensures at least one update occurs every 5 seconds until unsubscribed.
+                @Code(name: "UnknownDevice.swift", file: 02-connecting-02-04.swift) 
+            }
+            
+            @Step {
+                Expose a "remember device" action, asking the sync store to connect and record the device's identity. 
+                
+                Once successful, the callback provides the connected MetaWear and its metadata for temporary use.
+                @Code(name: "UnknownDevice.swift", file: 02-connecting-02-05.swift) 
+            }
+
+            @Step {
+                Let's use that callback to flash the LEDs on the MetaWear. Ask the MetaWear to kickoff a Combine pipeline. Issue a command, using autocomplete to choose a preset flash pattern.
+                
+                ``MetaWear/MWLED/Flash/Pattern/Emulator`` can drive UI that mimics the flash command. For an example SwiftUI view using the emulator, see the `mbientSwiftUI` repository on GitHub.
+                @Code(name: "UnknownDevice.swift", file: 02-connecting-02-06.swift) 
+            }
+
+            @Step {
+                One hitch. The sync store will diff its list of devices, likely deallocating this controller before the flash command issues or completes. 
+                
+                In this barebones app, our fix is to get a reference to the parent list controller and store this pipeline there.
+                @Code(name: "UnknownDevice.swift", file: 02-connecting-02-07.swift) 
+            }
+        }
+    }
+    
+    @Section(title: "Managing known devices") {
+        @ContentAndMedia {
+            Issue commands, like rename, reset, or forget, and keep the displayed name up-to-date.
+            
+            @Image(source: bird-blue.png, alt: "Bird art")
+        }
+        
+        @Steps {
+            @Step {
+                Ask the sync store to vend an optional MetaWear and metadata object, delivered as an optional tuple. 
+                
+                In _Streamy_, this controller instantiates only for known devices. Force unwrapping the tuple will never fail. Metadata will always be present, but a MetaWear reference could be nil, as this might be a cloud-synced MetaWear never used locally before.
+                @Code(name: "KnownDevice.swift", file: 02-connecting-03-00.swift, previousFile: 02-connecting-03-00_mask.swift) 
+            }    
+            
+            @Step {
+                Track connection progress with publisher. 
+                
+                Tip: To make depicting UI state a little, MetaWear conforms `CBPeripheralState` to Comparable so you can use logic like `<` or `..<`.
+                @Code(name: "KnownDevice.swift", file: 02-connecting-03-01.swift) 
+            } 
+            
+            @Step {
+                _Streamy_ will show an iCloud glyph and disables any buttons that issue connection-dependent commands if a MetaWear isn't locally available from CoreBluetooth.
+                @Code(name: "KnownDevice.swift", file: 02-connecting-03-02.swift, previousFile: 02-connecting-03-02_mask.swift)) 
+            } 
+            
+            @Step {
+                When this MetaWear is brought nearby and connected, _Streamy_ needs to recover from this locked state. 
+                
+                Ask the sync store for a publisher that fires when this MAC address's metadata or MetaWear reference changes. 
+                @Code(name: "KnownDevice.swift", file: 02-connecting-03-03.swift, previousFile: 02-connecting-03-03_mask.swift) 
+            } 
+
+            @Step {
+                Furthermore, let's also kick off the RSSI and connection state publishers that would have failed to start in `onAppear` when the MetaWear reference was nil.
+                @Code(name: "KnownDevice.swift", file: 02-connecting-03-04.swift, previousFile: 02-connecting-03-04_mask.swift) 
+            } 
+            
+            @Step {
+                Add connect and disconnect actions.
+                @Code(name: "KnownDevice.swift", file: 02-connecting-03-05.swift, previousFile: 02-connecting-03-05_mask.swift) 
+            } 
+            
+            @Step {
+                To forget devices, use the sync store. 
+                
+                The scanner also has this command, but calling it will leave the sync store unawares, rendering it unstable.
+                @Code(name: "KnownDevice.swift", file: 02-connecting-03-06.swift) 
+            } 
+            
+            @Step {
+                To reset a MetaWear, let's issue a one-time command. The ``MetaWear/MetaWear/publishWhenConnected()`` publisher fires every time a MetaWear connects. Use `.first()` to terminate the pipeline after one event. Calling ``MetaWear/MetaWear/connect()`` will start connecting to the MetaWear (if not already connected).
+                
+                This await-kickoff pattern is common for this SDK. Other kick offs include ``MetaWear/MetaWear/publishWhenDisconnected()`` or ``MetaWear/MetaWear/publishIfConnected()``, which errors out if not presently connected.
+                @Code(name: "KnownDevice.swift", file: 02-connecting-03-07.swift) 
+            } 
+            
+            @Step {
+                Reset commands come in gradations of severity: ``MetaWear/MWCommand/resetFactoryDefaults`` nukes everything, ``MetaWear/MWCommand/resetActivities`` strips macros or loggers but not settings, ``MetaWear/MWCommand/macroEraseAll`` strips just macros, and ``MetaWear/MWCommand/restart`` preserves macros, loggers and settings, but purges in-memory activities. 
+                
+                If your MetaWear crashes on connect, use the factory reset to break the bad state caused by a faulty command or Bluetooth hiccup.
+                @Code(name: "KnownDevice.swift", file: 02-connecting-03-08.swift) 
+            } 
+            
+            @Step {
+                To find one MetaWear in a stack of lookalikes, offer to flash its LED. 
+                
+                The Presets enum conforms to CaseIterable, so you could configure a list of MetaWears with up to 10 distinct patterns... or compose your own.
+                @Code(name: "KnownDevice.swift", file: 02-connecting-03-09.swift, previousFile: 02-connecting-03-09_mask.swift) 
+            } 
+            
+            @Step {
+                Finally, let's ask the sync store to rename a MetaWear. Providing a name that's too long or contains invalid characters will throw an error.
+                
+                _Streamy_ will use a quick-and-dirty published Bool to coordinate recovery from an invalid rename using the SwiftUI alert API.
+                @Code(name: "KnownDevice.swift", file: 02-connecting-03-10.swift) 
+            } 
+        }
+    }
+}

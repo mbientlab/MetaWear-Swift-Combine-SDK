@@ -85,6 +85,8 @@ public extension MWThermometer {
 
 public extension MWReadable where Self == MWThermometer {
 
+    /// Thermistor reports degrees Celsius.
+    ///
     static func thermometer(type: MWThermometer.Source = .onboard, board: MWBoard) throws -> Self {
         let available = MWThermometer.Source.availableChannels(on: board)
         guard let i = available.firstIndex(of: type) else {
@@ -96,6 +98,8 @@ public extension MWReadable where Self == MWThermometer {
 
 public extension MWPollable where Self == MWThermometer {
 
+    /// Thermistor reports degrees Celsius.
+    ///
     static func thermometer(rate: MWFrequency, type: MWThermometer.Source = .onboard, board: MWBoard) throws -> Self {
         let available = MWThermometer.Source.availableChannels(on: board)
         guard let i = available.firstIndex(of: type) else {

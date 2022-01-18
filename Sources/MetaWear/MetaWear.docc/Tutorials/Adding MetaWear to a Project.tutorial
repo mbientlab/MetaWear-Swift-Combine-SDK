@@ -1,0 +1,86 @@
+@Tutorial(time: 5, projectFiles: "Streamy.zip") {
+    @Intro(title: "Adding MetaWear to a Project") {
+        This tutorial guides you through building _Streamy_, an app to capture and analyze motion sensor data. 
+        You'll start by adding the MetaWear SDK using Swift Package Manager and then link up dependencies.
+        @Image(source: streamyIcon.png, alt: "Streamy app icon")
+    }
+    
+    @Section(title: "Swift Package Manager") {
+        @ContentAndMedia {
+            Our Combine SDK is available using Xcode's native package dependency manager.
+            @Image(source: bird-red.png, alt: "Bird art")
+        }
+        @Steps {
+            @Step { 
+                In the File menu, choose Add Package...
+                https://github.com/mbientlab/MetaWear-SDK-Swift-Combine
+                @Image(source: tut-AddPackage.png, alt: ".")
+            }
+            
+            @Step { 
+                By default, Xcode will update the MetaWear package when minor versions are released, but not for a major release. You can also depend on a branch head or specific commits. 
+                @Image(source: tut-AddPackage.png, alt: ".")
+            }
+            
+            @Step { 
+                Add all frameworks but Firmware to your Streamy target. (We won't be updating device firmware.) 
+                @Image(source: tut-AddPackageProducts.png, alt: ".")
+            }
+            @Step { 
+                Sometimes Xcode neglects to add those frameworks to a second app target. If they don't appear, tap the + icon. 
+                @Image(source: tut-ManuallyAddProducts.png, alt: ".")
+            }
+            @Step { 
+                Don't forget to set the Info.plist Bluetooth privacy usage descriptions.
+                @Image(source: tut-Plist.png, alt: ".")
+            }
+            @Step { 
+                For macOS, ensure Bluetooth and CloudKit permissions are enabled.
+                @Image(source: tut-MacPermissions.png, alt: ".")
+            }
+            @Step { 
+                For iOS, these permissions are needed.
+                @Image(source: tut-iOSPermissions.png, alt: ".")
+            }
+        }
+    }
+    
+    @Section(title: "Add MetaWear and MetaWearSync") {
+        @ContentAndMedia {
+            MetaWear has three core classes: ``MetaWear/MetaWear``, ``MetaWear/MetaWearScanner``, and `MetaWearSyncStore`.
+            @Image(source: bird-red-yellow.png, alt: "Bird art")
+        }
+        @Steps {
+            @Step { 
+                Streamy will house the scanner and sync store in a root object, which holds off any work that could produce UI updates until the first view appears.
+                @Code(name: "Root.swift", file: 01-root-01-01.swift) {}
+            }    
+            @Step { 
+                The ``MetaWear/MetaWearScanner`` abstracts the CoreBluetooth framework for you, finding nearby ``MetaWear`` devices. The `.sharedRestore` singleton enables CoreBluetooth to recognize this app and vend it previously used peripherals.
+                @Code(name: "Root.swift", file: 01-root-01-02.swift) {}
+            } 
+            @Step { 
+                To persist names, capabilities, and other data about previously connected MetaWears, the scanner and other SDK components use UserDefaults storage. 
+                
+                You can inspect the keys used and specify the container at `UserDefaults.MetaWear.suite`. By default, the SDK uses `.standard`. 
+                @Code(name: "Root.swift", file: 01-root-01-03.swift) {}
+            }
+            @Step { 
+                Apple randomizes Bluetooth device identifiers between devices. That undermines syncing device-specific files and data between Apple machines. 
+    
+                The `MetaWearSyncStore` solves this by saving de-identifying metadata to iCloud key value storage, including a device's name, serial number, and sensor capabilities. If using this SDK feature, use the `MetaWearSyncStore` exclusively to obtain and manage MetaWears, rather than the scanner. Otherwise, the saved data will become out-of-sync.
+                @Code(name: "Root.swift", file: 01-root-01-04.swift) {}
+            }
+            @Step { 
+                An iCloud key value store must be synchronized at launch to obtain the latest values.
+                @Code(name: "Root.swift", file: 01-root-01-05.swift) {}
+            }
+            @Step { 
+                For brevity, this tutorial will skip UI-related code. 
+                
+                See the Streamy repo for how `Root` and other aspects are handled in this barebones SwiftUI app.
+                @Code(name: "Root.swift", file: 01-root-02-06.swift, reset: true) {}
+            }
+        }
+    }
+}
