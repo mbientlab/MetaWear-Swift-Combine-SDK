@@ -237,7 +237,7 @@ public extension MetaWearSyncStore {
     ///
     func getDevice(_ mac: MACAddress) -> MetaWear? {
         bleQueue.sync {
-            guard let meta = _knownDevices[mac] else { return nil }
+            guard let meta = _knownDevices.value[mac] else { return nil }
             return getDevice(meta)
         }
     }
@@ -417,7 +417,7 @@ public extension MetaWearSyncStore {
         }
     }
 
-    /// Update values for a known device both in metadata and advertising packets
+    /// Update values for a known device both in metadata and advertising packets.
     ///
     func rename(known: MetaWear.Metadata, to newName: String) throws {
         let command = try MWChangeAdvertisingName(newName: newName)
@@ -432,9 +432,14 @@ public extension MetaWearSyncStore {
             /// Rename in advertisements
             guard let device = device, let self = self else { return }
             device.publishWhenConnected()
+                .first()
                 .command(command)
                 .sink { _ in } receiveValue: { _ in }
                 .store(in: &self.subs)
+
+            if device.connectionState < .connecting {
+                device.connect()
+            }
         }
     }
 }
