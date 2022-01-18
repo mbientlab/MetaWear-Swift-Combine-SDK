@@ -60,8 +60,8 @@ public extension MWStreamable where Self == MWMagnetometer {
 }
 
 public extension MWLoggable where Self == MWMagnetometer {
-    static func magnetometer(freq: MWMagnetometer.SampleFrequency? = nil) -> Self {
-        Self(freq: freq)
+    static func magnetometer(rate: MWMagnetometer.SampleFrequency? = nil) -> Self {
+        Self(freq: rate)
     }
 }
 

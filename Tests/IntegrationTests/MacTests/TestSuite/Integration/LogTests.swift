@@ -19,7 +19,7 @@ class LogTests: XCTestCase {
     func test_LogThenDownload_TwoSensors_AccelerometerMagnetometer() {
         _testLog2(
             .accelerometer(rate: .hz50, gravity: .g2),
-            .magnetometer(freq: .hz25)
+            .magnetometer(rate: .hz25)
         )
     }
 
@@ -102,11 +102,11 @@ class LogTests: XCTestCase {
     }
 
     func test_LogThenDownload_Gryoscope() {
-        _testLog( .gyroscope(range: .dps1000, freq: .hz25) )
+        _testLog( .gyroscope(rate: .hz25, range: .dps1000) )
     }
 
     func test_LogThenDownload_Magnetometer() {
-        _testLog( .magnetometer(freq: .hz25) )
+        _testLog( .magnetometer(rate: .hz25) )
     }
 
     /// Remember to depress the button, otherwise there will be no logged data
@@ -173,7 +173,7 @@ class LogTests: XCTestCase {
 
     func test_LogThenDownload_Temperature() throws {
         _testLog(byPolling: {
-            try! MWThermometer(type: .onboard, board: $0.board, rate: .init(hz: 1))
+            try! MWThermometer(rate: .init(hz: 1), type: .onboard, board: $0.board)
         })
     }
 

@@ -106,25 +106,25 @@ public extension MWNamedSignal {
 
     var downloadUtilities: MWNamedSignal.DownloadUtilities {
         switch self {
-            case .acceleration: return .init(loggable: .accelerometer(rate: .hz100, gravity: .g16))
-            case .altitude: return .init(loggable: .absoluteAltitude(standby: .ms10, iir: .off, oversampling: .standard))
-            case .ambientLight: return .init(loggable: .ambientLight(rate: .ms1000, gain: .x1, integrationTime: .ms100))
-            case .chargingStatus: return .init(loggable: .chargingStatus)
-            case .eulerAngles: return .init(loggable: .sensorFusionEulerAngles(mode: .compass))
-            case .gravity: return .init(loggable: .sensorFusionGravity(mode: .compass))
-            case .gyroscope: return .init(loggable: .gyroscope(range: .dps1000, freq: .hz100))
-            case .humidity: return .init(pollable: .humidity())
+            case .acceleration:       return .init(loggable: .accelerometer(rate: .hz100, gravity: .g16))
+            case .altitude:           return .init(loggable: .absoluteAltitude(standby: .ms10, iir: .off, oversampling: .standard))
+            case .ambientLight:       return .init(loggable: .ambientLight(rate: .ms1000, gain: .x1, integrationTime: .ms100))
+            case .chargingStatus:     return .init(loggable: .chargingStatus)
+            case .eulerAngles:        return .init(loggable: .sensorFusionEulerAngles(mode: .compass))
+            case .gravity:            return .init(loggable: .sensorFusionGravity(mode: .compass))
+            case .gyroscope:          return .init(loggable: .gyroscope(rate: .hz100, range: .dps1000))
+            case .humidity:           return .init(pollable: .humidity())
             case .linearAcceleration: return .init(loggable: .sensorFusionLinearAcceleration(mode: .compass))
-            case .magnetometer: return .init(loggable: .magnetometer(freq: .hz10))
-            case .mechanicalButton: return .init(loggable: .mechanicalButton)
+            case .magnetometer:       return .init(loggable: .magnetometer(rate: .hz10))
+            case .mechanicalButton:   return .init(loggable: .mechanicalButton)
             case .motion: fatalError("C++ library is being rewritten to support logging.")
 //                return .init(loggable: .motionActivityClassification)
-            case .orientation: return .init(loggable: .orientation)
-            case .pressure: return .init(loggable: .relativePressure(standby: .ms10, iir: .off, oversampling: .standard))
-            case .quaternion: return .init(loggable: .sensorFusionQuaternion(mode: .compass))
-            case .steps: return .init(loggable: .stepDetector(sensitivity: .normal))
-            case .temperature: return .init(pollable: MWThermometer(type: .onboard, channel: 0, rate: .hz1))
-            case .custom(let id): return Self.customDownloads[id]!
+            case .orientation:        return .init(loggable: .orientation)
+            case .pressure:           return .init(loggable: .relativePressure(standby: .ms10, iir: .off, oversampling: .standard))
+            case .quaternion:         return .init(loggable: .sensorFusionQuaternion(mode: .compass))
+            case .steps:              return .init(loggable: .stepDetector(sensitivity: .normal))
+            case .temperature:        return .init(pollable: MWThermometer(rate: .hz1, type: .onboard, channel: 0))
+            case .custom(let id):     return Self.customDownloads[id]!
         }
     }
 
