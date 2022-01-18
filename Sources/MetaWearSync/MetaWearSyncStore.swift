@@ -223,7 +223,8 @@ public extension MetaWearSyncStore {
         }
     }
 
-    /// Retrieve a reference for a device by MAC address.
+    /// Retrieve a reference for a device by MAC address and associated
+    /// known Bluetooth IDs.
     ///
     /// If ``forget(locally:)`` or ``forget(globally:)`` was called
     /// on the device this session, `DeviceInformation` still exists
@@ -231,7 +232,25 @@ public extension MetaWearSyncStore {
     /// even though the local CoreBluetooth UUID is not associated
     /// with metadata in ``knownDevices``.
     ///
-    /// - Parameter device: Targeted device
+    /// - Parameter device: Targeted device MAC address
+    /// - Returns: Reference to the device, if available from the scanner
+    ///
+    func getDevice(_ mac: MACAddress) -> MetaWear? {
+        bleQueue.sync {
+            guard let meta = _knownDevices[mac] else { return nil }
+            return getDevice(meta)
+        }
+    }
+
+    /// Retrieve a reference for a device by known Bluetooth IDs.
+    ///
+    /// If ``forget(locally:)`` or ``forget(globally:)`` was called
+    /// on the device this session, `DeviceInformation` still exists
+    /// on the MetaWear instance and the device will be retrieved,
+    /// even though the local CoreBluetooth UUID is not associated
+    /// with metadata in ``knownDevices``.
+    ///
+    /// - Parameter device: Targeted device metadata
     /// - Returns: Reference to the device, if available from the scanner
     ///
     func getDevice(_ device: MetaWear.Metadata) -> MetaWear? {
