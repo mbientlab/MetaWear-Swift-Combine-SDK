@@ -159,3 +159,43 @@ public extension MWNamedSignal {
     }
 
 }
+
+// MARK: - Conflicting Sensor Utilities
+
+public extension MWNamedSignal {
+
+    var isSensorFusion: Bool { Self.allSensorFusion.contains(self) }
+
+    static let allSensorFusion: [MWNamedSignal] = [.eulerAngles, .gravity, .quaternion, .linearAcceleration]
+
+    /// Cannot be streamed or logged at the same time.
+    var conflictsWithSensorFusion: Bool { Self.allSensorFusionConflicts.contains(self) }
+
+    /// Cannot be streamed or logged at the same time as these sensors' outputs are being fused together.
+    static let allSensorFusionConflicts: [MWNamedSignal] = [.gyroscope, .acceleration, .magnetometer]
+
+}
+
+public extension Set where Element == MWNamedSignal {
+
+    mutating func removeConflicts(for sensor: MWNamedSignal) {
+        if sensor.isSensorFusion {
+            removeAllSensorFusion()
+            removeAllConflictsWithSensorFusion()
+        } else if sensor.conflictsWithSensorFusion {
+            removeAllSensorFusion()
+        }
+    }
+
+    mutating func removeAllConflictsWithSensorFusion() {
+        MWNamedSignal.allSensorFusionConflicts.forEach {
+            self.remove($0)
+        }
+    }
+
+    mutating func removeAllSensorFusion()  {
+        MWNamedSignal.allSensorFusion.forEach {
+            self.remove($0)
+        }
+    }
+}
