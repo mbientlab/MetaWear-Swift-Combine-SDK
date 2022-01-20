@@ -134,7 +134,7 @@ internal extension MetaWearSyncStore {
     /// Refreshes Metadata for the given MetaWear,
     /// updating any persisted information matching that MAC address.
     ///
-    func makeFirstMetadata(for metawear: MetaWear, didRefresh: ((MetaWear.Metadata) -> Void)? = nil) {
+    func makeFirstMetadata(for metawear: MetaWear, didRefresh: ((MetaWearMetadata) -> Void)? = nil) {
         metawear.publishWhenConnected()
             .first()
             .mapToMWError()
@@ -150,7 +150,7 @@ internal extension MetaWearSyncStore {
                 )
             }
         /// Make metadata from this
-            .map { modules, ids -> MetaWear.Metadata in
+            .map { modules, ids -> MetaWearMetadata in
                 // An empty MAC never occur, but would be high-risk. Provide a stand-in identifier until refreshed.
                 let mac = ids.info.mac.isEmpty == false
                 ? ids.info.mac

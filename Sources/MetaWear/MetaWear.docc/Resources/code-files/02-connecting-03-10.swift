@@ -5,7 +5,7 @@ class KnownDeviceController: ObservableObject {
 
     @Published private(set) var rssi: Int
     @Published private(set) var connection: CBPeripheralState
-    @Published private var metadata: MetaWear.Metadata
+    @Published private var metadata: MetaWearMetadata
     @Published var showRenamePrompt = false
 
     private weak var metawear: MetaWear? = nil

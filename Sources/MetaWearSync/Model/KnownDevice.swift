@@ -6,4 +6,4 @@ import MetaWear
 /// An optional MetaWear reference (e.g., never seen locally by CoreBluetooth)
 /// and mandatory Metadata (is cloud persisted)
 ///
-public typealias MWKnownDevice = (mw: MetaWear?, meta: MetaWear.Metadata)
+public typealias MWKnownDevice = (mw: MetaWear?, meta: MetaWearMetadata)

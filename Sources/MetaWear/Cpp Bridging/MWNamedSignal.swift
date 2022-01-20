@@ -48,7 +48,7 @@ public enum MWNamedSignal: Equatable, Hashable, Identifiable {
             case .orientation:              return "orientation"
             case .temperature:              return "temperature"
             case .steps:
-#warning("Resolve steps bug")
+#warning("The step counter and detector sensors can currently be streamed, but have a bug when logging them. Fix forthcoming.")
                 print("MetaWear Combine SDK Beta: Steps logging has bugs.")
                 return "steps"
             case .custom(let string):       return string

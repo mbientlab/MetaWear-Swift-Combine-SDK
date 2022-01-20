@@ -3,7 +3,7 @@
 import Foundation
 import Combine
 
-/// Object that implements some persistence strategy with legacy support
+/// Object that implements some versioned persistence strategy to support retrieval of old model formats.
 ///
 open class MWLoader<Loadable: VersionedContainerLoadable> {
     public let loaded: AnyPublisher<Loadable, Never>

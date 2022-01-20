@@ -24,8 +24,8 @@ public final class DraggableMetaWear: NSObject, Codable {
     /// Metadata-based representation of a group or a single MetaWear
     ///
     public enum Item: Codable {
-        case group(MetaWear.Group)
-        case remembered(meta: MetaWear.Metadata, localID: CBPeripheralIdentifier?)
+        case group(MetaWearGroup)
+        case remembered(meta: MetaWearMetadata, localID: CBPeripheralIdentifier?)
         case unknown(CBPeripheralIdentifier)
     }
 
@@ -81,14 +81,14 @@ private extension DraggableMetaWear {
         }
     }
 
-    static func represent(_ group: MetaWear.Group) -> String {
+    static func represent(_ group: MetaWearGroup) -> String {
         """
     \(group.name)
     MACs: \(group.deviceMACs.sorted().joined(separator: ", "))
     """
     }
 
-    static func represent(_ meta: MetaWear.Metadata, _ localID: CBPeripheralIdentifier?) -> String {
+    static func represent(_ meta: MetaWearMetadata, _ localID: CBPeripheralIdentifier?) -> String {
         """
     \(meta.name)
     MAC: \(meta.mac)

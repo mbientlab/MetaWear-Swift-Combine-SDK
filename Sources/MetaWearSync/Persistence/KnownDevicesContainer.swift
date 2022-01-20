@@ -54,12 +54,12 @@ fileprivate struct MWGroupDTO1: Codable {
     let id: UUID
     var deviceMACs: Set<String>
     var name: String
-    init(model: MetaWear.Group) {
+    init(model: MetaWearGroup) {
         self.id = model.id
         self.deviceMACs = model.deviceMACs
         self.name = model.name
     }
-    var model: MetaWear.Group {
+    var model: MetaWearGroup {
         .init(id: id, deviceMACs: deviceMACs, name: name)
     }
 }
@@ -73,7 +73,7 @@ fileprivate struct MWMetadataDTO1: Codable {
     var localBluetoothIds: Set<UUID>
     var name: String
 
-    init(model: MetaWear.Metadata) {
+    init(model: MetaWearMetadata) {
         self.mac = model.mac
         self.model = .init(model: model.model)
         self.serial = model.serial
@@ -82,7 +82,7 @@ fileprivate struct MWMetadataDTO1: Codable {
         self.name = model.name
     }
 
-    var appModel: MetaWear.Metadata {
+    var appModel: MetaWearMetadata {
         return .init(
             mac: mac,
             serial: serial,

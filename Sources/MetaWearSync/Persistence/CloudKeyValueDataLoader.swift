@@ -3,6 +3,8 @@
 import Foundation
 import Combine
 
+/// Loads from local and iCloud key value stores, sending notifications about cloud updates.
+///
 open class MWCloudKeyValueDataLoader<Loadable: VersionedContainerLoadable>: MWLoader<Loadable> {
 
     private let _loaded = PassthroughSubject<Loadable,Never>()

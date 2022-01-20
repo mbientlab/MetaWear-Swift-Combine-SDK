@@ -19,3 +19,5 @@ SERVICES, OR ANY CLAIMS BY THIRD PARTIES (INCLUDING BUT NOT LIMITED TO ANY DEFEN
 
 Should you have any questions regarding your right to use this Software, contact MbientLab via email:
 hello@mbientlab.com.
+
+Images of birds for the demo app Streamy in this SDK's interactive documentation are adapted from "Nature Vectors" on Vecteezy.com.

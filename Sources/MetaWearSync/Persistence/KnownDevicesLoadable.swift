@@ -7,11 +7,11 @@ import Combine
 /// Container for metadata for MetaWear devices and groups.
 ///
 public struct MWKnownDevicesLoadable {
-    public var devices: [MetaWear.Metadata]
-    public var groups: [MetaWear.Group]
-    public var groupsRecovery: [MetaWear.Group]
+    public var devices: [MetaWearMetadata]
+    public var groups: [MetaWearGroup]
+    public var groupsRecovery: [MetaWearGroup]
 
-    public init(devices: [MetaWear.Metadata], groups: [MetaWear.Group], groupsRecovery: [MetaWear.Group]) {
+    public init(devices: [MetaWearMetadata], groups: [MetaWearGroup], groupsRecovery: [MetaWearGroup]) {
         self.devices = devices
         self.groups = groups
         self.groupsRecovery = groupsRecovery
