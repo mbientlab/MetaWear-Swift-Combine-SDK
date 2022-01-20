@@ -3,16 +3,20 @@
 import Combine
 import CoreBluetooth
 
-/// Handles messages from MetaWear devices
+/// Handles log messages (e.g., Bluetooth packets) from MetaWear devices
 ///
 public protocol MWConsoleLoggerDelegate: AnyObject {
     func logWith(_ level: MWConsoleLogger.LogLevel, message: String)
 }
 
-/// Simple logger implementation that prints messages to the console
+/// Prints MetaWear Bluetooth packets to the console. Singleton.
+/// Set ``MWConsoleLogger/activateConsoleLoggingOnAllMetaWears`` to enroll all devices or manually set the logger in the target MetaWear.
 ///
 public class MWConsoleLogger: MWConsoleLoggerDelegate {
     public static let shared = MWConsoleLogger()
+
+    /// Configures this logger as the default logger for all MetaWears.
+    public static let activateConsoleLoggingOnAllMetaWears = false
 
     internal init() {
         self.didLogPublisher = _didLog.dropFirst().eraseToAnyPublisher()

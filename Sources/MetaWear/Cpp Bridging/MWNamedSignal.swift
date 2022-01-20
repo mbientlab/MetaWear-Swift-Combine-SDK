@@ -2,9 +2,14 @@
 
 import Foundation
 
-/// String key returned with a logger signal for a module
+/// String key returned with a logger signal for a module by the C++ library.
+/// Subscripts can indicate a particular aspect (e.g., which thermistor),
+/// a custom slice into a Cartesian float, or other more advanced operations.
 ///
-public enum MWNamedSignal: Equatable, Hashable {
+/// You can use .custom and customDownloads to capture custom logger signals
+/// into Swift types during a download or stream.
+///
+public enum MWNamedSignal: Equatable, Hashable, Identifiable {
     case acceleration
     case altitude
     case ambientLight
@@ -42,7 +47,10 @@ public enum MWNamedSignal: Equatable, Hashable {
             case .quaternion:               return "quaternion"
             case .orientation:              return "orientation"
             case .temperature:              return "temperature"
-            case .steps:                    return "steps" // Not supported
+            case .steps:
+#warning("Resolve steps bug")
+                print("MetaWear Combine SDK Beta: Steps logging has bugs.")
+                return "steps"
             case .custom(let string):       return string
         }
     }
@@ -66,6 +74,8 @@ public enum MWNamedSignal: Equatable, Hashable {
         .steps,
         .temperature
     ]
+
+    public var id: String { name }
 
     public init(identifier: String) {
 
@@ -106,25 +116,25 @@ public extension MWNamedSignal {
 
     var downloadUtilities: MWNamedSignal.DownloadUtilities {
         switch self {
-            case .acceleration: return .init(loggable: .accelerometer(rate: .hz100, gravity: .g16))
-            case .altitude: return .init(loggable: .absoluteAltitude(standby: .ms10, iir: .off, oversampling: .standard))
-            case .ambientLight: return .init(loggable: .ambientLight(rate: .ms1000, gain: .x1, integrationTime: .ms100))
-            case .chargingStatus: return .init(loggable: .chargingStatus)
-            case .eulerAngles: return .init(loggable: .sensorFusionEulerAngles(mode: .compass))
-            case .gravity: return .init(loggable: .sensorFusionGravity(mode: .compass))
-            case .gyroscope: return .init(loggable: .gyroscope(range: .dps1000, freq: .hz100))
-            case .humidity: return .init(pollable: .humidity())
+            case .acceleration:       return .init(loggable: .accelerometer(rate: .hz100, gravity: .g16))
+            case .altitude:           return .init(loggable: .absoluteAltitude(standby: .ms10, iir: .off, oversampling: .standard))
+            case .ambientLight:       return .init(loggable: .ambientLight(rate: .ms1000, gain: .x1, integrationTime: .ms100))
+            case .chargingStatus:     return .init(loggable: .chargingStatus)
+            case .eulerAngles:        return .init(loggable: .sensorFusionEulerAngles(mode: .compass))
+            case .gravity:            return .init(loggable: .sensorFusionGravity(mode: .compass))
+            case .gyroscope:          return .init(loggable: .gyroscope(rate: .hz100, range: .dps1000))
+            case .humidity:           return .init(pollable: .humidity())
             case .linearAcceleration: return .init(loggable: .sensorFusionLinearAcceleration(mode: .compass))
-            case .magnetometer: return .init(loggable: .magnetometer(freq: .hz10))
-            case .mechanicalButton: return .init(loggable: .mechanicalButton)
+            case .magnetometer:       return .init(loggable: .magnetometer(rate: .hz10))
+            case .mechanicalButton:   return .init(loggable: .mechanicalButton)
             case .motion: fatalError("C++ library is being rewritten to support logging.")
 //                return .init(loggable: .motionActivityClassification)
-            case .orientation: return .init(loggable: .orientation)
-            case .pressure: return .init(loggable: .relativePressure(standby: .ms10, iir: .off, oversampling: .standard))
-            case .quaternion: return .init(loggable: .sensorFusionQuaternion(mode: .compass))
-            case .steps: return .init(loggable: .stepDetector(sensitivity: .normal))
-            case .temperature: return .init(pollable: MWThermometer(type: .onboard, channel: 0, rate: .hz1))
-            case .custom(let id): return Self.customDownloads[id]!
+            case .orientation:        return .init(loggable: .orientation)
+            case .pressure:           return .init(loggable: .relativePressure(standby: .ms10, iir: .off, oversampling: .standard))
+            case .quaternion:         return .init(loggable: .sensorFusionQuaternion(mode: .compass))
+            case .steps:              return .init(loggable: .stepDetector(sensitivity: .normal))
+            case .temperature:        return .init(pollable: MWThermometer(rate: .hz1, type: .onboard, channel: 0))
+            case .custom(let id):     return Self.customDownloads[id]!
         }
     }
 
@@ -158,4 +168,44 @@ public extension MWNamedSignal {
         }
     }
 
+}
+
+// MARK: - Conflicting Sensor Utilities
+
+public extension MWNamedSignal {
+
+    var isSensorFusion: Bool { Self.allSensorFusion.contains(self) }
+
+    static let allSensorFusion: [MWNamedSignal] = [.eulerAngles, .gravity, .quaternion, .linearAcceleration]
+
+    /// Cannot be streamed or logged at the same time.
+    var conflictsWithSensorFusion: Bool { Self.allSensorFusionConflicts.contains(self) }
+
+    /// Cannot be streamed or logged at the same time as these sensors' outputs are being fused together.
+    static let allSensorFusionConflicts: [MWNamedSignal] = [.gyroscope, .acceleration, .magnetometer]
+
+}
+
+public extension Set where Element == MWNamedSignal {
+
+    mutating func removeConflicts(for sensor: MWNamedSignal) {
+        if sensor.isSensorFusion {
+            removeAllSensorFusion()
+            removeAllConflictsWithSensorFusion()
+        } else if sensor.conflictsWithSensorFusion {
+            removeAllSensorFusion()
+        }
+    }
+
+    mutating func removeAllConflictsWithSensorFusion() {
+        MWNamedSignal.allSensorFusionConflicts.forEach {
+            self.remove($0)
+        }
+    }
+
+    mutating func removeAllSensorFusion()  {
+        MWNamedSignal.allSensorFusion.forEach {
+            self.remove($0)
+        }
+    }
 }

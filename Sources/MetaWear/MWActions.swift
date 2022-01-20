@@ -173,7 +173,7 @@ public protocol MWStreamable: MWDataConvertible {
 /// Direct construction may be useful for patterns where you persist
 /// user selected settings or organize arbitrarily large logging or
 /// streaming sessions. Our open-source **MetaBase 5** app provides an example
-/// in [ActionVM.swift](https://github.com/mbientlab/MetaBase/blob/6bc70d01be561565de2755c85c810d784ef68760/Shared/Screens/4_Action/VMs/ActionVM.swift#L224) of starting logging and streaming sessions with arbitrary
+/// in [ActionVM.swift](https://github.com/mbientlab/MetaBase/blob/main/Shared/Screens/4_Action/VMs/ActionVM.swift) of starting logging and streaming sessions with arbitrary
 /// mixes of `MWPollable`, `MWStreamable`, and `MWLoggable` sensors with merged
 /// outputs.
 ///
@@ -211,7 +211,7 @@ public protocol MWPollable: MWReadable {
 ///
 /// These operators accept `MWReadable` instances constructed by
 /// autocompletion, such as ``MWReadable/thermometer(type:board:)``,
-/// or directly, such as ``MWThermometer/init(type:channel:rate:)``.
+/// or directly, such as ``MWThermometer/init(rate:type:board:)``.
 ///
 /// ```swift
 /// metawear

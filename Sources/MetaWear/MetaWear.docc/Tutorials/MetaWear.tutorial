@@ -1,42 +1,34 @@
 @Tutorials(name: "MetaWear") {
     @Intro(title: "From Zero to Machine Learning") {
         
-        [Not completed](uhoh.com) Stream, log, configure, and connect to MetaWear wearable sensors with or without C++ expertise. Get started by building the demo app _Streamy_ with only basic `Swift` and `SwiftUI` experience.
+        Control MetaWear wearable sensors to classify movement. Let's build _Streamy_, a barebones app using `Swift`, `Combine`, `CoreML`, and `SwiftUI`.
         
-        @Image(source: streamyIcon.png, alt: "Icon for the demo app Streamy with a MetaWear sensor on top of binary code.")
+        @Image(source: streamyIcon.png, alt: "The Streamy app icon: A hummingbird flying above binary code.")
     }
     
     @Chapter(name: "Discover & Connect") {
-        @Image(source: streamyIcon.png, alt: ".")
+        @Image(source: metamotion.png, alt: "Bird art")
         
-        Find and connect to nearby devices.
+        Find and connect to nearby devices with iCloud-synced metadata.
         
-        @TutorialReference(tutorial: "doc:Finding-Nearby-Devices")
-        @TutorialReference(tutorial: "doc:Connecting-To-A-MetaWear")
-        @TutorialReference(tutorial: "doc:Renaming-Devices")
+        @TutorialReference(tutorial: "doc:Adding-MetaWear-to-a-Project")
+        @TutorialReference(tutorial: "doc:Connecting-to-MetaWears"
     }
     
-    @Chapter(name: "Stream the Accelerometer") {
-        @Image(source: streamyIcon.png, alt: ".")
+    @Chapter(name: "Log Sensor Data") {
+            @Image(source: metawear-board.png, alt: "Bird art")
         
-        Configure and read the accelerometer.
+        Download data from selected sensors into CSV format.
         
-        @TutorialReference(tutorial: "doc:Finding-Nearby-Devices")
+        @TutorialReference(tutorial: "doc:Logging-Sensor-Data")
     }
 
     @Chapter(name: "Train a CoreML Model") {
-        @Image(source: streamyIcon.png, alt: ".")
+        @Image(source: metawear-side.png, alt: "Bird art")
         
-        Train your own machine learning model.
+        Train and apply your own machine learning model to classify user movement.
         
-        @TutorialReference(tutorial: "doc:Finding-Nearby-Devices")
-    }
-    
-    @Chapter(name: "Show Rep Counts by Machine Learning") {
-        @Image(source: streamyIcon.png, alt: ".")
-        
-        Train your own machine learning model.
-        
-        @TutorialReference(tutorial: "doc:Finding-Nearby-Devices")
+        @TutorialReference(tutorial: "doc:Training-Activity-Classification")
+        @TutorialReference(tutorial: "doc:Using-a-CoreML-Model")
     }
 }

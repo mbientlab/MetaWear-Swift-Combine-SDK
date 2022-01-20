@@ -10,9 +10,9 @@ public extension MetaWearScanner {
 
 /// Start scanning for MetaWear devices without having to understand all of CoreBluetooth. Pipelines return on the scanner's unique `bleQueue`.
 ///
-/// You may prefer to import `MetaWearSync` and use the `MetaWearSyncStore` for its iCloud-synced metadata handling, instead of interactive with the scanner directly to obtain MetaWears.
+/// You may prefer to import `MetaWearSync` and use the `MetaWearSyncStore` for its iCloud-synced metadata handling, instead of interacting with the scanner directly to obtain MetaWears.
 ///
-public class MetaWearScanner: NSObject {
+open class MetaWearScanner: NSObject {
 
     // MARK: - Discovered Devices
 

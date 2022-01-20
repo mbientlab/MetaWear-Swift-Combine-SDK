@@ -25,7 +25,7 @@ public struct MWThermometer: MWReadable, MWPollable {
 
     /// Verifies channel and source alignment before streaming or logging.
     ///
-    public init(type: Source, channel: Int, board: MWBoard, rate: MWFrequency = .init(hz: 1)) throws {
+    public init(rate: MWFrequency = .init(hz: 1), type: Source, channel: Int, board: MWBoard) throws {
         guard Source(board: board, atChannel: channel) == type else {
             throw MWError.operationFailed("\(type.displayName) unavailable at the specified channel.")
         }
@@ -37,7 +37,7 @@ public struct MWThermometer: MWReadable, MWPollable {
 
     /// Verifies channel and source alignment before streaming or logging.
     ///
-    public init(type: Source, board: MWBoard, rate: MWFrequency = .init(hz: 1)) throws {
+    public init(rate: MWFrequency = .init(hz: 1), type: Source, board: MWBoard) throws {
         let available = MWThermometer.Source.availableChannels(on: board)
         guard let i = available.firstIndex(of: type) else {
             throw MWError.operationFailed("\(type.displayName) is not available.")
@@ -52,7 +52,7 @@ public struct MWThermometer: MWReadable, MWPollable {
     /// exposing possible faults when attempting to log or stream.
     /// Useful when using the Metadata package and channels are known.
     ///
-    public init(type: Source, channel: Int, rate: MWFrequency) {
+    public init(rate: MWFrequency, type: Source, channel: Int) {
         self.type = type
         self.channel = channel
         self.pollingRate = rate
@@ -85,23 +85,27 @@ public extension MWThermometer {
 
 public extension MWReadable where Self == MWThermometer {
 
+    /// Thermistor reports degrees Celsius.
+    ///
     static func thermometer(type: MWThermometer.Source = .onboard, board: MWBoard) throws -> Self {
         let available = MWThermometer.Source.availableChannels(on: board)
         guard let i = available.firstIndex(of: type) else {
             throw MWError.operationFailed("\(type.displayName) is not available.")
         }
-        return try Self(type: type, channel: i, board: board, rate: .init(hz: 1))
+        return try Self(rate: .init(hz: 1), type: type, channel: i, board: board)
     }
 }
 
 public extension MWPollable where Self == MWThermometer {
 
-    static func thermometer(type: MWThermometer.Source = .onboard, board: MWBoard, rate: MWFrequency) throws -> Self {
+    /// Thermistor reports degrees Celsius.
+    ///
+    static func thermometer(rate: MWFrequency, type: MWThermometer.Source = .onboard, board: MWBoard) throws -> Self {
         let available = MWThermometer.Source.availableChannels(on: board)
         guard let i = available.firstIndex(of: type) else {
             throw MWError.operationFailed("\(type.displayName) is not available.")
         }
-        return try Self(type: type, channel: i, board: board, rate: rate)
+        return try Self(rate: rate,  type: type, channel: i, board: board)
     }
 }
 

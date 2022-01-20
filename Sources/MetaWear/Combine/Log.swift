@@ -110,7 +110,7 @@ public extension Publisher where Output == MetaWear {
     /// Downloads all logs into a `String` format that can convert into a .csv file.
     /// You can also get an `MWData` array output using `_logDownloadData()`.
     ///
-    /// - Parameter startDate: Time that the logging session started. Used to calculate elapsed time in an output CSV files, potentially synchronized across multiple devices. (A MetaWear ticks time, but lacks a calendar-aware clock.)
+    /// - Parameter startDate: A timestamp you have cached for when the logging session started. Used to calculate elapsed time in an output CSV files, potentially synchronized across multiple devices. (A MetaWear ticks time, but lacks a calendar-aware clock.)
     ///
     /// - Returns: Publishes percent complete. At 100% complete, publishes all logged data.
     ///

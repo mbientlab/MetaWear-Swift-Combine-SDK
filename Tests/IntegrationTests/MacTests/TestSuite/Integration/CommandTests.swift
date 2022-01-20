@@ -29,7 +29,6 @@ class CommandTests: XCTestCase {
         }
     }
 
-#warning("Ryan lacks an equipped test device")
     func test_Buzzer() {
         connectNearbyMetaWear(timeout: .read) { metawear, exp, subs in
             metawear.publish()

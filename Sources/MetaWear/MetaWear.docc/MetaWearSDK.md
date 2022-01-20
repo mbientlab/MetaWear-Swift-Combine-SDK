@@ -2,7 +2,7 @@
 
 Develop Bluetooth Low Energy apps using our sensors and `Combine`
 
-This SDK abstracts `CoreBluetooth` and our MetaWear C/C++ API using concise `Combine` publishers and presets. It offers two optional imports:
+This SDK abstracts `CoreBluetooth` and our MetaWear C/C++ API using concise `Combine` publishers and presets. It offers three optional imports:
 
 * `MetaWearSync`  —  track groups of MetaWears across Apple devices using iCloud key-value storage
 * `MetaWearCpp`  —  mix our C/C++ API with `Combine` publishers for additional flexibility
@@ -13,7 +13,7 @@ This SDK abstracts `CoreBluetooth` and our MetaWear C/C++ API using concise `Com
 
 ## Getting Started
 
-Beyond this guide, you can ramp up with an interactive <doc:/tutorials/MetaWear> tutorial to build a simple app, similar to our barebones [integration test host app](https://github.com/mbientlab/MetaWear-SDK-Swift-Combine-TestHost).  Existing MetaWear developers can orient with <doc:Migrating-From-Bolts>. You can also examine the [source code of our cross-platform MetaBase app](https://github.com/mbientlab/MetaBase).
+Beyond this guide, you can ramp up with an interactive <doc:/tutorials/MetaWear> tutorial to build a simple app, similar to our barebones [integration test host app](https://github.com/mbientlab/MetaWear-SDK-Swift-Combine/tree/main/Tests/IntegrationTests).  Existing MetaWear developers can orient with <doc:Migrating-From-Bolts>. You can also examine the [source code of our cross-platform MetaBase app](https://github.com/mbientlab/MetaBase).
 
 #### 1. Entitlements
 For each target in your project, go to the **Signing & Capabilities** tab. For macOS, go to *App Sandbox* and check **Bluetooth**. For iOS, add *Background Modes* and check **Uses Bluetooth LE accessories**. 
@@ -39,10 +39,11 @@ Bluetooth power and authorization | ``MetaWearScanner/bluetoothState``
 
 A restored device may not be nearby right now, but was connected in a previous session. As with all MetaWear interactions, you'll receive updates on that scanner's ``MetaWearScanner/bleQueue``. 
 
+**If you wish to sync MetaWear identities via iCloud, only use the scanner to start/stop scanning and observe Bluetooth state.** Use the `MetaWearSyncStore` to retrieve, remember, and forget MetaWears. It will monitor the scanner's output for you.
 
 #### 3. Interact
 
-First, to connect to a MetaWear, call ``MetaWear/MetaWear/connect()`` or ``MetaWear/MetaWear/connectPublisher()``. You can observe connection state via the ``MetaWear/MetaWear/connectionStatePublisher``.
+First, to connect to a MetaWear, call ``MetaWear/MetaWear/connect()`` or use  the ``MetaWear/MetaWear/connectPublisher()``. You can observe connection state via the ``MetaWear/MetaWear/connectionStatePublisher``.
 
 Since nearly every MetaWear interaction is an asynchronous call and response over a potentially low strength Bluetooth connection, this SDK reasons about these events and streams of data through Apple's `Combine` framework. If unfamiliar with Combine, the  <doc:/tutorials/MetaWear> tutorial has some basics. A good reference is [Joseph Heck's Using Combine](https://heckj.github.io/swiftui-notes/).
 
@@ -63,8 +64,8 @@ Operator | Example
 `.command()` | ``MWCommand/rename(advertisingName:)``
 `.read()` | ``MWReadable/batteryLevel``
 `.stream()` | ``MWStreamable/sensorFusionQuaternion(mode:)``
-`.log()` | ``MWLoggable/gyroscope(range:freq:)``
-`.downloadLogs()` | Returns ``MWDataTable`` array and percent progress
+`.log()` | ``MWLoggable/gyroscope(rate:range:)``
+`.downloadLogs(:)` | Returns ``MWDataTable`` array and percent progress
 
 
 ###### Example: Wait until first connection, stream accelerometer vectors, update UI on main ######
@@ -222,6 +223,7 @@ When interacting with the C++ library or forming your own publishers, these type
 - ``MWDataSignalOrBoard``
 - ``MWDataProcessorSignal``
 - ``MWLoggerSignal``
+- ``MWTimerSignal``
 - ``MWMacroIdentifier``
 
 ### C++ Library Status Code
@@ -229,52 +231,53 @@ When interacting with the C++ library or forming your own publishers, these type
 Useful only when interacting with the C++ library.
 
 - ``MWStatusCode``
-- ``STATUS_OK``
-- ``STATUS_ERROR_UNSUPPORTED_PROCESSOR``
-- ``STATUS_ERROR_TIMEOUT``
-- ``STATUS_ERROR_ENABLE_NOTIFY``
-- ``STATUS_ERROR_SERIALIZATION_FORMAT``
-- ``STATUS_WARNING_INVALID_PROCESSOR_TYPE``
-- ``STATUS_WARNING_INVALID_RESPONSE``
-- ``STATUS_WARNING_UNEXPECTED_SENSOR_DATA``
+- ``MBL_MW_STATUS_OK``
+- ``MBL_MW_STATUS_OK``
+- ``MBL_MW_STATUS_ERROR_UNSUPPORTED_PROCESSOR``
+- ``MBL_MW_STATUS_ERROR_TIMEOUT``
+- ``MBL_MW_STATUS_ERROR_ENABLE_NOTIFY``
+- ``MBL_MW_STATUS_ERROR_SERIALIZATION_FORMAT``
+- ``MBL_MW_STATUS_WARNING_INVALID_PROCESSOR_TYPE``
+- ``MBL_MW_STATUS_WARNING_INVALID_RESPONSE``
+- ``MBL_MW_STATUS_WARNING_UNEXPECTED_SENSOR_DATA``
 
 ### C++ Constants
 
 Useful only when interacting with the C++ library.
 
-- ``MODULE_ACC_TYPE_BMI270``
-- ``MODULE_ACC_TYPE_BMI160``
-- ``MODULE_ACC_TYPE_BMA255``
-- ``MODULE_ACC_TYPE_MMA8452Q``
-- ``MODULE_BARO_TYPE_BME280``
-- ``MODULE_BARO_TYPE_BMP280``
-- ``MODULE_GYRO_TYPE_BMI160``
-- ``MODULE_GYRO_TYPE_BMI270``
-- ``MODULE_TYPE_NA``
-- ``LED_REPEAT_INDEFINITELY``
-- ``GPIO_UNUSED_PIN``
-- ``SETTINGS_BATTERY_CHARGE_INDEX``
-- ``SETTINGS_BATTERY_VOLTAGE_INDEX``
-- ``SETTINGS_CHARGE_STATUS_UNSUPPORTED``
-- ``SETTINGS_POWER_STATUS_UNSUPPORTED``
-- ``SENSOR_FUSION_CALIBRATION_ACCURACY_HIGH``
-- ``SENSOR_FUSION_CALIBRATION_ACCURACY_LOW``
-- ``SENSOR_FUSION_CALIBRATION_ACCURACY_MEDIUM``
-- ``SENSOR_FUSION_CALIBRATION_ACCURACY_UNRELIABLE``
-- ``ADDRESS_TYPE_RANDOM_STATIC``
-- ``ADDRESS_TYPE_PUBLIC``
-- ``ADDRESS_TYPE_PRIVATE_RESOLVABLE``
-- ``ADDRESS_TYPE_PRIVATE_NON_RESOLVABLE``
-- ``ACC_ACCEL_X_AXIS_INDEX``
-- ``ACC_ACCEL_Y_AXIS_INDEX``
-- ``ACC_ACCEL_Z_AXIS_INDEX``
-- ``CD_TCS34725_ADC_RED_INDEX``
-- ``CD_TCS34725_ADC_GREEN_INDEX``
-- ``CD_TCS34725_ADC_BLUE_INDEX``
-- ``CD_TCS34725_ADC_CLEAR_INDEX``
-- ``GYRO_ROTATION_X_AXIS_INDEX``
-- ``GYRO_ROTATION_Y_AXIS_INDEX``
-- ``GYRO_ROTATION_Z_AXIS_INDEX``
-- ``MAG_BFIELD_X_AXIS_INDEX``
-- ``MAG_BFIELD_Y_AXIS_INDEX``
-- ``MAG_BFIELD_Z_AXIS_INDEX``
+- ``MBL_MW_MODULE_ACC_TYPE_BMI270``
+- ``MBL_MW_MODULE_ACC_TYPE_BMI160``
+- ``MBL_MW_MODULE_ACC_TYPE_BMA255``
+- ``MBL_MW_MODULE_ACC_TYPE_MMA8452Q``
+- ``MBL_MW_MODULE_BARO_TYPE_BME280``
+- ``MBL_MW_MODULE_BARO_TYPE_BMP280``
+- ``MBL_MW_MODULE_GYRO_TYPE_BMI160``
+- ``MBL_MW_MODULE_GYRO_TYPE_BMI270``
+- ``MBL_MW_MODULE_TYPE_NA``
+- ``MBL_MW_LED_REPEAT_INDEFINITELY``
+- ``MBL_MW_GPIO_UNUSED_PIN``
+- ``MBL_MW_SETTINGS_BATTERY_CHARGE_INDEX``
+- ``MBL_MW_SETTINGS_BATTERY_VOLTAGE_INDEX``
+- ``MBL_MW_SETTINGS_CHARGE_STATUS_UNSUPPORTED``
+- ``MBL_MW_SETTINGS_POWER_STATUS_UNSUPPORTED``
+- ``MBL_MW_SENSOR_FUSION_CALIBRATION_ACCURACY_HIGH``
+- ``MBL_MW_SENSOR_FUSION_CALIBRATION_ACCURACY_LOW``
+- ``MBL_MW_SENSOR_FUSION_CALIBRATION_ACCURACY_MEDIUM``
+- ``MBL_MW_SENSOR_FUSION_CALIBRATION_ACCURACY_UNRELIABLE``
+- ``MBL_MW_ADDRESS_TYPE_RANDOM_STATIC``
+- ``MBL_MW_ADDRESS_TYPE_PUBLIC``
+- ``MBL_MW_ADDRESS_TYPE_PRIVATE_RESOLVABLE``
+- ``MBL_MW_ADDRESS_TYPE_PRIVATE_NON_RESOLVABLE``
+- ``MBL_MW_ACC_ACCEL_X_AXIS_INDEX``
+- ``MBL_MW_ACC_ACCEL_Y_AXIS_INDEX``
+- ``MBL_MW_ACC_ACCEL_Z_AXIS_INDEX``
+- ``MBL_MW_CD_TCS34725_ADC_RED_INDEX``
+- ``MBL_MW_CD_TCS34725_ADC_GREEN_INDEX``
+- ``MBL_MW_CD_TCS34725_ADC_BLUE_INDEX``
+- ``MBL_MW_CD_TCS34725_ADC_CLEAR_INDEX``
+- ``MBL_MW_GYRO_ROTATION_X_AXIS_INDEX``
+- ``MBL_MW_GYRO_ROTATION_Y_AXIS_INDEX``
+- ``MBL_MW_GYRO_ROTATION_Z_AXIS_INDEX``
+- ``MBL_MW_MAG_BFIELD_X_AXIS_INDEX``
+- ``MBL_MW_MAG_BFIELD_Y_AXIS_INDEX``
+- ``MBL_MW_MAG_BFIELD_Z_AXIS_INDEX``

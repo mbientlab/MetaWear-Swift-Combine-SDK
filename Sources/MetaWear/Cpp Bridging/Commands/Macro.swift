@@ -4,6 +4,8 @@ import Foundation
 import Combine
 import MetaWearCpp
 
+/// Commands for recording, stopping, and removing sequences of commands.
+///
 public struct MWMacro {
     private init() { }
 }

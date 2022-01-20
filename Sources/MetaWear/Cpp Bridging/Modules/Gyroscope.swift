@@ -16,9 +16,9 @@ public struct MWGyroscope: MWStreamable, MWLoggable {
     public var frequency: Frequency? = nil
     public var needsConfiguration: Bool { range != nil || frequency != nil }
 
-    public init(range: GraphRange? = nil, frequency: Frequency? = nil) {
+    public init(rate: Frequency? = nil, range: GraphRange? = nil) {
         self.range = range
-        self.frequency = frequency
+        self.frequency = rate
     }
 }
 
@@ -99,14 +99,14 @@ public extension MWGyroscope {
 // MARK: - Discoverable Presets
 
 public extension MWStreamable where Self == MWGyroscope {
-    static func gyroscope(range: MWGyroscope.GraphRange? = nil, freq: MWGyroscope.Frequency? = nil) -> Self {
-        Self(range: range, frequency: freq)
+    static func gyroscope(rate: MWGyroscope.Frequency? = nil, range: MWGyroscope.GraphRange? = nil) -> Self {
+        Self(rate: rate, range: range)
     }
 }
 
 public extension MWLoggable where Self == MWGyroscope {
-    static func gyroscope(range: MWGyroscope.GraphRange? = nil, freq: MWGyroscope.Frequency? = nil) -> Self {
-        Self(range: range, frequency: freq)
+    static func gyroscope(rate: MWGyroscope.Frequency? = nil, range: MWGyroscope.GraphRange? = nil) -> Self {
+        Self(rate: rate, range: range)
     }
 }
 

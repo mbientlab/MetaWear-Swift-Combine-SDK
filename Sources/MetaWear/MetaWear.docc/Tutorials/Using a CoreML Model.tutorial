@@ -1,0 +1,17 @@
+@Tutorial(time: 20, projectFiles: "Streamy.zip") {
+    @Intro(title: "Using a CoreML Model") {
+        Forthcoming.
+        @Image(source: streamyIcon.png, alt: "Streamy app icon")
+    }
+    
+    @Section(title: "Forthcoming") {
+        @ContentAndMedia {
+            ...
+            @Image(source: bird-rainbow.png, alt: "Bird art")
+        }
+        
+        @Steps { 
+            Steps.
+        }
+    }
+}

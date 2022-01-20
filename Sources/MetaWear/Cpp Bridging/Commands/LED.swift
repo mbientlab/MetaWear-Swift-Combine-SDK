@@ -79,7 +79,22 @@ public extension MWLED {
             var red: CGFloat = 0
             var blue: CGFloat = 0
             var green: CGFloat = 0
-            color.getRed(&red, green: &green, blue: &blue, alpha: nil)
+
+            var _color = color
+            #if os(macOS)
+            if [NSColorSpace.sRGB, NSColorSpace.extendedSRGB].contains(color) == false {
+                _color = color.usingColorSpace(.sRGB) ?? .white
+            }
+            if _color.numberOfComponents == 2 {
+                _color.getWhite(&red, alpha: nil)
+                (blue, green) = (red, red)
+            } else {
+                _color.getRed(&red, green: &green, blue: &blue, alpha: nil)
+            }
+            #else
+            _color.getRed(&red, green: &green, blue: &blue, alpha: nil)
+            #endif
+
             let scaledRed = UInt8(round(red * scaledIntensity))
             let scaledBlue = UInt8(round(blue * scaledIntensity))
             let scaledGreen = UInt8(round(green * scaledIntensity))
