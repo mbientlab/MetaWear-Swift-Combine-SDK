@@ -40,7 +40,7 @@ class StreamTests: XCTestCase {
     }
 
     func testStream_Gyroscope() {
-        _testStream(.gyroscope(range: .dps125, freq: .hz50))
+        _testStream(.gyroscope(rate: .hz50, range: .dps125))
     }
 
     func testStream_Magnetometer() {

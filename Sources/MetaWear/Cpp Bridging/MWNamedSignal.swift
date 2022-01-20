@@ -4,7 +4,7 @@ import Foundation
 
 /// String key returned with a logger signal for a module
 ///
-public enum MWNamedSignal: Equatable, Hashable {
+public enum MWNamedSignal: Equatable, Hashable, Identifiable {
     case acceleration
     case altitude
     case ambientLight
@@ -42,7 +42,10 @@ public enum MWNamedSignal: Equatable, Hashable {
             case .quaternion:               return "quaternion"
             case .orientation:              return "orientation"
             case .temperature:              return "temperature"
-            case .steps:                    return "steps" // Not supported
+            case .steps:
+#warning("Resolve steps bug")
+                print("MetaWear Combine SDK Beta: Steps logging has bugs.")
+                return "steps"
             case .custom(let string):       return string
         }
     }
@@ -66,6 +69,8 @@ public enum MWNamedSignal: Equatable, Hashable {
         .steps,
         .temperature
     ]
+
+    public var id: String { name }
 
     public init(identifier: String) {
 
