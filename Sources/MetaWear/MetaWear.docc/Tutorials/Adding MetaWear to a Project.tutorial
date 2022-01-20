@@ -13,7 +13,7 @@
         @Steps {
             @Step { 
                 In the File menu, choose Add Package...
-                https://github.com/mbientlab/MetaWear-SDK-Swift-Combine
+                https://github.com/mbientlab/MetaWear-Swift-Combine-SDK
                 
                 By default, Xcode will update the MetaWear package when minor versions are released, but not for a major release. You can also depend on a branch head or specific commits. 
                 @Image(source: tut-AddPackage.png, alt: ".")
