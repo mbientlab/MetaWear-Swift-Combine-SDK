@@ -13,7 +13,7 @@ This SDK abstracts `CoreBluetooth` and our MetaWear C/C++ API using concise `Com
 
 ## Getting Started
 
-Beyond this guide, you can ramp up with an interactive <doc:/tutorials/MetaWear> tutorial to build a simple app, similar to our barebones [integration test host app](https://github.com/mbientlab/MetaWear-SDK-Swift-Combine/tree/main/Tests/IntegrationTests).  Existing MetaWear developers can orient with <doc:Migrating-From-Bolts>. You can also examine the [source code of our cross-platform MetaBase app](https://github.com/mbientlab/MetaBase).
+Beyond this guide, you can ramp up with an interactive <doc:/tutorials/MetaWear> tutorial to build a simple app, similar to our barebones [integration test host app](https://github.com/mbientlab/MetaWear-Swift-Combine-SDK/tree/main/Tests/IntegrationTests).  Existing MetaWear developers can orient with <doc:Migrating-From-Bolts>. You can also examine the [source code of our cross-platform MetaBase app](https://github.com/mbientlab/MetaWear-MetaBase-iOS-macOS-App).
 
 #### 1. Entitlements
 For each target in your project, go to the **Signing & Capabilities** tab. For macOS, go to *App Sandbox* and check **Bluetooth**. For iOS, add *Background Modes* and check **Uses Bluetooth LE accessories**. 

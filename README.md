@@ -16,7 +16,7 @@
 Getting Started
 --------------
 - For detailed documentation and comparison to our Bolts SDK, press Control Shift Cmd + D in Xcode.
-- For sample apps, see [Streamy](https://github.com/mbientlab/Streamy) (in documentation tutorials) or [MetaBase](https://github.com/mbientlab/MetaBase).
+- For sample apps, see [Streamy](https://github.com/mbientlab/Streamy) (in documentation tutorials) or [MetaBase](https://github.com/mbientlab/MetaWear-MetaBase-iOS-macOS-App/tree/combine-sdk-macos).
 - For license and copyright, see LICENSE.md.
 
 Please email us, open an issue, or post on the MetaWear community forum with questions or feedback.
