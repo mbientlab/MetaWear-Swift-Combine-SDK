@@ -90,7 +90,7 @@ public class MetaWear: NSObject {
     ///
     public unowned let scanner: MetaWearScanner
 
-    /// Receives device activity
+    /// Receives device activity (e.g., Bluetooth packets)
     ///
     public weak var logDelegate: MWConsoleLoggerDelegate?
 
@@ -237,6 +237,9 @@ public class MetaWear: NSObject {
     public init(peripheral: CBPeripheral,
                 scanner: MetaWearScanner,
                 mac: MACAddress? = nil) {
+        if MWConsoleLogger.activateConsoleLoggingOnAllMetaWears {
+            self.logDelegate = MWConsoleLogger.shared
+        }
         self.peripheral = peripheral
         self.scanner = scanner
         self._refreshTimer = Self._makeFiveSecondRefresher(scanner.bleQueue)
