@@ -1,37 +1,41 @@
 # MetaWear Swift Combine SDK Beta
 
-Control our wearable sensors using Combine on iOS and macOS devices.
+### Control our wearable sensors on iOS and macOS devices using Combine.
 
-Optional utilities facilitate tracking MetaWears uniquely across 
-Apple devices via iCloud sync and conveniences for drag and drop UI.
+💪 Inexperienced with CoreBluetooth or C/C++ in Swift? No problem.
 
-Detailed documentation, demo apps, and quick start guides are available 
-in Xcode-native format. Build it by pressing Control + Shift + Cmd + D.
+📚 Interactive DocC documentation and tutorials
 
-For license and copyright, see LICENSE.md.
+☁️ New iCloud-sync recognition of MetaWears across Apple devices
 
-Please email us, open an issue, or post on the MetaWear community 
-forum with questions or feedback.
+✋ Optional drag-and-drop UI conveniences
 
+<br /><br />![metawear](https://user-images.githubusercontent.com/78187398/150276856-d2c75a0f-d8a0-48a9-b877-d4f8dbb0c52c.png)<br /><br />
+
+
+Getting Started
+--------------
+- For detailed documentation and comparison to our Bolts SDK, press Control Shift Cmd + D in Xcode.
+- For sample apps, see [Streamy](https://github.com/mbientlab/Streamy) (in documentation tutorials) or [MetaBase](https://github.com/mbientlab/MetaBase).
+- For license and copyright, see LICENSE.md.
+
+Please email us, open an issue, or post on the MetaWear community forum with questions or feedback.
+
+<br />
 
 Directories At a Glance
 --------------
 
-### SDK Products
-##### MetaWear
+#### 📂 MetaWear
 The root directory contains the core objects and type aliases for typical use of the SDK.
-- Combine: Primary Combine operators used to control MetaWear devices
-- Cpp Bridging: Swift wrappers around sensors/modules (e.g., gyroscope), commands (e.g., activate iBeacon), and anything else from the C/C++ library
-- Helpers: Extensions and utilities
+- 📁 **Combine** — Primary Combine operators used to control MetaWear devices
+- 📁 **Cpp Bridging** — Swift wrappers around sensors/modules (e.g., gyroscope), commands (e.g., activate iBeacon), and anything else from the C/C++ library
+- 📁 **Helpers** — Extensions and utilities
 
-##### MetaWearSync
-iCloud synchronization of device identities
+📂 **MetaWearSync** — iCloud synchronization of device identities
 
-##### MetaWearFirmware
-Updates device firmware from MetaWear servers
+📂 **MetaWearFirmware** — Updates device firmware from MetaWear servers
 
-##### MetaWearCpp 
-Underlying C/C++ library
+📂 **MetaWearCpp** — Underlying C/C++ submodule
 
-### Tests
-Run the test host project at Sources/Tests/IntegrationTests/. CoreBluetooth does not work in an iOS Simulator.
+📂 **Tests** — Run the test host project at 📂 Sources/Tests/IntegrationTests/. CoreBluetooth does not work in an iOS Simulator.
