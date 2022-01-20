@@ -3,6 +3,8 @@
 
 import Foundation
 
+/// Stringly-expressed data from any sensor, ready to export in CSV format.
+///
 public struct MWDataTable {
 
     /// Maximum decimal places used for string formatting

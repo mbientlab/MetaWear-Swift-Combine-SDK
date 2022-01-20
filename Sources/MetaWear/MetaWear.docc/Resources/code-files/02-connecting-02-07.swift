@@ -41,4 +41,3 @@ class UnknownDeviceController: ObservableObject {
         })
     }
 }
-

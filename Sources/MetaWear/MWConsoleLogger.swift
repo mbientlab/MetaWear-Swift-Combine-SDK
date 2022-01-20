@@ -3,7 +3,7 @@
 import Combine
 import CoreBluetooth
 
-/// Handles messages from MetaWear devices
+/// Handles log messages (e.g., Bluetooth packets) from MetaWear devices
 ///
 public protocol MWConsoleLoggerDelegate: AnyObject {
     func logWith(_ level: MWConsoleLogger.LogLevel, message: String)

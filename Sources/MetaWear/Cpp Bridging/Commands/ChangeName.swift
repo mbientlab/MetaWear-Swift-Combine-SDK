@@ -3,6 +3,8 @@
 import Foundation
 import MetaWearCpp
 
+/// Changes only the device's Bluetooth advertising name (not any SDK metadata).
+///
 public struct MWChangeAdvertisingName: MWCommand {
     var newName: String
 

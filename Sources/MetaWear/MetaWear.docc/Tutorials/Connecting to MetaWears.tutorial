@@ -6,7 +6,7 @@
     
     @Section(title: "List nearby devices") {
         @ContentAndMedia {
-            List MetaWears by the best available identifier: either a stable MAC address or a locally-unique CoreBluetooth UUID.
+            List MetaWears by the best available identifier: either a stable ``MetaWear/MACAddress`` or a locally-unique CoreBluetooth ``MetaWear/CBPeripheralIdentifier`` UUID.
             @Image(source: bird-green-yellow.png, alt: "Bird art")
         }
         

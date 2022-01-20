@@ -2,7 +2,12 @@
 
 import Foundation
 
-/// String key returned with a logger signal for a module
+/// String key returned with a logger signal for a module by the C++ library.
+/// Subscripts can indicate a particular aspect (e.g., which thermistor),
+/// a custom slice into a Cartesian float, or other more advanced operations.
+///
+/// You can use .custom and customDownloads to capture custom logger signals
+/// into Swift types during a download or stream.
 ///
 public enum MWNamedSignal: Equatable, Hashable, Identifiable {
     case acceleration
