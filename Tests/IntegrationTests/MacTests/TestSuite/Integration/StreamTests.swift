@@ -141,7 +141,7 @@ class StreamTests: XCTestCase {
     func testStreamPoll_Temperature() throws {
         try _testPoll { metawear in
             try [MWThermometer.Source.onboard, .bmp280, .onDie, .external]
-                .map { try .thermometer(type: $0, board: metawear.board, rate: .init(hz: 2)) }
+                .map { try .thermometer(rate: .init(hz: 2), type: $0, board: metawear.board) }
         }
     }
 
