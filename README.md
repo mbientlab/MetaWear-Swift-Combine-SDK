@@ -4,7 +4,7 @@
 
 💪 Inexperienced with CoreBluetooth or C/C++ in Swift? No problem.
 
-📚 Interactive DocC documentation and tutorials
+📚 Interactive Xcode [DocC documentation](https://mbientlab.netlify.app/documentation/MetaWear) and [tutorials](https://mbientlab.netlify.app/tutorials/metawear)
 
 ☁️ New iCloud-sync recognition of MetaWears across Apple devices
 
@@ -15,11 +15,11 @@
 
 Getting Started
 --------------
-- For detailed documentation and comparison to our Bolts SDK, press Control Shift Cmd + D in Xcode.
+- For detailed documentation and comparison to our Bolts SDK, press Control Shift Cmd + D in Xcode. Or use a [web version of the docs](https://mbientlab.netlify.app/documentation/MetaWear) and [interactive tutorial](https://mbientlab.netlify.app/tutorials/metawear).
 - For sample apps, see [Streamy](https://github.com/mbientlab/Streamy) (in documentation tutorials) or [MetaBase](https://github.com/mbientlab/MetaWear-MetaBase-iOS-macOS-App/tree/combine-sdk-macos).
 - For license and copyright, see LICENSE.md.
 
-Please email us, open an issue, or post on the MetaWear community forum with questions or feedback.
+Please [email us](mailto:hello@mbientlab.com), open an issue, or post on the MetaWear community forum with questions or feedback.
 
 <br />
 
