@@ -25,3 +25,20 @@ public extension Publisher where Output == Int {
             .eraseToAnyPublisher()
     }
 }
+
+public extension Publisher where Output == MetaWear {
+
+    /// Ensurers block is executed and subscribed on the proper queue.
+    ///
+    func handleOutputOnBleQueue(_ block: @escaping (MetaWear) -> Void) -> MWPublisher<MetaWear> {
+        mapToMWError()
+            .flatMap { metawear in
+                _JustMW(metawear)
+                    .handleEvents(receiveOutput: { metaWear in
+                        block(metawear)
+                    })
+                    .erase(subscribeOn: metawear.bleQueue)
+            }
+            .eraseToAnyPublisher()
+    }
+}

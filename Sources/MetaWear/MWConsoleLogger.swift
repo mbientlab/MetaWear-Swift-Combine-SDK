@@ -16,7 +16,7 @@ public class MWConsoleLogger: MWConsoleLoggerDelegate {
     public static let shared = MWConsoleLogger()
 
     /// Configures this logger as the default logger for all MetaWears.
-    public static let activateConsoleLoggingOnAllMetaWears = false
+    public static var activateConsoleLoggingOnAllMetaWears = false
 
     internal init() {
         self.didLogPublisher = _didLog.dropFirst().eraseToAnyPublisher()

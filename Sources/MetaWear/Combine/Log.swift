@@ -8,10 +8,47 @@ import MetaWearCpp
 
 public extension Publisher where Output == MetaWear {
 
-    /// Starts logging a preset sensor configuration.
+    /// Starts recording data from all loggers currently setup.
+    ///
+    /// - Parameters:
+    ///   - overwriting: When flash memory is full, continue logging by overwriting data
+    ///
+    /// - Returns: The connected MetaWear.
+    ///
+    func startCurrentLoggers(overwriting: Bool = false) -> MWPublisher<MetaWear> {
+        handleOutputOnBleQueue { mw in
+            mbl_mw_logging_start(mw.board, overwriting ? 1 : 0)
+        }
+    }
+
+    /// Stops recording data from all loggers, but doesn't cancel them and keeps sensors active.
+    ///
+    /// - Parameters:
+    ///   - overwriting: When flash memory is full, continue logging by overwriting data
+    ///
+    /// - Returns: The connected MetaWear.
+    ///
+    func pauseCurrentLoggers(overwriting: Bool = false) -> MWPublisher<MetaWear> {
+        handleOutputOnBleQueue { mw in
+            mbl_mw_logging_stop(mw.board)
+        }
+    }
+
+    /// Logs a preset sensor configuration.
+    ///
+    /// - Parameters:
+    ///   - loggable: Instance of a sensor configuration that supports logging its signal to onboard storage
+    ///   - overwriting: When flash memory is full, continue logging by overwriting data
+    ///   - startsImmediately: Start logging immediately upon issuing this command
+    ///
     /// - Returns: The connected MetaWear or an error if the logging attempt fails.
     ///
-    func log<L: MWLoggable>(_ loggable: L, overwriting: Bool = false) -> MWPublisher<MetaWear> {
+    func log<L: MWLoggable>(
+        _ loggable: L,
+        overwriting: Bool = false,
+        startImmediately: Bool = true
+    ) -> MWPublisher<MetaWear> {
+
         let errorMsg = MWError.operationFailed("Unable to log \(loggable.name)")
         return self
             .handleEvents(receiveOutput: { loggable.loggerConfigure(board: $0.board) })
@@ -25,6 +62,7 @@ public extension Publisher where Output == MetaWear {
                 signal
                     .log(board: metawear.board,
                          overwriting: overwriting,
+                         startImmediately: startImmediately,
                          start: { loggable.loggerStart(board: metawear.board) }
                     )
                     .compactMap { [weak metawear] _ in metawear }
@@ -35,10 +73,21 @@ public extension Publisher where Output == MetaWear {
             .eraseToAnyPublisher()
     }
 
-    /// Starts logging a preset sensor configuration that works by polling a readable signal.
+    /// Logs a preset sensor configuration that works by polling a readable signal.
+    ///
+    /// - Parameters:
+    ///   - byPolling: Instance of a sensor configuration that supports logging its signal to onboard storage by polling at a specific interval
+    ///   - overwriting: When flash memory is full, continue logging by overwriting data
+    ///   - startsImmediately: Start logging immediately upon issuing this command
+    ///
     /// - Returns: The connected MetaWear or an error if the logging attempt fails.
     ///
-    func log<P: MWPollable>(byPolling pollable: P, overwriting: Bool = false) -> MWPublisher<MetaWear> {
+    func log<P: MWPollable>(
+        byPolling pollable: P,
+        overwriting: Bool = false,
+        startsImmediately: Bool = true
+    ) -> MWPublisher<MetaWear> {
+
         tryMap { metawear -> (metawear: MetaWear, sensor: MWDataSignal) in
             guard let moduleSignal = try pollable.pollSensorSignal(board: metawear.board)
             else { throw MWError.operationFailed("Could not create \(pollable.name)") }
@@ -54,10 +103,22 @@ public extension Publisher where Output == MetaWear {
         .share()
         .eraseToAnyPublisher()
     }
-    /// Starts logging sensors who can only be intermittently read (e.g., thermistors) at the intervals specified.
+    /// Logs a sensor that can only be intermittently read (e.g., thermistors) at the intervals specified.
+    ///
+    /// - Parameters:
+    ///   - byPolling: A data signal that supports logging by polling at a specific interval
+    ///   - rate: Frequency at which to poll the sensor
+    ///   - overwriting: When flash memory is full, continue logging by overwriting data
+    ///   - startsImmediately: Start logging immediately upon issuing this command
+    ///
     /// - Returns: The connected MetaWear or an error if the logging attempt fails.
     ///
-    func log(byPolling signal: MWDataSignal, rate: MWFrequency, overwriting: Bool = false) -> MWPublisher<MetaWear> {
+    func log(byPolling signal: MWDataSignal,
+             rate: MWFrequency,
+             overwriting: Bool = false,
+             startsImmediately: Bool = true
+    ) -> MWPublisher<MetaWear> {
+
         let upstream = self.mapToMWError().share()
         return upstream
             .flatMap { metawear -> MWPublisher<MetaWear> in
@@ -75,7 +136,7 @@ public extension Publisher where Output == MetaWear {
                         recordedEvent: { mbl_mw_datasignal_read(signal) }
                     )
                     .handleEvents(receiveOutput: { timer in
-                        mbl_mw_logging_start(metawear.board, overwriting ? 1 : 0)
+                        if startsImmediately { mbl_mw_logging_start(metawear.board, overwriting ? 1 : 0) }
                         mbl_mw_timer_start(timer)
                     })
                     .compactMap { [weak metawear] _ in metawear }
@@ -85,18 +146,40 @@ public extension Publisher where Output == MetaWear {
     }
 
     /// Given a non-nil preset, starts logging a preset sensor configuration.
+    ///
+    /// - Parameters:
+    ///   - loggable: Instance of a sensor configuration that supports logging its signal to onboard storage
+    ///   - overwriting: When flash memory is full, continue logging by overwriting data
+    ///   - startsImmediately: Start logging immediately upon issuing this command
+    ///
     /// - Returns: The connected MetaWear or an error if the logging attempt fails.
     ///
-    func optionallyLog<L: MWLoggable>(_ loggable: L?, overwriting: Bool = false) -> MWPublisher<MetaWear> {
+    func optionallyLog<L: MWLoggable>(
+        _ loggable: L?,
+        overwriting: Bool = false,
+        startsImmediately: Bool = true
+    ) -> MWPublisher<MetaWear> {
+
         if let loggable = loggable {
-            return self.log(loggable, overwriting: overwriting)
+            return self.log(loggable, overwriting: overwriting, startImmediately: startsImmediately)
         } else { return self.mapToMWError() }
     }
 
     /// Given a non-nil preset, starts logging a preset sensor configuration that works by polling a readable signal.
+    ///
+    /// - Parameters:
+    ///   - byPolling: Instance of a sensor configuration that supports logging its signal to onboard storage by polling at a specific interval
+    ///   - overwriting: When flash memory is full, continue logging by overwriting data
+    ///   - startsImmediately: Start logging immediately upon issuing this command
+    ///
     /// - Returns: The connected MetaWear or an error if the logging attempt fails.
     ///
-    func optionallyLog<P: MWPollable>(byPolling pollable: P?, overwriting: Bool = false) -> MWPublisher<MetaWear> {
+    func optionallyLog<P: MWPollable>(
+        byPolling pollable: P?,
+        overwriting: Bool = false,
+        startsImmediately: Bool = true
+    ) -> MWPublisher<MetaWear> {
+
         if let pollable = pollable {
             return self.log(byPolling: pollable, overwriting: overwriting)
         } else { return self.mapToMWError() }
@@ -187,7 +270,7 @@ public extension Publisher where Output == MetaWear {
 
 // MARK: - Collect Loggers & Clear Loggers
 
-public extension Publisher where Output == MetaWear{
+public extension Publisher where Output == MetaWear {
 
     /// Collects references to active loggers on the MetaWear.
     ///
@@ -202,18 +285,21 @@ public extension Publisher where Output == MetaWear{
             .eraseToAnyPublisher()
     }
 
+
+    /// Deactivates the specific loggers.
+    ///
+    func removeLoggers(_ loggers: [OpaquePointer]) -> MWPublisher<MetaWear> {
+        handleOutputOnBleQueue { metawear in
+            loggers.forEach(mbl_mw_logger_remove)
+        }
+    }
+
     /// Wipes logged data.
     ///
     func deleteLoggedEntries() -> MWPublisher<MetaWear> {
-        mapToMWError()
-            .flatMap { metawear in
-                _JustMW(metawear)
-                    .handleEvents(receiveOutput: { metaWear in
-                        mbl_mw_logging_clear_entries(metaWear.board)
-                    })
-                    .erase(subscribeOn: metawear.bleQueue)
-            }
-            .eraseToAnyPublisher()
+        handleOutputOnBleQueue { mw in
+            mbl_mw_logging_clear_entries(mw.board)
+        }
     }
 }
 
@@ -318,12 +404,13 @@ public extension Publisher where Output == MWDataSignal {
     ///
     func log(board: MWBoard,
              overwriting: Bool,
+             startImmediately: Bool,
              start:     (() -> Void)?
     ) -> AnyPublisher<(id: MWNamedSignal, signal: OpaquePointer), MWError> {
 
         mapToMWError()
             .flatMap { signal -> AnyPublisher<(id: MWNamedSignal, signal: OpaquePointer), MWError> in
-                signal.log(board: board, overwriting: overwriting, start: start)
+                signal.log(board: board, overwriting: overwriting, startImmediately: startImmediately, start: start)
             }
             .eraseToAnyPublisher()
     }
@@ -341,13 +428,14 @@ public extension MWDataSignal {
     ///
     func log(board:       MWBoard,
              overwriting: Bool,
+             startImmediately: Bool,
              start:       (() -> Void)?
     ) -> AnyPublisher<(id: MWNamedSignal, signal: OpaquePointer), MWError> {
 
         makeLoggerSignal()
             .map { (MWNamedSignal(identifier: $0), $1) }
             .handleEvents(receiveOutput: { id, signal in
-                mbl_mw_logging_start(board, overwriting ? 1 : 0)
+                if startImmediately { mbl_mw_logging_start(board, overwriting ? 1 : 0) }
                 start?()
             })
             .eraseToAnyPublisher()

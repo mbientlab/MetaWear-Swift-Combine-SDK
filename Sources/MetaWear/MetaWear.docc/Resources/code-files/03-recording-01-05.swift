@@ -1,38 +1,50 @@
-class SensorLoggingController: ObservableObject {
+class NewSessionUseCase: ObservableObject {
 
-    @Published private(set) var selectedSensors: Set<MWNamedSignal> = []
-    private let accelerometerConfig = MWAccelerometer(rate: .hz100, gravity: .g16)
-    private let gyroscopeConfig     = MWGyroscope(rate: .hz100, range: .dps2000)
-    private var logSub:               AnyCancellable? = nil
-    private var startDate:            Date
+    @Published private(set) var sensors:  Set<MWNamedSignal> = []
+    let sensorChoices:                    [MWNamedSignal] = [
+        .acceleration, .gyroscope, .linearAcceleration, .quaternion
+    ]
+
+    @Published private(set) var state:    UseCaseState    = .notReady
     ...
+}
 
-    enum State: Equatable {
-        case unknown
-        case logging
-        case loggingError(String)
+extension NewSessionUseCase {
+
+    func didTapCTA() {
+        guard sensors.hasElements, let metawear = metawear else { return }
+        state = .workingIndefinite
+        let configs = SensorConfigurations(selections: sensors)
+        actionSub = metawear
+            .publishWhenConnected()
+            .first()
+            .optionallyLog(<some MWLoggable>)
+        ...
+
+        metawear.connect()
     }
 }
 
-extension SensorLoggingController {
+struct SensorConfigurations {
+    var accelerometer: MWAccelerometer? = nil
+    var gyroscope:     MWGyroscope?     = nil
+    var linearAcc:     MWSensorFusion.LinearAcceleration? = nil
+    var quaternion:    MWSensorFusion.Quaternion? = nil
 
-    func log() {
-        guard selectedSensors.isEmpty == false else { return }
+    init(selections: Set<MWNamedSignal>)  {
+        if selections.contains(.linearAcceleration) {
+            linearAcc  = .init(mode: .imuplus)
+            return
+        } else if selections.contains(.quaternion) {
+            quaternion = .init(mode: .imuplus)
+            return
+        }
 
-        logSub = metawear
-            .publishWhenConnected()
-            .first()
-            .optionallyLog(selectedSensors.contains(.gyroscope) ? gyroscopeConfig : nil)
-            .optionallyLog(selectedSensors.contains(.acceleration) ? accelerometerConfig : nil)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] completion in
-                guard case let failure(error) = completion else { return }
-                self?.state = .loggingError(error.localizedDescription)
-            } receiveValue: { [weak self] _ in
-                self?.state = .logging
-                self?.startDate = .init()
-            }
-
-        metawear.connect()
+        if selections.contains(.acceleration) {
+            accelerometer = .init(rate: .hz100, gravity: .g16)
+        }
+        if selections.contains(.gyroscope) {
+            gyroscope = .init(rate: .hz100, range: .dps2000)
+        }
     }
 }

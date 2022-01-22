@@ -1,25 +1,13 @@
-class SensorLoggingController: ObservableObject {
+class NewSessionUseCase: ObservableObject {
 
-    @Published private(set) var enableCTAs:   Bool
-    private var enableCTAsSub:                AnyCancellable? = nil
-    let name: String
-    private unowned let metawear: MetaWear
-
-    init(mac: MACAddress, sync: MetaWearSyncStore) {
-        let (device, metadata) = sync.getDeviceAndMetadata(mac)!
-        self.metawear = device!
-        self.name = metadata.name
-        self.enableCTAs = device?.connectionState == .connected
-    }
+    @Published private(set) var sensors:  Set<MWNamedSignal> = []
+    let sensorChoices:                    [MWNamedSignal] = [
+        .acceleration, .gyroscope, .linearAcceleration, .quaternion
+    ]
+    ...
 }
 
-extension SensorLoggingController {
+extension NewSessionUseCase {
 
-    func onAppear() {
-        metawear.connect()
-
-        enableCTAsSub = metawear.connectionStatePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.enableCTAs = $0 == .connected }
-    }
+    ...
 }
