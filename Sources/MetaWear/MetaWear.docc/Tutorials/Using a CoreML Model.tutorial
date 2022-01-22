@@ -1,4 +1,4 @@
-@Tutorial(time: 20, projectFiles: "Streamy.zip") {
+@Tutorial(time: 15, projectFiles: "Streamy.zip") {
     @Intro(title: "Using a CoreML Model") {
         Forthcoming.
         @Image(source: streamyIcon.png, alt: "Streamy app icon")

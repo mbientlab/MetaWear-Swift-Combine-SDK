@@ -1,4 +1,4 @@
-@Tutorial(time: 5, projectFiles: "Streamy.zip") {
+@Tutorial(time: 15, projectFiles: "Streamy.zip") {
     @Intro(title: "Logging Sensor Data") {
         Configure an arbitrary number of sensors for logging, exporting time-synced data as CSVs in a folder.
         @Image(source: streamyIcon.png, alt: "Streamy app icon")

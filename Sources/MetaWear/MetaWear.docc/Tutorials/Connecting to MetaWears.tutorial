@@ -1,4 +1,4 @@
-@Tutorial(time: 10, projectFiles: "Streamy.zip") {
+@Tutorial(time: 15, projectFiles: "Streamy.zip") {
     @Intro(title: "Connecting to MetaWears") {
         Learn how _Streamy_ finds and manages both nearby and cloud-synced MetaWears.
         @Image(source: streamyIcon.png, alt: "Streamy app icon")
