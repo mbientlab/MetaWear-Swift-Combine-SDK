@@ -1,9 +1,17 @@
-class UnknownDeviceController: ObservableObject {
+class UnknownDeviceUseCase: ObservableObject {
 
-    private weak var metawear: MetaWear?
+    private weak var metawear:  MetaWear?
 
-    init(id: CBPeripheralIdentifier,
-         sync: MetaWearSyncStore) {
-        self.metawear = device
+
+        self.metawear = nearby.metawear
     }
+
+}
+
+// * Called by the factory object creating the use case *
+
+class MetaWearSyncStore {
+
+    func getDevice(byLocalCBUUID: CBPeripheralIdentifier)
+    -> (device: MetaWear?, metadata: MetaWearMetadata?)
 }

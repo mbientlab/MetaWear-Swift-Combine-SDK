@@ -65,21 +65,21 @@
     
     @Section(title: "First connection") {
         @ContentAndMedia {
-            Provide a name, signal strength, and a connection intent for newly discovered MetaWears.
+            Display the advertised Bluetooth name and signal strength. Attempt a first connection and flash the LEDs upon success.
             
             @Image(source: bird-teal.png, alt: "Bird art")
         }
         
         @Steps {
             @Step {
-                Ask the sync store to vend a reference to a ``MetaWear/MetaWear`` held by ``MetaWear/MetaWearScanner``. 
+                The factory that created this use case obtained a reference to the nearby MetaWear of interest by asking the sync store for a particular UUID identifier.
+                
+                The sync store gets this ``MetaWear/MetaWear`` reference from the ``MetaWear/MetaWearScanner``. It tries to match it with additional metadata.
                 @Code(name: "UnknownDevice.swift", file: 02-connecting-02-01.swift, previousFile: 02-connecting-02-01_mask.swift) 
             }    
             
             @Step {
                 Retrieve a name from metadata, if available, or the MetaWear's Bluetooth advertised name.
-                
-                If using a valid UUID from the current app session, the MetaWear reference will never be nil.
                 @Code(name: "UnknownDevice.swift", file: 02-connecting-02-02.swift) 
             } 
             
@@ -110,10 +110,10 @@
             }
 
             @Step {
-                One hitch. The sync store will diff its list of devices, likely deallocating this controller before the flash command issues or completes. 
+                One hitch. The sync store will diff and publish its lists of devices, likely deallocating this controller before the flash command issues or completes.
                 
-                In this barebones app, our fix is to get a reference to the parent list controller and store this pipeline there.
-                @Code(name: "UnknownDevice.swift", file: 02-connecting-02-07.swift) 
+                In this barebones app, our fix is to deposit the token for this flash pipeline in an external object (on the parent ListUseCase).
+                @Code(name: "UnknownDevice.swift", file: 02-connecting-02-07.swift, previousFile: 02-connecting-02-07_mask.swift) 
             }
         }
     }
