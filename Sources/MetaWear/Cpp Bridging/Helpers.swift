@@ -44,7 +44,6 @@ public func _anonymous_datasignal_subscribe_accumulate(_ signal: OpaquePointer) 
     mbl_mw_anonymous_datasignal_subscribe(signal, bridge(obj: subject)) { _context, dataPtr in
         let _subject: _MWDataArraySubject = bridge(ptr: _context!)
         let datum = dataPtr!.pointee.copy()
-        print(#function)
         _subject.send(_subject.value + CollectionOfOne(datum))
     }
     return subject
