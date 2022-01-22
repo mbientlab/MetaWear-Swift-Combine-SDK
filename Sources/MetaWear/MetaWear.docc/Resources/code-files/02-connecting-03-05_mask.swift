@@ -1,16 +1,17 @@
-class KnownDeviceController: ObservableObject {
+class KnownDeviceUseCase: ObservableObject {
 
-    @Published private(set) var rssi: Int
+    var isCloudSynced: Bool { metawear == nil }
+
+    @Published private(set) var metadata:   MetaWearMetadata
+    @Published private(set) var rssi:       Int
     @Published private(set) var connection: CBPeripheralState
 
-    private weak var metawear: MetaWear? = nil
-    private weak var sync:     MetaWearSyncStore?
-
+    private weak var metawear: MetaWear?
     ...
-
 
 }
 
-private extension KnownDeviceController {
-    ...
+extension KnownDeviceUseCase {
+
+
 }

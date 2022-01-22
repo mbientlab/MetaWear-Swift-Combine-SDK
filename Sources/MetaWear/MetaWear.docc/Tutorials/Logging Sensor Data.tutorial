@@ -6,42 +6,51 @@
     
     @Section(title: "Configure logging commands") {
         @ContentAndMedia {
-            Issue optional logging commands to a MetaWear.
+            Create a UseCase that composes a logging session with a valid group of sensors and commands the MetaWear to start logging.
             @Image(source: bird-rainbow.png, alt: "Bird art")
         }
         
         @Steps {
             @Step {
-                Gate buttons that issue commands to the MetaWear until the device is connected.
-                @Code(name: "SensorLogging.swift", file: 03-recording-01-01.swift, previousFile: 03-recording-01-01_mask.swift) 
-            }    
-            @Step {
-                Toggle preferred sensors by vending the Binding a SwiftUI toggle component requires.
-                
-                The accelerometer, gyroscope, and magnetometer can be logged either individually or in a fused mode, which enables logging Euler angles, quaternion, linear acceleration, or gravity.
-                @Code(name: "SensorLogging.swift", file: 03-recording-01-02.swift, previousFile: 03-recording-01-02_mask.swift) 
+                We'll start with a MetaWear reference and metadata.
+                @Code(name: "SensorLogging.swift", file: 03-recording-01-00.swift, previousFile: 03-recording-01-00_mask.swift) 
             }  
+            @Step {
+                When a MetaWear logs its sensors, the activity is given an identifier String. The SDK catalogs these as ``MetaWear/MWNamedSignal``. We'll use that enum as a rough-and-ready way to present options for logging.
+                
+                _Streamy_ will offer the accelerometer and gyroscope, plus two modes that fuse the accelerometer and gyroscope together.
+                @Code(name: "SensorLogging.swift", file: 03-recording-01-01.swift, previousFile: 03-recording-01-01_mask.swift) 
+            }  
+            @Step {
+                When fusing the accelerometer and gyroscope together, it's not possible to log those sensors individually. We'll ask the SDK for some logic to ensure our updates to the Set keeps the two fused modes exclusive to logging individual sensors (and another fused mode).
+                
+                If any sensors are selected, we'll enable the call to action.
+                @Code(name: "SensorLogging.swift", file: 03-recording-01-02.swift) 
+            } 
             
             @Step {
-                MetaWear sensors can generate data at different rates and settings. This SDK organizes these parameters in a struct that you pass into operators like `stream`, `log`, and `command`. You can  use code completion in those operators to find possible options, too.
-                
-                If you don't know exactly which sensors a MetaWear is equipped with, or say if its Bosch accelerometer only records at a subset of frequencies, look at its MetaWearSync metadata or call ``MetaWear/MetaWear/describeModules()``. Any exceptions are highlighted in documentation, throw Swift errors, or the SDK will handle for you. _MetaBase_ automatically restricts presented options based on legal parameters.
+                Programming a logging session is fast, but the MetaWear might not yet be connected. We'll set a flag saying something's happening.
                 
                 @Code(name: "SensorLogging.swift", file: 03-recording-01-03.swift) 
-            }  
+            }
             
             @Step {
-                The `.optionallyLog` operator will conditionally issue a `.log` command for the provided sensor configuration.
+                The `.log` and `.optionallyLog` Combine operators in the SDK ask for an object conforming to ``MetaWear/MWLoggable``. Exact details are not important. It tells the SDK how to configure and obtain a sensor's loggable signal, which varies by sensor model. What you do need to know is that code completion will find any options for you.
                 
-                For an example of optional streaming commands, see the source code for _MetaBase_.
+                For streaming, one-time reads, and one-time commands, there are also ``MetaWear/MWStreamable``, ``MetaWear/MWReadable``, and ``MetaWear/MWCommand``. Some sensors can only be streamed or logged by polling, hence ``MetaWear/MWPollable``. These are sorta-don't-cares. Overloads on `log` and `stream` handle the details for you.
                 @Code(name: "SensorLogging.swift", file: 03-recording-01-04.swift) 
             }  
             
             @Step {
-                If the command(s) issue without error, cache a timestamp. Later, when downloading data, the SDK uses an anchor date to align timestamps in exported CSV files. This is helpful to simultaneously log from multiple devices, as Bluetooth latency will cause logging to start unevenly.
+                To organize calling a series of `.optionallyLog` commands, _Streamy_ uses a configuration container based on the selected sensors.
                 
-                _Streamy_ is barebones, keeping this date in memory. _MetaBase_ persists this via iCloud.
+                You can instantiate `MWLoggable` conforming types yourself, similar to SwiftUI styles. Our open source _MetaBase 5_ uses this strategy to merge an array of optional streaming publishers.
                 @Code(name: "SensorLogging.swift", file: 03-recording-01-05.swift) 
+            }  
+            
+            @Step {
+                Once the commands issue, _Streamy_ enables the download action.
+                @Code(name: "SensorLogging.swift", file: 03-recording-01-06.swift) 
             }
         }
     }
@@ -54,6 +63,11 @@
         
         @Steps {
             @Step {
+                
+                
+                If the command(s) issue without error, cache a timestamp. Later, when downloading data, the SDK uses an anchor date to align timestamps in exported CSV files. This is helpful to simultaneously log from multiple devices, as Bluetooth latency will cause logging to start unevenly.
+                Streamy is barebones, keeping this date in memory. MetaBase persists this via iCloud.
+                
                 Issue the `downloadLogs` command using the cached start date. This pipeline will emit progress updates as percentages and, at 100%, also emit the collected data.
                 
                 This percentage is a rough estimate from counting flash storage pages. If the last page was only minimally filled with data, you'll see progress leap to 100%.

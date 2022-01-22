@@ -1,19 +1,24 @@
-class SensorLoggingController: ObservableObject {
+class NewSessionUseCase: ObservableObject {
 
-    @Published private(set) var selectedSensors: Set<MWNamedSignal> = []
+    @Published private(set) var sensors:  Set<MWNamedSignal> = []
+    let sensorChoices:                    [MWNamedSignal] = [
+        .acceleration, .gyroscope, .linearAcceleration, .quaternion
+    ]
+
+    @Published private(set) var state:    UseCaseState    = .notReady
     ...
 }
 
-extension SensorLoggingController {
+extension NewSessionUseCase {
 
-    func toggleSensor(_ sensor: MWNamedSignal) -> Binding<Bool>  {
-        Binding(
-            get: { [weak self] in self?.selectedSensors.contains(sensor) == true },
-            set: { [weak self] shouldUse in
-                guard shouldUse else { self?.selectedSensors.remove(sensor); return }
-                self?.selectedSensors.removeConflicts(for: sensor)
-                self?.selectedSensors.insert(sensor)
-            }
-        )
+    func toggleSensor(_ sensor: MWNamedSignal)  {
+        guard sensors.contains(sensor) else {
+            sensors.removeConflicts(for: sensor)
+            sensors.insert(sensor)
+            if state == .notReady { state = .ready }
+            return
+        }
+        sensors.remove(sensor)
+        if sensors.isEmpty { state = .notReady }
     }
 }

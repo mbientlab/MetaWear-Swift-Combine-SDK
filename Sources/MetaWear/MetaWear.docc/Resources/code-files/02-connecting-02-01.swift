@@ -5,7 +5,7 @@ class UnknownDeviceUseCase: ObservableObject {
     init(nearby: (MetaWear, metadata: MetaWearMetadata?)) {
         self.metawear = nearby.metawear
     }
-    
+
 }
 
 // * Called by the factory object creating the use case *
@@ -13,5 +13,5 @@ class UnknownDeviceUseCase: ObservableObject {
 class MetaWearSyncStore {
 
     func getDevice(byLocalCBUUID: CBPeripheralIdentifier)
-    -> (device: MetaWear?, metadata: MetaWearMetadata?) 
+    -> (device: MetaWear?, metadata: MetaWearMetadata?)
 }

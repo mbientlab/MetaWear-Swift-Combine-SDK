@@ -1,16 +1,17 @@
-class KnownDeviceController: ObservableObject {
+class KnownDeviceUseCase: ObservableObject {
 
-    var name: String { metadata.name }
     var isCloudSynced: Bool { metawear == nil }
 
-    @Published private(set) var rssi: Int
+    @Published private(set) var metadata:   MetaWearMetadata
+    @Published private(set) var rssi:       Int
     @Published private(set) var connection: CBPeripheralState
-    @Published private var metadata: MetaWearMetadata
 
-    private weak var metawear: MetaWear? = nil
-    private weak var sync:     MetaWearSyncStore?
-
+    private weak var metawear: MetaWear?
     ...
+
+}
+
+extension KnownDeviceUseCase {
 
     func connect() {
         metawear?.connect()
@@ -23,8 +24,4 @@ class KnownDeviceController: ObservableObject {
     func forget() {
         sync?.forget(globally: metadata)
     }
-}
-
-private extension KnownDeviceController {
-    ...
 }

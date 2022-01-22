@@ -1,35 +1,30 @@
-class KnownDeviceController: ObservableObject {
+class KnownDeviceUseCase: ObservableObject {
 
 
-    
-    @Published private(set) var rssi: Int
+
+    @Published private(set) var metadata:   MetaWearMetadata
+    @Published private(set) var rssi:       Int
     @Published private(set) var connection: CBPeripheralState
 
-    private weak var metawear: MetaWear? = nil
-    private weak var sync:     MetaWearSyncStore?
+    private weak var metawear: MetaWear?
     private var connectionSub: AnyCancellable? = nil
     private var rssiSub:       AnyCancellable? = nil
 
-    init(knownDevice: MACAddress, sync: MetaWearSyncStore) {
+    init(_ sync: MetaWearSyncStore,
+         _ known: (device: MetaWear?, metadata: MetaWearMetadata)) {
         self.sync = sync
-        (self.metawear, self.metadata) = sync.getDeviceAndMetadata(knownDevice)!
+        (self.metawear, self.metadata) = known
         self.rssi = self.metawear?.rssi ?? -100
         self.connection = self.metawear?.connectionState ?? .disconnected
     }
 
-    func onAppear() {
+    func onAppear {
         trackRSSI()
         trackConnection()
     }
 }
 
-private extension KnownDeviceController {
-
-    func trackRSSI() {
-        rssiSub = metawear?.rssiPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.rssi = $0 }
-    }
+private extension KnownDeviceUseCase {
 
     func trackConnection() {
         connectionSub = metawear?.connectionStatePublisher

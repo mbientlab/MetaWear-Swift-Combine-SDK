@@ -1,27 +1,21 @@
-class KnownDeviceController: ObservableObject {
+class KnownDeviceUseCase: ObservableObject {
 
-    var name: String { metadata.name }
     var isCloudSynced: Bool { metawear == nil }
 
-    @Published private(set) var rssi: Int
+    @Published private(set) var metadata:   MetaWearMetadata
+    @Published private(set) var rssi:       Int
     @Published private(set) var connection: CBPeripheralState
-    @Published private var metadata: MetaWearMetadata
+    @Published var showRenamePrompt:        Bool = false
 
-    private weak var metawear: MetaWear? = nil
-    private weak var sync:     MetaWearSyncStore?
-    private var identifySub:   AnyCancellable? = nil
-
+    private weak var metawear: MetaWear?
     ...
 
-    func identify() {
-        identifySub = metawear?.publishWhenConnected()
-            .first()
-            .command(.ledFlash(.Presets.one.pattern))
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
-        if metawear?.connectionState ?? .disconnected < .connecting { metawear?.connect() }
-    }
 }
 
-private extension KnownDeviceController {
-    ...
+extension KnownDeviceUseCase {
+
+    func rename(_ newName: String) {
+        do { try sync?.rename(known: metadata, to: newName) }
+        catch { showRenamePrompt = true }
+    }
 }
