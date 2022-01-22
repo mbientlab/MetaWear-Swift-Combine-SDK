@@ -4,6 +4,22 @@
         @Image(source: streamyIcon.png, alt: "Streamy app icon")
     }
     
+    @Section(title: "To Log or Download?") {
+        @ContentAndMedia {
+            Create a UseCase detecting if the MetaWear flash storage contains any logged data, suggesting the relevant call to action.
+            @Image(source: bird-rainbow.png, alt: "Bird art")
+        }
+        
+        @Steps {
+            @Step {
+                Issuing the `logLength` command returns the used flash storage in bytes, as counted by pages occupied. 
+                
+                If no bytes are used, it's time to start a new logging session. Otherwise, _Streamy_ should offer to download the data.
+                @Code(name: "NextSteps.swift", file: 03-recording-00-00.swift, previousFile: 03-recording-00-00_mask.swift) 
+            }  
+        }
+    }
+    
     @Section(title: "Configure logging commands") {
         @ContentAndMedia {
             Create a UseCase that composes a logging session with a valid group of sensors and commands the MetaWear to start logging.
@@ -66,33 +82,33 @@
                 The SDK's `.downloadLogs` command asks for a `Date` when logging started. This aligns the timestamps of datapoints across groups of MetaWears, as each will start logging at different times due to Bluetooth delays.
                 
                 For demo purposes _Streamy_ just injects the current time. A real app should have cached a timestamp back when the log command succeeded.
-                @Code(name: "SensorLogging.swift", file: 03-recording-02-01.swift, previousFile: 03-recording-02-01_mask.swift) 
+                @Code(name: "Download.swift", file: 03-recording-02-01.swift, previousFile: 03-recording-02-01_mask.swift) 
             }    
             
             @Step {
                 The `download` operators will emit progress updates approximately every 4%. At 100%, the collected data arrives.
                 
                 This percentage is a rough estimate from counting flash storage pages. If the last page was only minimally filled with data, you'll see progress leap to 100%.
-                @Code(name: "SensorLogging.swift", file: 03-recording-02-02.swift) 
+                @Code(name: "Download.swift", file: 03-recording-02-02.swift) 
             }  
             
             @Step {
                 _Streamy_ passes the data component of the download tuple for CSV formatting.
-                @Code(name: "SensorLogging.swift", file: 03-recording-02-03.swift) 
+                @Code(name: "Download.swift", file: 03-recording-02-03.swift) 
             }  
             
             @Step {
                 Translate the array of ``MetaWear/MWDataTable`` into CSV-formatted Data by calling ``MetaWear/MWDataTable/makeCSV(delimiter:)``.
                 
                 Each table represents one sensor. Use ``MetaWear/MWDataTable/source`` for its name. The time-related columns and decimal digits of the output are customizable. (When streaming data, the SDK returns timestamped `SIMD<Float>` and other native types.)
-                @Code(name: "SensorLogging.swift", file: 03-recording-02-04.swift, previousFile: 03-recording-02-04_mask.swift) 
+                @Code(name: "Download.swift", file: 03-recording-02-04.swift, previousFile: 03-recording-02-04_mask.swift) 
             }  
             
             @Step {
                 Export and archive these CSVs as needed.
                 
                 _Streamy_ writes these files to a temp folder. A `FileWrapper` for that folder is embedded in a `FileDocument` to align with a SwiftUI API. _MetaBase_ archives the files to CoreData and iCloud and exports them using AppKit and UIKit APIs.
-                @Code(name: "SensorLogging.swift", file: 03-recording-02-05.swift) 
+                @Code(name: "Download.swift", file: 03-recording-02-05.swift) 
             } 
         }
     }
