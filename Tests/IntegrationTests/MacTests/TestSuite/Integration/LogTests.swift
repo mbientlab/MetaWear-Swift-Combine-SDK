@@ -68,6 +68,65 @@ class LogTests: XCTestCase {
         }
     }
 
+    // MARK: - Granular Commands
+
+    func test_Logs_SetupWithLazyStart() {
+        connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
+            let kickoff = metawear.publish()
+            kickoff
+                ._assertLoggers([], metawear: metawear)
+
+            // ACT I
+                .log(.accelerometer(rate: .hz50, gravity: .g16), overwriting: false, startImmediately: false)
+                ._assertLoggers([.acceleration], metawear: metawear)
+                .delay(for: 2, tolerance: 0, scheduler: metawear.bleQueue)
+                .read(.logLength)
+            // Assert I
+                .handleEvents(receiveOutput: { logLength in
+                    XCTAssertEqual(logLength.value, 0)
+                })
+
+            // Act II
+                .flatMap { _ in kickoff.startCurrentLoggers(overwriting: false) }
+                .delay(for: 2, tolerance: 0, scheduler: metawear.bleQueue)
+                .downloadLogs(startDate: .init())
+                .drop(while: { $0.percentComplete < 1 })
+                ._sinkNoFailure(&subs, #file, #line, finished: { exp.fulfill() }, receiveValue: { output in
+            // Assert II
+                    XCTAssertGreaterThan(output.data.first?.rows.endIndex ?? 0, 0)
+                    exp.fulfill()
+                })
+        }
+    }
+
+    func test_RemovesSpecificLoggers() {
+        connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
+            let expDeleted = MWAccelerometer(rate: .hz50, gravity: .g16)
+            let expRetained = MWGyroscope(rate: .hz50, range: .dps125)
+
+            metawear.publish()
+                ._assertLoggers([], metawear: metawear)
+
+            // Arrange
+                .log(expDeleted, overwriting: false, startImmediately: false)
+                .log(expRetained, overwriting: false, startImmediately: false)
+                ._assertLoggers([expDeleted.signalName, expRetained.signalName], metawear: metawear)
+                .collectAnonymousLoggerSignals()
+                .compactMap { $0.first(where: { $0.id == expDeleted.signalName })?.log }
+
+            // Act
+                .flatMap { loggerSignal in
+                    metawear.publish().removeLoggers([loggerSignal])
+                }
+                .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
+                ._assertLoggers([expRetained.signalName], metawear: metawear)
+
+            // Cleanup
+                .command(.resetActivities)
+                ._sinkNoFailure(&subs, receiveValue: { _ in  exp.fulfill() })
+        }
+    }
+
     // MARK: - Single
 
     func test_NotLogging() {
