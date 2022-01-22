@@ -16,6 +16,7 @@ This library also includes conveniences for drag-and-drop operations in AppKit, 
 - ``MetaWearMetadata``
 - ``MetaWearGroup``
 - ``MWKnownDevice``
+- ``MWNearbyUnknownDevice``
 
 ### Drag and Drop
 - ``DraggableMetaWear``

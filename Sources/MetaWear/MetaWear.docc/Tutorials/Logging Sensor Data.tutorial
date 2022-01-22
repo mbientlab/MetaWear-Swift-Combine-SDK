@@ -57,35 +57,43 @@
     
     @Section(title: "Download data") {
         @ContentAndMedia {
-            Collect logged data into CSV files.
+            Collect logged data into exportable CSV files.
             @Image(source: bird-gray-yellow.png, alt: "Bird art")
         }
         
         @Steps {
             @Step {
+                The SDK's `.downloadLogs` command asks for a `Date` when logging started. This aligns the timestamps of datapoints across groups of MetaWears, as each will start logging at different times due to Bluetooth delays.
                 
-                
-                If the command(s) issue without error, cache a timestamp. Later, when downloading data, the SDK uses an anchor date to align timestamps in exported CSV files. This is helpful to simultaneously log from multiple devices, as Bluetooth latency will cause logging to start unevenly.
-                Streamy is barebones, keeping this date in memory. MetaBase persists this via iCloud.
-                
-                Issue the `downloadLogs` command using the cached start date. This pipeline will emit progress updates as percentages and, at 100%, also emit the collected data.
-                
-                This percentage is a rough estimate from counting flash storage pages. If the last page was only minimally filled with data, you'll see progress leap to 100%.
-                @Code(name: "SensorLogging.swift", file: 03-recording-02-06.swift, previousFile: 03-recording-02-06_mask.swift) 
+                For demo purposes _Streamy_ just injects the current time. A real app should have cached a timestamp back when the log command succeeded.
+                @Code(name: "SensorLogging.swift", file: 03-recording-02-01.swift, previousFile: 03-recording-02-01_mask.swift) 
             }    
             
             @Step {
-                Once the download completes, translate the received array of ``MetaWear/MWDataTable`` into a CSV-formatted String by calling ``MetaWear/MWDataTable/makeCSV(delimiter:)``. 
+                The `download` operators will emit progress updates approximately every 4%. At 100%, the collected data arrives.
                 
-                Use ``MetaWear/MWDataTable/source`` for the sensor's name or to reconstruct String-erased values into a concrete type. (The SDK's `.stream` command returns typed values.) The time-related columns and decimal digits of the output are customizable.
-                @Code(name: "SensorLogging.swift", file: 03-recording-02-07.swift) Î
+                This percentage is a rough estimate from counting flash storage pages. If the last page was only minimally filled with data, you'll see progress leap to 100%.
+                @Code(name: "SensorLogging.swift", file: 03-recording-02-02.swift) 
             }  
             
             @Step {
-                Archive these CSVs as needed.
+                _Streamy_ passes the data component of the download tuple for CSV formatting.
+                @Code(name: "SensorLogging.swift", file: 03-recording-02-03.swift) 
+            }  
+            
+            @Step {
+                Translate the array of ``MetaWear/MWDataTable`` into CSV-formatted Data by calling ``MetaWear/MWDataTable/makeCSV(delimiter:)``.
+                
+                Each table represents one sensor. Use ``MetaWear/MWDataTable/source`` for its name. The time-related columns and decimal digits of the output are customizable. (When streaming data, the SDK returns timestamped `SIMD<Float>` and other native types.)
+                @Code(name: "SensorLogging.swift", file: 03-recording-02-04.swift, previousFile: 03-recording-02-04_mask.swift) 
+            }  
+            
+            @Step {
+                Export and archive these CSVs as needed.
                 
                 _Streamy_ writes these files to a temp folder. A `FileWrapper` for that folder is embedded in a `FileDocument` to align with a SwiftUI API. _MetaBase_ archives the files to CoreData and iCloud and exports them using AppKit and UIKit APIs.
-            }  
+                @Code(name: "SensorLogging.swift", file: 03-recording-02-05.swift) 
+            } 
         }
     }
 }
