@@ -1,9 +1,9 @@
 import MetaWear
 
-class DeviceListController: ObservableObject {
+class DeviceListUseCase: ObservableObject {
 
     @Published private(set) var unknownDevices: [CBPeripheralIdentifier] = []
-    @Published private(set) var knownDevices: [MACAddress] = []
+    @Published private(set) var knownDevices:   [MACAddress] = []
 
     init() {
     }

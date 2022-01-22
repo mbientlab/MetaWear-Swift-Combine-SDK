@@ -2,10 +2,10 @@ import MetaWear
 import MetaWearSync
 import Combine
 
-class DeviceListController: ObservableObject {
+class DeviceListUseCase: ObservableObject {
 
     @Published private(set) var unknownDevices: [CBPeripheralIdentifier] = []
-    @Published private(set) var knownDevices: [MACAddress] = []
+    @Published private(set) var knownDevices:   [MACAddress] = []
 
     private weak var scanner: MetaWearScanner?
     private weak var sync:    MetaWearSyncStore?
@@ -18,7 +18,7 @@ class DeviceListController: ObservableObject {
     }
 }
 
-extension NearbyDeviceListController {
+extension DeviceListUseCase {
 
     func onAppear() {
         scanner?.startScan(higherPerformanceMode: true)

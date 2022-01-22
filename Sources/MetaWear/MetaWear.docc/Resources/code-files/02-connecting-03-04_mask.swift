@@ -1,33 +1,42 @@
-class KnownDeviceController: ObservableObject {
+class KnownDeviceUseCase: ObservableObject {
 
-    var name: String { metadata.name }
     var isCloudSynced: Bool { metawear == nil }
 
-    @Published private(set) var rssi: Int
+    @Published private(set) var metadata:   MetaWearMetadata
+    @Published private(set) var rssi:       Int
     @Published private(set) var connection: CBPeripheralState
-    @Published private var metadata: MetaWearMetadata
 
-    private weak var metawear: MetaWear? = nil
-    private weak var sync:     MetaWearSyncStore?
+    private weak var metawear: MetaWear?
     private var identitySub:   AnyCancellable? = nil
+    private var connectionSub: AnyCancellable? = nil
+    private var rssiSub:       AnyCancellable? = nil
 
-    ...
+    init(_ sync: MetaWearSyncStore,
+         _ known: (device: MetaWear?, metadata: MetaWearMetadata)) {
+        self.sync = sync
+        (self.metawear, self.metadata) = known
+        self.rssi = self.metawear?.rssi ?? -100
+        self.connection = self.metawear?.connectionState ?? .disconnected
+    }
 
-    func onAppear() {
+    func onAppear {
         trackIdentity()
         trackRSSI()
         trackConnection()
     }
 }
 
-private extension KnownDeviceController {
+private extension KnownDeviceUseCase {
 
     func trackIdentity() {
         identitySub = sync?.publisher(for: metadata.mac)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] metawear, metadata in
-                self?.metawear = metawear
+            .sink { [weak self] deviceReference, metadata in
+
+                self?.metawear = deviceReference
                 self?.metadata = metadata
+
+
             }
     }
 }

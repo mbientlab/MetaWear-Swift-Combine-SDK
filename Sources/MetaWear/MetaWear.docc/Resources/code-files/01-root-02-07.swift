@@ -1,16 +1,19 @@
 @main
 struct MacApp: App {
-    @StateObject private var root = Root()
+
+    @NSApplicationDelegateAdaptor private var app: AppDelegate
 
     var body: some Scene {
-        WindowGroup {
-            NavigationView {
-                DeviceListSidebar(root)
-                EmptyView()
-            }
-            .toolbar { BluetoothStateToolbar(root: root) }
-            .onAppear(perform: root.start)
-            .environmentObject(root)
-        }
+        MainWindowScene(factory: .init(root: app.root))
+    }
+}
+
+@main
+struct iOSApp: App {
+
+    @UIApplicationDelegateAdaptor private var app: AppDelegate
+
+    var body: some Scene {
+        MainScene(factory: .init(root: app.root))
     }
 }

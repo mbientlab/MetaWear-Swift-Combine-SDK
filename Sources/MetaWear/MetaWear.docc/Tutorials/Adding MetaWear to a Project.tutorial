@@ -79,9 +79,9 @@
                 @Code(name: "Root.swift", file: 01-root-01-06.swift) {}
             }
             @Step { 
-                For brevity, this tutorial will skip UI-related code. 
+                For brevity, this tutorial will skip UI-related code. We'll only examine UseCase objects and Combine pipelines related to the SDK.
                 
-                See the Streamy repo for how `Root` and other aspects are handled in this barebones SwiftUI app.
+                _Streamy_ is built to be modular. All views depend on generic ObservableObjects (i.e., use cases) and call on other generic views, so you can tinker with Streamy easily bit by bit to build a mockup app.
                 @Code(name: "App.swift", file: 01-root-02-07.swift, reset: true) {}
             }
         }

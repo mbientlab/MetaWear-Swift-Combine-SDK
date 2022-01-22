@@ -7,19 +7,17 @@ class UnknownDeviceUseCase: ObservableObject {
 
     private weak var metawear:  MetaWear?
     private weak var sync:      MetaWearSyncStore?
-    private weak var tasks:     UnownedCancellableStore?
     private      var rssiSub:   AnyCancellable? = nil
 
     init(nearby: (MetaWear, metadata: MetaWearMetadata?),
          sync:   MetaWearSyncStore,
-         tasks:  UnownedCancellableStore) {
+
         self.metawear = nearby.metawear
         self.name = nearby.metadata?.name ?? nearby.metawear.name
         self.isCloudSynced = nearby.metadata != nil
         self.rssi = nearby.metawear.rssi
         self.connection = nearby.metawear.connectionState
         self.sync = sync
-        self.tasks = tasks
     }
 
     func onAppear() {
@@ -37,7 +35,6 @@ class UnknownDeviceUseCase: ObservableObject {
             device?.publishIfConnected()
                 .command(.ledFlash(.Presets.one.pattern))
                 .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
-                .store(in: tasks.subs)
         })
     }
 }
