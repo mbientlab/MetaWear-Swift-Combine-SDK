@@ -44,26 +44,29 @@ class LogTests: XCTestCase {
     }
 
     func test_Read_LogLength_WhenPopulated() {
-        let log: some MWLoggable = .accelerometer(rate: .hz50, gravity: .g2)
-
         connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
             // Prepare
+            let log: some MWLoggable = .accelerometer(rate: .hz50, gravity: .g2)
+            
             metawear.publish()
                 .deleteLoggedEntries()
-                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
+                .delay(for: 2, tolerance: 0, scheduler: metawear.bleQueue)
                 .log(log)
                 ._assertLoggers([log.signalName], metawear: metawear)
-                .delay(for: 10, tolerance: 0, scheduler: metawear.bleQueue)
+                .delay(for: 2, tolerance: 0, scheduler: metawear.bleQueue)
 
             // Act
                 .read(.logLength)
+
+            // Assert
                 .handleEvents(receiveOutput: { output in
                     XCTAssertGreaterThan(output.value, 1)
                 })
+
+            // Cleanup
                 .map { _ in metawear }
                 .command(.resetActivities)
-
-            // Assert
+                .deleteLoggedEntries()
                 ._sinkNoFailure(&subs, receiveValue: { _ in  exp.fulfill() })
         }
     }
