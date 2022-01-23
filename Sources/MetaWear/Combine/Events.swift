@@ -4,42 +4,75 @@ import Foundation
 import Combine
 import MetaWearCpp
 
-// See Timer for timed events.
+// For timed events, see Timer.swift.
 
 public extension Publisher where Output == MetaWear {
 
-    func recordEventsOnButtonDown(_ events: @escaping (MetaWear) -> MWPublisher<MetaWear>) -> MWPublisher<MetaWear> {
+    /// Record any commands issued in the closure to execute when the MetaWear's button is depressed.
+    ///
+    /// - Parameter events: A pipeline to record desired events, such as flashing a light
+    /// - Returns: MetaWear that recorded the event or an error
+    ///
+    func recordEventsOnButtonDown(
+        _ events: @escaping (MWPublisher<MetaWear>) -> MWPublisher<MetaWear>
+    ) -> MWPublisher<MetaWear> {
         let upstream = mapToMWError().share()
         let source = MWMechanicalButton()
-        let signal = upstream.map(\.board).flatMap(source.getDownEventSignal(board:))
-        return Publishers.Zip(upstream, signal)
-            .mapToMWError()
-            .flatMap { metawear, signal in
-                events(metawear)
-                    .flatMap { _ in signal.eventEndRecording() }
-                    .map { _ in metawear }
-                    .eraseToAnyPublisher()
+        let signal = upstream.map(\.board).flatMap(source.getDownEventSignal)
+        return upstream
+            .zip(signal, { (device: $0, signal: $1) })
+            .recordEventsForSignal(events)
+    }
+
+    /// Record any commands issued in the closure to execute when the MetaWear's button is released.
+    ///
+    /// - Parameter events: A pipeline to record desired events, such as flashing a light
+    /// - Returns: MetaWear that recorded the event or an error
+    ///
+    func recordEventsOnButtonUp(
+        _ events: @escaping (MWPublisher<MetaWear>) -> MWPublisher<MetaWear>
+    ) -> MWPublisher<MetaWear> {
+        let upstream = mapToMWError().share()
+        let source = MWMechanicalButton()
+        let signal = upstream.map(\.board).flatMap(source.getUpEventSignal)
+        return upstream
+            .zip(signal, { (device: $0, signal: $1) })
+            .recordEventsForSignal(events)
+    }
+}
+
+public extension Publisher where Output == (device: MetaWear, signal: MWDataProcessorSignal) {
+
+    /// Record any commands issued in the closure to execute when the MetaWear receives an output from the provided signal.
+    ///
+    /// - Parameter events: A pipeline to record desired events, such as flashing a light
+    /// - Returns: MetaWear that recorded the event or an error
+    ///
+    func recordEventsForSignal(
+        _ events: @escaping (MWPublisher<MetaWear>) -> MWPublisher<MetaWear>
+    ) -> MWPublisher<MetaWear> {
+        let upstream = self.mapToMWError().share()
+        let userInput = events(upstream.map(\.device).eraseToAnyPublisher())
+        return upstream
+            .handleEvents(receiveOutput: { mw, event in
+                mbl_mw_event_record_commands(event)
+            })
+            .zip(userInput, { (event: $0.signal, device: $1) })
+            .flatMap { event, device -> MWPublisher<MetaWear> in
+                event
+                    .eventEndRecording()
+                    .map { device }
+                    .erase(subscribeOn: device.bleQueue)
             }
             .eraseToAnyPublisher()
     }
 }
 
-public extension Publisher where Output == (MetaWear, MWDataProcessorSignal) {
-
-    func recordEventsForSignal(
-    _ events @escaping (MetaWear) -> MWPublisher<MetaWear>
-    ) -> MWPublisher<MetaWear> {
-
-        self.mapToMWError().flatMap { mw, event in
-            mbl_mw_event_record_commands(event)
-            return
-        }
-    }
-}
-
 public extension MWBoard {
 
-    /// When pointing to an event signal, ends recording of an `MblMwEvent`. Combine wrapper for `mbl_mw_event_end_record`.
+    /// When pointing to an event signal, ends recording of an `MblMwEvent`.
+    ///
+    /// Combine wrapper for `mbl_mw_event_end_record`.
     ///
     func eventEndRecording() -> PassthroughSubject<Void,MWError> {
 
