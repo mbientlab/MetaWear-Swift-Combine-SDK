@@ -27,9 +27,6 @@ private extension NextStepsUseCase {
             .publishWhenConnected()
             .first()
 
-        
-            .receive(on: DispatchQueue.main)
-        ...
 
         metawear.connect()
     }
