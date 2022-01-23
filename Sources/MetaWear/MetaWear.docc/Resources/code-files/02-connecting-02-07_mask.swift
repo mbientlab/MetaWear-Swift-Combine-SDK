@@ -14,7 +14,7 @@ class UnknownDeviceUseCase: ObservableObject {
 
         self.metawear = nearby.metawear
         self.name = nearby.metadata?.name ?? nearby.metawear.name
-        self.isCloudSynced = nearby.metadata != nil
+        self.isCloudSynced = nearby.metadata?.hasCloudSyncedInfo == true
         self.rssi = nearby.metawear.rssi
         self.connection = nearby.metawear.connectionState
         self.sync = sync

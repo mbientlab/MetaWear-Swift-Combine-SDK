@@ -2,7 +2,7 @@ import Foundation
 import MetaWear
 import MetaWearSync
 
-class Root: ObservableObject {
+class Root {
 
     let syncedDevices: MetaWearSyncStore
     let scanner: MetaWearScanner

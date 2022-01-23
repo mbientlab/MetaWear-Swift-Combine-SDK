@@ -8,7 +8,7 @@ class UnknownDeviceUseCase: ObservableObject {
     init(nearby: (MetaWear, metadata: MetaWearMetadata?)) {
         self.metawear = nearby.metawear
         self.name = nearby.metadata?.name ?? nearby.metawear.name
-        self.isCloudSynced = nearby.metadata != nil
+        self.isCloudSynced = nearby.metadata?.hasCloudSyncedInfo == true
     }
-    
+
 }

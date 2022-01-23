@@ -1,4 +1,5 @@
 import MetaWear
+import MetaWearSync
 import Combine
 
 class DeviceListUseCase: ObservableObject {
@@ -22,7 +23,7 @@ extension DeviceListUseCase {
         scanner?.startScan(higherPerformanceMode: true)
 
         unknownSub = sync?.unknownDevices
-    
+
     }
 
     func onDisappear() {

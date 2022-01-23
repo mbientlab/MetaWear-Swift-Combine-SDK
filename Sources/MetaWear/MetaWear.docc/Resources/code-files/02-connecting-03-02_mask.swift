@@ -1,6 +1,6 @@
 class KnownDeviceUseCase: ObservableObject {
 
-
+    var isCloudSynced: Bool { metawear == nil }
 
     @Published private(set) var metadata:   MetaWearMetadata
     @Published private(set) var rssi:       Int
@@ -15,7 +15,7 @@ class KnownDeviceUseCase: ObservableObject {
         self.sync = sync
         (self.metawear, self.metadata) = known
         self.rssi = self.metawear?.rssi ?? -100
-        self.connection = self.metawear?.connectionState ?? .disconnected
+
     }
 
     func onAppear {
@@ -26,9 +26,5 @@ class KnownDeviceUseCase: ObservableObject {
 
 private extension KnownDeviceUseCase {
 
-    func trackConnection() {
-        connectionSub = metawear?.connectionStatePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.connection = $0 }
-    }
+
 }

@@ -23,6 +23,6 @@ class KnownDeviceUseCase: ObservableObject {
 
 class MetaWearSyncStore {
 
-    func getDeviceAndMetadata(_ mac: MACAddress)
-    -> (device: MetaWear?, metadata: MetaWearMetadata)?
+
+
 }
