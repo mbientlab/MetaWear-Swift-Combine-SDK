@@ -8,5 +8,5 @@ class UnknownDeviceUseCase: ObservableObject {
         self.metawear = nearby.metawear
         self.name = nearby.metadata?.name ?? nearby.metawear.name
     }
-    
+
 }

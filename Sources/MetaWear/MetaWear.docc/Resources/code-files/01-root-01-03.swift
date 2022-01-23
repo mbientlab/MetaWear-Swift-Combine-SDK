@@ -1,7 +1,7 @@
 import Foundation
 import MetaWear
 
-class Root: ObservableObject {
+class Root {
 
     let scanner: MetaWearScanner
 

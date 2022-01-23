@@ -17,7 +17,7 @@ class DeviceTests: XCTestCase {
     // MARK: - Info Tests
 
     func test_DiscoversName() {
-        connectNearbyMetaWear(timeout: .download) { metawear, exp, subs in
+        connectNearbyMetaWear(timeout: .read) { metawear, exp, subs in
             XCTAssertFalse(metawear.name.isEmpty)
             XCTAssertTrue(MetaWear.isNameValid(metawear.name))
             exp.fulfill()

@@ -27,6 +27,11 @@ private extension NextStepsUseCase {
             .publishWhenConnected()
             .first()
             .read(.logLength)
+            .map { $0.value > 0 }
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { [weak self] bytesAreUsed in
+                self?.updateCTAState(isLogging: bytesAreUsed)
+            })
 
         metawear.connect()
     }

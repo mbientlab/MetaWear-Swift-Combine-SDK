@@ -5,7 +5,7 @@ class KnownDeviceUseCase: ObservableObject {
     @Published private(set) var metadata:   MetaWearMetadata
     @Published private(set) var rssi:       Int
     @Published private(set) var connection: CBPeripheralState
-    @Published var showRenamePrompt:        Bool = false
+    @Published var showRenameInvalidPrompt: Bool = false
 
     private weak var metawear: MetaWear?
     ...
@@ -16,6 +16,6 @@ extension KnownDeviceUseCase {
 
     func rename(_ newName: String) {
         do { try sync?.rename(known: metadata, to: newName) }
-        catch { showRenamePrompt = true }
+        catch { showRenameInvalidPrompt = true }
     }
 }

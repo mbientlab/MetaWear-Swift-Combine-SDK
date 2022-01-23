@@ -12,6 +12,6 @@ class UnknownDeviceUseCase: ObservableObject {
 
 class MetaWearSyncStore {
 
-    func getDevice(byLocalCBUUID: CBPeripheralIdentifier)
-    -> (device: MetaWear?, metadata: MetaWearMetadata?)
+
+    
 }

@@ -24,11 +24,11 @@ extension DownloadUseCase {
                 }
             })
             .drop { $0.percentComplete < 1 }
-            .map { $0.data }
+            .map(\.data)
             .sink(receiveCompletion: { [weak self] in
                 displayError(from: $0, on: self, \.state)
             }, receiveValue: { [weak self] in
-                self?.prepareForExport(dataTables: $0)
+
             })
 
         metawear?.connect()

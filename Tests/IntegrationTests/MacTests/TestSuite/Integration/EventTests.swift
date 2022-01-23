@@ -20,6 +20,15 @@ class EventTests: XCTestCase {
             metawear
                 .publish()
             // Act
+                .macro(executeOnBoot: true, actions: { macro in
+                    macro
+                        .recordEventsOnButtonUp { record in
+                            record.command(.ledFlash(.Presets.eight.pattern))
+                        }
+                        .recordEventsOnButtonDown { record in
+                            record.command(.ledFlash(.Presets.zero.pattern))
+                        }
+                })
                 .recordEventsOnButtonUp { record in
                     record.command(.ledFlash(.Presets.eight.pattern))
                 }

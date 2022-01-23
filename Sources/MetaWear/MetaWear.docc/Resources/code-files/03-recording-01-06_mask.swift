@@ -18,14 +18,14 @@ extension NewSessionUseCase {
         actionSub = metawear
             .publishWhenConnected()
             .first()
-            .optionallyLog(configs.accelerometer)
-            .optionallyLog(configs.gyroscope)
-            .optionallyLog(configs.linearAcc)
-            .optionallyLog(configs.quaternion)
+
+        
+
+
             .sink(receiveCompletion: { [weak self] in
                 displayError(from: $0, on: self, \.state)
             }, receiveValue: { [weak self] in
-                self?.offerDownloadCallToAction()
+
             })
 
         metawear.connect()
