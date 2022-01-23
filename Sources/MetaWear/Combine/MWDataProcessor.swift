@@ -258,6 +258,28 @@ public extension MWDataSignalOrBoard {
     }
 }
 
+/// Data processor Comparator options against a given threshold value. If successful, a signal is emitted that a subsequent event can listen for.
+///
+public enum MWComparatorOption: Int, CaseIterable, IdentifiableByRawValue {
+    case equal = 0
+    case notEqual
+    case lessThan
+    case lessThanOrEqual
+    case greaterThan
+    case greaterThanOrEqual
+
+    public var cppValue: MblMwComparatorOperation {
+        switch self {
+            case .equal: return MBL_MW_COMPARATOR_OP_EQ
+            case .notEqual: return MBL_MW_COMPARATOR_OP_NEQ
+            case .lessThan: return MBL_MW_COMPARATOR_OP_LT
+            case .lessThanOrEqual: return MBL_MW_COMPARATOR_OP_LTE
+            case .greaterThan: return MBL_MW_COMPARATOR_OP_GT
+            case .greaterThanOrEqual: return MBL_MW_COMPARATOR_OP_GTE
+        }
+    }
+}
+
 // MARK: - Helpers
 
 public extension Publisher where Output == MWDataProcessorSignal, Failure == MWError {

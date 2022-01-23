@@ -34,6 +34,24 @@ public extension MWMechanicalButton {
     func streamStart(board: MWBoard) {}
     func streamCleanup(board: MWBoard) {}
 
+    /// When the button is pressed
+    ///
+    func getDownEventSignal(board: MWBoard) -> MWPublisher<MWDataProcessorSignal> {
+        guard let stream = mbl_mw_switch_get_state_data_signal(board) else {
+            return _Fail(mw: .operationFailed("Could not create button signal"))
+        }
+        return stream.simpleComparatorCreate(op: MBL_MW_COMPARATOR_OP_EQ, reference: 1)
+    }
+
+    /// When the button is released
+    ///
+    func getUpEventSignal(board: MWBoard) -> MWPublisher<MWDataProcessorSignal> {
+        guard let stream = mbl_mw_switch_get_state_data_signal(board) else {
+            return _Fail(mw: .operationFailed("Could not create button signal"))
+        }
+        return stream.simpleComparatorCreate(op: MBL_MW_COMPARATOR_OP_EQ, reference: 0)
+    }
+
 }
 
 

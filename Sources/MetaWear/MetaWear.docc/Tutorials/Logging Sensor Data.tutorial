@@ -29,44 +29,44 @@
         @Steps {
             @Step {
                 We'll start with a MetaWear reference and metadata.
-                @Code(name: "SensorLogging.swift", file: 03-recording-01-00.swift, previousFile: 03-recording-01-00_mask.swift) 
+                @Code(name: "NewSession.swift", file: 03-recording-01-00.swift, previousFile: 03-recording-01-00_mask.swift) 
             }  
             @Step {
                 When a MetaWear logs its sensors, the activity is given an identifier String. The SDK catalogs these as ``MetaWear/MWNamedSignal``. We'll use that enum as a rough-and-ready way to present options for logging.
                 
                 _Streamy_ will offer the accelerometer and gyroscope, plus two modes that fuse the accelerometer and gyroscope together.
-                @Code(name: "SensorLogging.swift", file: 03-recording-01-01.swift, previousFile: 03-recording-01-01_mask.swift) 
+                @Code(name: "NewSession.swift", file: 03-recording-01-01.swift, previousFile: 03-recording-01-01_mask.swift) 
             }  
             @Step {
                 When fusing the accelerometer and gyroscope together, it's not possible to log those sensors individually. We'll ask the SDK for some logic to ensure our updates to the Set keeps the two fused modes exclusive to logging individual sensors (and another fused mode).
                 
                 If any sensors are selected, we'll enable the call to action.
-                @Code(name: "SensorLogging.swift", file: 03-recording-01-02.swift) 
+                @Code(name: "NewSession.swift", file: 03-recording-01-02.swift) 
             } 
             
             @Step {
                 Programming a logging session is fast, but the MetaWear might not yet be connected. We'll set a flag saying something's happening.
                 
-                @Code(name: "SensorLogging.swift", file: 03-recording-01-03.swift) 
+                @Code(name: "NewSession.swift", file: 03-recording-01-03.swift) 
             }
             
             @Step {
                 The `.log` and `.optionallyLog` Combine operators in the SDK ask for an object conforming to ``MetaWear/MWLoggable``. Exact details are not important. It tells the SDK how to configure and obtain a sensor's loggable signal, which varies by sensor model. What you do need to know is that code completion will find any options for you.
                 
                 For streaming, one-time reads, and one-time commands, there are also ``MetaWear/MWStreamable``, ``MetaWear/MWReadable``, and ``MetaWear/MWCommand``. Some sensors can only be streamed or logged by polling, hence ``MetaWear/MWPollable``. These are sorta-don't-cares. Overloads on `log` and `stream` handle the details for you.
-                @Code(name: "SensorLogging.swift", file: 03-recording-01-04.swift) 
+                @Code(name: "NewSession.swift", file: 03-recording-01-04.swift) 
             }  
             
             @Step {
                 To organize calling a series of `.optionallyLog` commands, _Streamy_ uses a configuration container based on the selected sensors.
                 
                 You can instantiate `MWLoggable` conforming types yourself, similar to SwiftUI styles. Our open source _MetaBase 5_ uses this strategy to merge an array of optional streaming publishers.
-                @Code(name: "SensorLogging.swift", file: 03-recording-01-05.swift) 
+                @Code(name: "NewSession.swift", file: 03-recording-01-05.swift) 
             }  
             
             @Step {
                 Once the commands issue, _Streamy_ enables the download action.
-                @Code(name: "SensorLogging.swift", file: 03-recording-01-06.swift) 
+                @Code(name: "NewSession.swift", file: 03-recording-01-06.swift) 
             }
         }
     }
