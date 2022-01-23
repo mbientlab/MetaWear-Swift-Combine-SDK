@@ -25,10 +25,13 @@ extension DeviceListUseCase {
 
         unknownSub = sync?.unknownDevices
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.unknownDevices = $0.sorted() }
+            .sink { [weak self] ids in self?.unknownDevices = ids.sorted() }
 
         knownSub = sync?.knownDevices
             .receive(on: DispatchQueue.main)
+            .sink { [weak self] metadata in
+                self?.knownDevices = metadata
+                ...
     }
 
     func onDisappear() {

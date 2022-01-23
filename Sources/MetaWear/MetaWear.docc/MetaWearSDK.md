@@ -61,11 +61,11 @@ From those publishers, autocompletion will reveal MetaWear operators.
 
 Operator | Example
 --- | ---
-`.command()` | ``MWCommand/rename(advertisingName:)``
-`.read()` | ``MWReadable/batteryLevel``
-`.stream()` | ``MWStreamable/sensorFusionQuaternion(mode:)``
-`.log()` | ``MWLoggable/gyroscope(rate:range:)``
-`.downloadLogs(:)` | Returns ``MWDataTable`` array and percent progress
+`.command()` | ``MetaWear/MWCommand/rename(advertisingName:)``
+`.read()` | ``MetaWear/MWReadable/batteryLevel``
+`.stream()` | ``MetaWear/MWStreamable/sensorFusionQuaternion(mode:)``
+`.log()` | ``MetaWear/MWLoggable/gyroscope(rate:range:)``
+`.downloadLogs(:)` | Returns ``MetaWear/MWDataTable`` array and percent progress
 
 
 ###### Example: Wait until first connection, stream accelerometer vectors, update UI on main ######

@@ -11,7 +11,7 @@ import CoreBluetooth
 extension TestDevices {
 
     /// Designate a stable of known devices to use
-    static var machine: HostMachine = .RyanMacBook
+    static var machine: HostMachine = .RyanMacMini
 
 }
 
@@ -49,10 +49,15 @@ enum TestDevices {
     /// Stables of known devices
     enum HostMachine {
         case RyanMacBook
+        case RyanMacMini
         case Laura
 
         var localDevices: LocalDevices {
             switch self {
+                case .RyanMacMini: return LocalDevices(
+                    s:  "89683858-2908-5016-24FA-AD30465633C2", // E2:ED:DF:1A:1A:A4 // No Orientation, Steps (BMI 270)
+                    rl: "931C9F87-18F8-02E3-D2B4-31E9E3D34D92"  // FF:9F:C6:B8:89:BE // No Ambient, Baro (BMI 160)
+                )
                 case .RyanMacBook: return LocalDevices(
                     s:  "62ED70A8-0BEC-DB6B-D720-D825FEEFCDF1", // E2:ED:DF:1A:1A:A4 // No Orientation, Steps (BMI 270)
                     rl: "208541A1-4094-8729-D138-E74B6F43CEC6"  // FF:9F:C6:B8:89:BE // No Ambient, Baro (BMI 160)

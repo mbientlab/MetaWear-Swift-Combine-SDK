@@ -492,7 +492,7 @@ public extension MetaWearSyncStore {
         bleQueue.async { [weak self] in
             var localID: CBPeripheralIdentifier? = nil
 
-            // Remove local memory (i.e., will not be requested next app launch)
+            // Remove local memory (i.e., will not be requested from CoreBluetooth on the next app launch)
             if let device = device {
                 // Cache local CoreBluetooth ID
                 localID = device.localBluetoothID

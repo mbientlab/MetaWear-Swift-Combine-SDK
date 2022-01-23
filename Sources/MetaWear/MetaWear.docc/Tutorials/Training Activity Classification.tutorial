@@ -1,17 +1,29 @@
 @Tutorial(time: 15, projectFiles: "Streamy.zip") {
-    @Intro(title: "Training Activity Classification") {
-        Forthcoming.
+    @Intro(title: "Training an Activity Classifier") {
+        Let's collect training data for CoreML to compute a model for classifying motion data. 
+        
+        Originally, we wanted to train a push up rep counter. As it turns out, we needed more sample data than locally available! Instead, let's detect letters written in the air while holding a MetaWear.
         @Image(source: streamyIcon.png, alt: "Streamy app icon")
     }
     
-    @Section(title: "Forthcoming") {
+    @Section(title: "Collecting Training Data") {
         @ContentAndMedia {
-            ...
+            Model training works best with many short recordings classified by letter (or "no letter"), lasting a second or two each.
+            
+            Tracking the timestamps to divvy up a logged CSV file would not be fun. Let's exploit the MetaWear's button to do this for us. 
             @Image(source: bird-rainbow.png, alt: "Bird art")
         }
-        
-        @Steps { 
-            Steps.
+        @Steps {
+            
+            @Step {
+                We'll write an onboard macro event that responds us pushing the button between trials.
+                @Code(name: "ExampleTests.swift", file: 04-training-01-01.swift) { }
             }
+            
+            @Step {
+                Still writing this tutorial...
+                @Code(name: "ExampleTests.swift", file: 04-training-01-01.swift) { }
+            }
+        }
     }
 }
