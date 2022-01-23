@@ -122,16 +122,7 @@ class StreamTests: XCTestCase {
     // Where steps are reported in chunks of 20
     func testStream_StepCounting_BMI270() {
         TestDevices.useOnly(.metamotionS)
-        _testStream(.stepCounter(), timeout: .download, dataCountTarget: 1) { value in
-            XCTAssertEqual(value, 20)
-        }
-    }
-
-    // Where steps are reported in chunks of 20
-    #warning("Failing -> no response received")
-    func testStream_StepCounting_BMI160() {
-        TestDevices.useOnly(.metamotionRL)
-        _testStream(.stepCounter(sensitivity: .sensitive), timeout: .download, dataCountTarget: 1) { value in
+        _testStream(.stepCounter_BMI270, timeout: .download, dataCountTarget: 1) { value in
             XCTAssertEqual(value, 20)
         }
     }
@@ -143,6 +134,15 @@ class StreamTests: XCTestCase {
             try [MWThermometer.Source.onboard, .bmp280, .onDie, .external]
                 .map { try .thermometer(rate: .init(hz: 2), type: $0, board: metawear.board) }
         }
+    }
+
+    // Where steps are reported in chunks of 20
+    #warning("Failing -> receives zeros and not counts")
+    func testStreamPoll_StepCounting_BMI160() throws {
+        TestDevices.useOnly(.metamotionRL)
+        try _testPoll(timeout: 200) { _ in [
+            .stepCounter_BMI160(sensitivity: .sensitive, rate: .every30sec)
+        ] }
     }
 
     func testStreamPoll_Humidity() throws {
@@ -174,8 +174,8 @@ class StreamTests: XCTestCase {
 
 extension XCTestCase {
 
-    func _testPoll<P: MWPollable>(makeSUTs: @escaping (MetaWear) throws -> [P] ) throws {
-        connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
+    func _testPoll<P: MWPollable>(timeout: TimeInterval = .download, makeSUTs: @escaping (MetaWear) throws -> [P] ) throws {
+        connectNearbyMetaWear(timeout: timeout, useLogger: false) { metawear, exp, subs in
             var dataCount = 0
             var sub: AnyCancellable? = nil
             var suts = try makeSUTs(metawear)

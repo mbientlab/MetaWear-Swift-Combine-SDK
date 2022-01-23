@@ -221,18 +221,18 @@ class LogTests: XCTestCase {
     }
 
     func test_LogThenDownload_StepCounterBMI270() {
-        XCTExpectFailure("Log StepsCounter: Empty logger name string")
+        XCTExpectFailure("Fails with steps logger name string")
         TestDevices.useOnly(.metamotionS)
-        _testLog( .stepCounter(sensitivity: .sensitive) )
-    }
-
-    func test_LogThenDownload_StepCounterBMI160() {
-        XCTExpectFailure("Log StepsCounter: Empty logger name string")
-        TestDevices.useOnly(.metamotionRL)
-        _testLog( .stepCounter(sensitivity: .sensitive) )
+        _testLog( .stepDetector(sensitivity: .sensitive) )
     }
 
     // MARK: - Pollable
+
+    func test_LogThenDownload_StepCounterBMI160() {
+        XCTExpectFailure("Fails with steps logger name string")
+        TestDevices.useOnly(.metamotionRL)
+        _testLog(byPolling: { _ in .stepCounter_BMI160(rate: .hz1, sensitivity: .sensitive) } )
+    }
 
     func test_LogThenDownload_Temperature() throws {
         _testLog(byPolling: {
