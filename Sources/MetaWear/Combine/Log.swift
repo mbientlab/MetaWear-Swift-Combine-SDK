@@ -133,10 +133,12 @@ public extension Publisher where Output == MetaWear {
                         period: UInt32(rate.periodMs),
                         repetitions: .max,
                         immediateFire: false,
-                        recordedEvent: { mbl_mw_datasignal_read(signal) }
+                        recordedEvent: { Swift.print("-> mbl_mw_datasignal_read", #function); mbl_mw_datasignal_read(signal) }
                     )
                     .handleEvents(receiveOutput: { timer in
+                        Swift.print("-> mbl_mw_logging_start", #function)
                         if startsImmediately { mbl_mw_logging_start(metawear.board, overwriting ? 1 : 0) }
+                        Swift.print("-> mbl_mw_timer_start", #function)
                         mbl_mw_timer_start(timer)
                     })
                     .compactMap { [weak metawear] _ in metawear }
@@ -212,6 +214,8 @@ public extension Publisher where Output == MetaWear {
             .zip(shared.collectAnonymousLoggerSignals())
             .flatMap { metawear, loggers -> MWPublisher<Download<[MWData.LogDownload]>> in
 
+                Swift.print("-> \(loggers.map(\.id.id))", #function)
+
                 // Stop logging + subscribe/store the downloaded feed from each signal
                 let downloads = loggers.reduce(into: [MWNamedSignal:CurrentValueSubject<[MWData], MWError>]()) { dict, logger in
                     logger.id.downloadUtilities.stopModule(metawear.board)
@@ -257,6 +261,7 @@ public extension Publisher where Output == MetaWear {
         return shared
             .zip(shared.collectAnonymousLoggerSignals())
             .tryMap { metawear, logs -> (MetaWear, OpaquePointer) in
+                Swift.print("-> \(logs.map(\.id.id))", #function)
                 guard let logger = logs.first(where: { $0.id == loggable.signalName }) else {
                     throw MWError.operationFailed("Could not find logger \(loggable.name)")
                 }
@@ -358,6 +363,7 @@ public extension Publisher where Output == (MetaWear, MWLoggerSignal) {
                 mbl_mw_logging_flush_page(metawear.board)
 
                 // Download
+                Swift.print("-> _anonymous_datasignal_subscribe_accumulate \(loggerName.id)", #function)
                 let data = _anonymous_datasignal_subscribe_accumulate(logger)
                 var (handler, percentComplete) = _trackDownloadProgress()
                 mbl_mw_logging_download(metawear.board, 25, &handler)
@@ -435,6 +441,7 @@ public extension MWDataSignal {
         makeLoggerSignal()
             .map { (MWNamedSignal(identifier: $0), $1) }
             .handleEvents(receiveOutput: { id, signal in
+                print("-> mbl_mw_logging_start", #function)
                 if startImmediately { mbl_mw_logging_start(board, overwriting ? 1 : 0) }
                 start?()
             })
@@ -446,6 +453,7 @@ public extension MWDataSignal {
     func makeLoggerSignal() -> AnyPublisher<_AnonymousLogger, MWError> {
 
         let subject = PassthroughSubject<_AnonymousLogger, MWError>()
+        print("-> mbl_mw_datasignal_log", #function)
         mbl_mw_datasignal_log(self, bridge(obj: subject)) { (context, logger) in
             let _subject: PassthroughSubject<_AnonymousLogger, MWError> = bridge(ptr: context!)
             if let logger = logger {

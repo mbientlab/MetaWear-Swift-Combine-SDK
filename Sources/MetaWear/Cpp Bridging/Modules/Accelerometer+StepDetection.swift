@@ -57,7 +57,9 @@ public extension MWStepDetector {
         guard let model = MWAccelerometer.Model(board: board) else { return }
         configureAccelerometerForStepping(board)
         guard case .bmi160 = model else { return }
+        print("-> mbl_mw_acc_bmi160_set_step_counter_mode", #function)
         mbl_mw_acc_bmi160_set_step_counter_mode(board, (sensitivity ?? .normal).cppEnumValue)
+        print("-> mbl_mw_acc_bmi160_write_step_counter_config", #function)
         mbl_mw_acc_bmi160_write_step_counter_config(board)
     }
 
@@ -65,6 +67,7 @@ public extension MWStepDetector {
         guard let model = MWAccelerometer.Model(board: board) else {
             throw MWError.operationFailed("Accelerometer invalid for step detection.")
         }
+        print("-> mbl_mw_acc_bmiXXX_get_step_detector_data_signal", #function)
         switch model {
             case .bmi160: return mbl_mw_acc_bmi160_get_step_detector_data_signal(board)
             case .bmi270: return mbl_mw_acc_bmi270_get_step_detector_data_signal(board)
@@ -73,6 +76,7 @@ public extension MWStepDetector {
     }
 
     func streamStart(board: MWBoard) {
+        print("-> mbl_mw_acc_bmiXXX_enable_step_detector", #function)
         guard let model = MWAccelerometer.Model(board: board) else { return }
         switch model {
             case .bmi160: mbl_mw_acc_bmi160_enable_step_detector(board)
@@ -82,8 +86,10 @@ public extension MWStepDetector {
     }
 
     func streamCleanup(board: MWBoard) {
+        print("-> mbl_mw_acc_stop", #function)
         mbl_mw_acc_stop(board)
         guard let model = MWAccelerometer.Model(board: board) else { return }
+        print("-> mbl_mw_acc_bmiXXX_disable_step_detector", #function)
         switch model {
             case .bmi160: mbl_mw_acc_bmi160_disable_step_detector(board)
             case .bmi270: mbl_mw_acc_bmi270_disable_step_detector(board)
@@ -93,8 +99,12 @@ public extension MWStepDetector {
 }
 
 fileprivate func configureAccelerometerForStepping(_ board: MWBoard) {
+    print("-> mbl_mw_acc_start", #function)
     mbl_mw_acc_start(board)
+    print("-> mbl_mw_acc_set_range(board, 8.0)", #function)
     mbl_mw_acc_set_range(board, 8.0) // Max range in gs
+    print("-> mbl_mw_acc_set_odr(board, 100)", #function)
     mbl_mw_acc_set_odr(board, 100) // Must be at least 25 Hz
+    print("-> mbl_mw_acc_write_acceleration_config", #function)
     mbl_mw_acc_write_acceleration_config(board)
 }

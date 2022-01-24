@@ -124,6 +124,7 @@ public extension MWBoard {
 
         createTimer(period: period, repetitions: repetitions, immediateFire: immediateFire)
             .flatMap { timer -> MWPublisher<MWTimerSignal> in
+                Swift.print("-> mbl_mw_event_record_commands", #function)
                 mbl_mw_event_record_commands(timer)
                 commands()
                 return Publishers.Zip(_JustMW(timer), timer.eventEndRecording())

@@ -210,18 +210,21 @@ class LogTests: XCTestCase {
 
     func test_LogThenDownload_StepDetectionBMI270() {
         XCTExpectFailure("Log StepsDetection: Empty logger name string")
+        MWConsoleLogger.activateConsoleLoggingOnAllMetaWears = true
         TestDevices.useOnly(.metamotionS)
         _testLog( .stepDetector(sensitivity: .sensitive) )
     }
 
     func test_LogThenDownload_StepDetectionBMI160() {
         XCTExpectFailure("Log StepsDetection: Empty logger name string")
+        MWConsoleLogger.activateConsoleLoggingOnAllMetaWears = true
         TestDevices.useOnly(.metamotionRL)
         _testLog( .stepDetector(sensitivity: .sensitive) )
     }
 
     func test_LogThenDownload_StepCounterBMI270() {
         XCTExpectFailure("Fails with steps logger name string")
+        MWConsoleLogger.activateConsoleLoggingOnAllMetaWears = true
         TestDevices.useOnly(.metamotionS)
         _testLog( .stepDetector(sensitivity: .sensitive) )
     }
@@ -230,6 +233,7 @@ class LogTests: XCTestCase {
 
     func test_LogThenDownload_StepCounterBMI160() {
         XCTExpectFailure("Fails with steps logger name string")
+        MWConsoleLogger.activateConsoleLoggingOnAllMetaWears = true
         TestDevices.useOnly(.metamotionRL)
         _testLog(byPolling: { _ in .stepCounter_BMI160(rate: .hz1, sensitivity: .sensitive) } )
     }

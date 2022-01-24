@@ -77,6 +77,7 @@ public extension MWBoard {
     func eventEndRecording() -> PassthroughSubject<Void,MWError> {
 
         let subject = PassthroughSubject<Void,MWError>()
+        Swift.print("-> mbl_mw_event_end_record", #function)
         mbl_mw_event_end_record(self, bridge(obj: subject)) { (context, event, status) in
             let _subject: PassthroughSubject<Void,MWError> = bridge(ptr: context!)
 

@@ -86,10 +86,14 @@ public extension MWStepCounter_BMI160 {
     func readConfigure(board: MWBoard) {
         guard case .bmi160 = MWAccelerometer.Model(board: board) else { return }
         configureAccelerometerForStepping(board)
+        print("-> mbl_mw_acc_bmi160_enable_step_counter", #function)
         mbl_mw_acc_bmi160_enable_step_counter(board)
+        print("-> mbl_mw_acc_bmi160_set_step_counter_mode", #function)
         mbl_mw_acc_bmi160_set_step_counter_mode(board, sensitivity.cppEnumValue)
         // No 20-step trigger config method
+        print("-> mbl_mw_acc_bmi160_write_step_counter_config", #function)
         mbl_mw_acc_bmi160_write_step_counter_config(board)
+        print("-> mbl_mw_acc_bmi160_reset_step_counter", #function)
         mbl_mw_acc_bmi160_reset_step_counter(board)
     }
 
@@ -97,13 +101,18 @@ public extension MWStepCounter_BMI160 {
         guard case .bmi160 = MWAccelerometer.Model(board: board) else {
             throw MWError.operationFailed("This preset is specific to the BMI160. If you have a MetaMotion S, use the BMI270 preset instead.")
         }
+        print("-> mbl_mw_acc_bmi160_get_step_counter_data_signal", #function)
         return mbl_mw_acc_bmi160_get_step_counter_data_signal(board)
     }
 
     func readCleanup(board: MWBoard) {
+        print("-> mbl_mw_acc_bmi160_reset_step_counter", #function)
         mbl_mw_acc_bmi160_reset_step_counter(board)
-        mbl_mw_acc_bmi160_disable_step_counter(board)
+        print("-> mbl_mw_acc_bmi160_disable_step_counter", #function)
+        mbl_mw_acc_bmi160_reset_step_counter(board)
+        print("-> mbl_mw_acc_bmi160_reset_step_counter", #function)
         mbl_mw_acc_stop(board)
+        print("-> mbl_mw_acc_stop", #function)
     }
 }
 
@@ -139,9 +148,13 @@ public extension MWStepCounter_BMI270 {
 // MARK: - Shared setup method
 
 fileprivate func configureAccelerometerForStepping(_ board: MWBoard) {
+    print("-> mbl_mw_acc_start", #function)
     mbl_mw_acc_start(board)
+    print("-> mbl_mw_acc_set_range(board, 8.0)", #function)
     mbl_mw_acc_set_range(board, 8.0) // Max range in gs
+    print("-> mbl_mw_acc_set_odr(board, 100)", #function)
     mbl_mw_acc_set_odr(board, 100) // Must be at least 25 Hz
+    print("-> mbl_mw_acc_write_acceleration_config", #function)
     mbl_mw_acc_write_acceleration_config(board)
 }
 
