@@ -23,7 +23,7 @@ class ExampleTests: XCTestCase {
             // Prepare
             let log: some MWLoggable = .accelerometer(rate: .hz50, gravity: .g2)
             metawear.publish()
-                .deleteLoggedEntries()
+                .command(.deleteLoggedData)
                 .delay(for: 2, tolerance: 0, scheduler: metawear.bleQueue)
                 .log(log)
                 ._assertLoggers([log.signalName], metawear: metawear)
@@ -40,7 +40,7 @@ class ExampleTests: XCTestCase {
             // Cleanup
                 .map { _ in metawear }
                 .command(.resetActivities)
-                .deleteLoggedEntries()
+                .command(.deleteLoggedData)
                 ._sinkNoFailure(&subs, receiveValue: { _ in  exp.fulfill() })
         }
     }

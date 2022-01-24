@@ -8,32 +8,6 @@ import MetaWearCpp
 
 public extension Publisher where Output == MetaWear {
 
-    /// Starts recording data from all loggers currently setup.
-    ///
-    /// - Parameters:
-    ///   - overwriting: When flash memory is full, continue logging by overwriting data
-    ///
-    /// - Returns: The connected MetaWear.
-    ///
-    func startCurrentLoggers(overwriting: Bool = false) -> MWPublisher<MetaWear> {
-        handleOutputOnBleQueue { mw in
-            mbl_mw_logging_start(mw.board, overwriting ? 1 : 0)
-        }
-    }
-
-    /// Stops recording data from all loggers, but doesn't cancel them and keeps sensors active.
-    ///
-    /// - Parameters:
-    ///   - overwriting: When flash memory is full, continue logging by overwriting data
-    ///
-    /// - Returns: The connected MetaWear.
-    ///
-    func pauseCurrentLoggers(overwriting: Bool = false) -> MWPublisher<MetaWear> {
-        handleOutputOnBleQueue { mw in
-            mbl_mw_logging_stop(mw.board)
-        }
-    }
-
     /// Logs a preset sensor configuration.
     ///
     /// - Parameters:
@@ -184,6 +158,33 @@ public extension Publisher where Output == MetaWear {
             return self.log(byPolling: pollable, overwriting: overwriting)
         } else { return self.mapToMWError() }
     }
+
+    /// Starts recording data for all loggers currently setup. You do not need to call this function unless (a) you setup loggers lazily by passing `false` for the `startImmediately` parameter or (b) you asked loggers to pause with `.loggingPause()`.
+    ///
+    /// If sensors are not powered on and configured, starting logging won't record data. Using the ``MWCommand/powerDownSensors`` requires manually calling ``MWLoggable/loggerConfigure(board:)-6w0ys`` and ``MWLoggable/loggerStart(board:)-elqf`` functions to power the sensors up again. Or, remove the loggers and issue a new log command.
+    ///
+    /// - Parameters:
+    ///   - overwriting: When flash memory is full, continue logging by overwriting data
+    ///
+    /// - Returns: The connected MetaWear.
+    ///
+    func loggersStart(overwriting: Bool = false) -> MWPublisher<MetaWear> {
+        handleOutputOnBleQueue { mw in
+            mbl_mw_logging_start(mw.board, overwriting ? 1 : 0)
+        }
+    }
+
+    /// Stops recording data from all loggers, but doesn't destroy them. Sensors remain active.
+    ///
+    /// The gyroscope can consume a full battery in hours, so follow with a `.command` to stop all sensor activity if you do not plan on resuming logging in the near feature.
+    ///
+    /// - Returns: The connected MetaWear.
+    ///
+    func loggersPause() -> MWPublisher<MetaWear> {
+        handleOutputOnBleQueue { mw in
+            mbl_mw_logging_stop(mw.board)
+        }
+    }
 }
 
 // MARK: - Download Logs
@@ -209,7 +210,7 @@ public extension Publisher where Output == MetaWear {
     func _logDownloadData() -> MWPublisher<Download<[MWData.LogDownload]>> {
         let shared = self.mapToMWError().share()
         return shared
-            .zip(shared.collectAnonymousLoggerSignals())
+            .zip(shared.loggerSignalsCollectAll())
             .flatMap { metawear, loggers -> MWPublisher<Download<[MWData.LogDownload]>> in
 
                 // Stop logging + subscribe/store the downloaded feed from each signal
@@ -255,7 +256,7 @@ public extension Publisher where Output == MetaWear {
     -> MWPublisher<Download<[Timestamped<L.DataType>]>> {
         let shared = self.mapToMWError().share()
         return shared
-            .zip(shared.collectAnonymousLoggerSignals())
+            .zip(shared.loggerSignalsCollectAll())
             .tryMap { metawear, logs -> (MetaWear, OpaquePointer) in
                 guard let logger = logs.first(where: { $0.id == loggable.signalName }) else {
                     throw MWError.operationFailed("Could not find logger \(loggable.name)")
@@ -274,7 +275,7 @@ public extension Publisher where Output == MetaWear {
 
     /// Collects references to active loggers on the MetaWear.
     ///
-    func collectAnonymousLoggerSignals() -> MWPublisher<[(id: MWNamedSignal, log: OpaquePointer)]> {
+    func loggerSignalsCollectAll() -> MWPublisher<[(id: MWNamedSignal, log: OpaquePointer)]> {
         mapToMWError()
             .flatMap { device -> MWPublisher<[(id: MWNamedSignal, log: OpaquePointer)]> in
                 return device.board
@@ -286,19 +287,11 @@ public extension Publisher where Output == MetaWear {
     }
 
 
-    /// Deactivates the specific loggers.
+    /// Deactivates the specific loggers, but does not remove logged data or power down the sensors involved in logging.
     ///
-    func removeLoggers(_ loggers: [OpaquePointer]) -> MWPublisher<MetaWear> {
+    func loggersRemoveAll(_ loggers: [OpaquePointer]) -> MWPublisher<MetaWear> {
         handleOutputOnBleQueue { metawear in
             loggers.forEach(mbl_mw_logger_remove)
-        }
-    }
-
-    /// Wipes logged data.
-    ///
-    func deleteLoggedEntries() -> MWPublisher<MetaWear> {
-        handleOutputOnBleQueue { mw in
-            mbl_mw_logging_clear_entries(mw.board)
         }
     }
 }
