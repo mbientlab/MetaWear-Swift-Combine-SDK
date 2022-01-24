@@ -65,6 +65,26 @@ class CommandTests: XCTestCase {
         }
     }
 
+    func test_PowerDownSensors() {
+        connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
+            metawear
+                .publish()
+                ._assertLoggers([], metawear: metawear)
+                .log(.accelerometer(rate: .hz50, gravity: .g16), overwriting: false)
+                ._assertLoggers([.acceleration], metawear: metawear)
+            // Act
+                .command(.powerDownSensors)
+            // Assert
+                .command(.deleteLoggedData)
+                .delay(for: 2, tolerance: 0, scheduler: metawear.bleQueue)
+                .read(.logLength)
+                ._sinkNoFailure(&subs, #file, #line, finished: { }, receiveValue: { logLength in
+                    XCTAssertEqual(logLength.value, 0)
+                    exp.fulfill()
+                })
+        }
+    }
+
     // MARK: - REQUIRES MANUALLY WATCHING FOR LED FLASHES
 
     func test_LEDFlash() {
