@@ -8,36 +8,40 @@ import MetaWearCpp
 
 public extension Publisher where Output == MetaWear {
 
-    /// Record any commands issued in the closure to execute when the MetaWear's button is depressed.
+    /// Record commands to execute upon a trigger, such as a sensor signal after a logic computation. An example is triggering the LED and sensor recording upon button press/release.
     ///
-    /// - Parameter events: A pipeline to record desired events, such as flashing a light
+    /// In English, this recording commands for an event sounds very much like a ``MWCommand/macroStartRecording(runOnStartup:)``. The difference is that a macro is triggered (a) by your explicit command via its identifier or (b) on every reboot. A macro can include this event recording to ensure it restores on reboot.
+    ///
+    /// - Parameters:
+    ///   - signal: Trigger to respond to (e.g., button depressed or released)
+    ///   - events: A pipeline to record desired events, such as flashing a light
+    ///
     /// - Returns: MetaWear that recorded the event or an error
     ///
-    func recordEventsOnButtonDown(
+    func recordEvents(
+        for signal: MWEventSignal,
         _ events: @escaping (MWPublisher<MetaWear>) -> MWPublisher<MetaWear>
     ) -> MWPublisher<MetaWear> {
-        let upstream = mapToMWError().share()
-        let source = MWMechanicalButton()
-        let signal = upstream.map(\.board).flatMap(source.getDownEventSignal)
+        let upstream = mapToMWError().share().eraseToAnyPublisher()
+        let cppSignal = signal.signal(upstream)
         return upstream
-            .zip(signal, { (device: $0, signal: $1) })
-            .recordEventsForSignal(events)
+            .zip(cppSignal, { (device: $0, signal: $1) })
+            .recordEventsForOpaqueSignal(events)
     }
+}
 
-    /// Record any commands issued in the closure to execute when the MetaWear's button is released.
-    ///
-    /// - Parameter events: A pipeline to record desired events, such as flashing a light
-    /// - Returns: MetaWear that recorded the event or an error
-    ///
-    func recordEventsOnButtonUp(
-        _ events: @escaping (MWPublisher<MetaWear>) -> MWPublisher<MetaWear>
-    ) -> MWPublisher<MetaWear> {
-        let upstream = mapToMWError().share()
-        let source = MWMechanicalButton()
-        let signal = upstream.map(\.board).flatMap(source.getUpEventSignal)
-        return upstream
-            .zip(signal, { (device: $0, signal: $1) })
-            .recordEventsForSignal(events)
+public enum MWEventSignal {
+    case buttonDown, buttonUp
+
+    public func signal(_ upstream: MWPublisher<MetaWear>) -> MWPublisher<MWDataProcessorSignal> {
+        switch self {
+            case .buttonDown:
+                let source = MWMechanicalButton()
+                return upstream.map(\.board).flatMap(source.getDownEventSignal).eraseToAnyPublisher()
+            case .buttonUp:
+                let source = MWMechanicalButton()
+                return upstream.map(\.board).flatMap(source.getUpEventSignal).eraseToAnyPublisher()
+        }
     }
 }
 
@@ -48,7 +52,7 @@ public extension Publisher where Output == (device: MetaWear, signal: MWDataProc
     /// - Parameter events: A pipeline to record desired events, such as flashing a light
     /// - Returns: MetaWear that recorded the event or an error
     ///
-    func recordEventsForSignal(
+    func recordEventsForOpaqueSignal(
         _ events: @escaping (MWPublisher<MetaWear>) -> MWPublisher<MetaWear>
     ) -> MWPublisher<MetaWear> {
         let upstream = self.mapToMWError().share()

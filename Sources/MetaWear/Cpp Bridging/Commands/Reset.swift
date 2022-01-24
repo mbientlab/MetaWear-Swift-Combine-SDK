@@ -52,6 +52,17 @@ public struct MWRestart: MWCommand {
 }
 
 
+/// Wipes logged data from onboard flash storage.
+///
+public struct MWDeleteLoggedData: MWCommand {
+    /// Wipes logged data from onboard flash storage.
+    public init() {}
+    public func command(board: MWBoard) {
+        mbl_mw_logging_clear_entries(board)
+    }
+}
+
+
 // MARK: - Public Presets
 
 public extension MWCommand where Self == MWFactoryReset {
@@ -70,4 +81,9 @@ public extension MWCommand where Self == MWRestart {
     /// Restarts, preserving macros, loggers, and settings,
     /// but any in-memory activities are lost.
     static var restart: Self { Self() }
+}
+
+public extension MWCommand where Self == MWDeleteLoggedData {
+    /// Wipes logged data from onboard flash storage.
+    static var deleteLoggedData: Self { Self() }
 }

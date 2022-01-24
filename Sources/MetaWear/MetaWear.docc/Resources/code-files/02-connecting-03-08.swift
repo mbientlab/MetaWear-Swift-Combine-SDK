@@ -17,7 +17,7 @@ extension KnownDeviceUseCase {
         resetSub = metawear?
             .publishWhenConnected()
             .first()
-            .deleteLoggedEntries()
+            .command(.deleteLoggedData)
             .command(.resetActivities)
             .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
 

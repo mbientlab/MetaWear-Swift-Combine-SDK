@@ -29,7 +29,7 @@ class LogTests: XCTestCase {
         connectNearbyMetaWear(timeout: .read, useLogger: false) { metawear, exp, subs in
             // Prepare
             metawear.publish()
-                .deleteLoggedEntries()
+                .command(.deleteLoggedData)
                 .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
 
             // Act
@@ -49,7 +49,7 @@ class LogTests: XCTestCase {
             let log: some MWLoggable = .accelerometer(rate: .hz50, gravity: .g2)
             
             metawear.publish()
-                .deleteLoggedEntries()
+                .command(.deleteLoggedData)
                 .delay(for: 2, tolerance: 0, scheduler: metawear.bleQueue)
                 .log(log)
                 ._assertLoggers([log.signalName], metawear: metawear)
@@ -66,7 +66,7 @@ class LogTests: XCTestCase {
             // Cleanup
                 .map { _ in metawear }
                 .command(.resetActivities)
-                .deleteLoggedEntries()
+                .command(.deleteLoggedData)
                 ._sinkNoFailure(&subs, receiveValue: { _ in  exp.fulfill() })
         }
     }
@@ -90,7 +90,7 @@ class LogTests: XCTestCase {
                 })
 
             // Act II
-                .flatMap { _ in kickoff.startCurrentLoggers(overwriting: false) }
+                .flatMap { _ in kickoff.loggersStart(overwriting: false) }
                 .delay(for: 2, tolerance: 0, scheduler: metawear.bleQueue)
                 .downloadLogs(startDate: .init())
                 .drop(while: { $0.percentComplete < 1 })
@@ -114,12 +114,12 @@ class LogTests: XCTestCase {
                 .log(expDeleted, overwriting: false, startImmediately: false)
                 .log(expRetained, overwriting: false, startImmediately: false)
                 ._assertLoggers([expDeleted.signalName, expRetained.signalName], metawear: metawear)
-                .collectAnonymousLoggerSignals()
+                .loggerSignalsCollectAll()
                 .compactMap { $0.first(where: { $0.id == expDeleted.signalName })?.log }
 
             // Act
                 .flatMap { loggerSignal in
-                    metawear.publish().removeLoggers([loggerSignal])
+                    metawear.publish().loggersRemoveAll([loggerSignal])
                 }
                 .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
                 ._assertLoggers([expRetained.signalName], metawear: metawear)
@@ -135,7 +135,7 @@ class LogTests: XCTestCase {
     func test_NotLogging() {
         connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
             metawear.publish()
-                .collectAnonymousLoggerSignals()
+                .loggerSignalsCollectAll()
                 ._sinkNoFailure(&subs, finished: {  }, receiveValue: { signals in
                     XCTAssertEqual(signals.map(\.id), [])
                 })

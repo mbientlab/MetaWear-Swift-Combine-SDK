@@ -11,11 +11,14 @@ extension TrainingUseCase {
         logSub = metawear?
             .publishWhenConnected()
             .first()
-            .macro(executeOnBoot: true, actions: { macro in
-                macro
-                    .recordEventsOnButtonUp   { $0.command(.ledFlash(.Presets.eight.pattern)) }
-                    .recordEventsOnButtonDown { $0.command(.ledFlash(.Presets.zero.pattern))  }
+            .command(.macroStartRecording(runOnStartup: true))
+            .recordEvents(for: .buttonUp, { recording in
+                recording.command(.ledFlash(.Presets.eight.pattern))
             })
+            .recordEvents(for: .buttonDown, { recording in
+                recording.command(.ledFlash(.Presets.zero.pattern))
+            })
+            .command(.macroStopRecordingAndGenerateIdentifier)
             .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
 
         metawear?.connect()

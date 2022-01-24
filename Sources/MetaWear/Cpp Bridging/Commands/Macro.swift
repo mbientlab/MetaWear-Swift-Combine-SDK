@@ -26,7 +26,7 @@ public extension MWMacro {
         }
     }
 
-    /// Call via .command or via .macro Combine operators.
+    /// Stops recording macro commands and generates an identifier to later execute the macro.
     struct StopRecording: MWCommandWithResponse {
         public init() { }
         public typealias DataType = MWMacroIdentifier
@@ -41,6 +41,20 @@ public extension MWMacro {
             return Publishers.Zip(_JustMW(device), subject)
                 .map { ($1, $0) }
                 .erase(subscribeOn: device.bleQueue)
+        }
+    }
+
+    /// Run the desired macro.
+    struct Execute: MWCommand {
+        var id: MWMacroIdentifier
+
+        /// Run the desired macro, selected by the id you cached when ending macro recording.
+        public init(id: MWMacroIdentifier) {
+            self.id = id
+        }
+
+        public func command(board: MWBoard) {
+            mbl_mw_macro_execute(board, id)
         }
     }
 
@@ -64,9 +78,15 @@ public extension MWCommand where Self == MWMacro.Record {
 
 public extension MWCommandWithResponse where Self == MWMacro.StopRecording {
     /// Returns the identifier for the recorded macro.
-    static var macroStartRecording: Self { Self() }
+    static var macroStopRecordingAndGenerateIdentifier: Self { Self() }
 }
 
 public extension MWCommand where Self == MWMacro.EraseAll {
     static var macroEraseAll: Self { Self() }
+}
+
+public extension MWCommand where Self == MWMacro.Execute {
+    static func macroExecute(id: MWMacroIdentifier) -> Self {
+        Self.init(id: id)
+    }
 }

@@ -80,7 +80,7 @@ extension Publisher {
         mapToMWError()
             .flatMap { output -> AnyPublisher<Output,MWError> in
                 metawear.publish()
-                    .collectAnonymousLoggerSignals()
+                    .loggerSignalsCollectAll()
                     .map { result -> Output in
                         Swift.print("Loggers found: ", result.map(\.id.name))
                         XCTAssertEqual(loggers.count, result.count, file: file, line: line)
