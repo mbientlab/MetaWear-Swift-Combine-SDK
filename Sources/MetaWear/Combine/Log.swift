@@ -223,7 +223,7 @@ public extension Publisher where Output == MetaWear {
 
                 // Download
                 var (handler, percentComplete) = _trackDownloadProgress()
-                mbl_mw_logging_download(metawear.board, 25, &handler)
+                mbl_mw_logging_download(metawear.board, 50, &handler)
 
                 // Extend OpaquePointer lifetime
                 return Publishers.CombineLatest(_JustMW((metawear, loggers)), percentComplete)
