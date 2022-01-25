@@ -258,7 +258,7 @@ public extension MWDataSignalOrBoard {
 
     /// Throttles a data signal to the desired period, optionally computing the difference between the previous value and the most recently received value.
     ///
-    func throttled(mode: MWThrottleMutationMode = .noMutation, rate: MWFrequency) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+    func throttle(mode: MWThrottleMutationMode = .passthrough, rate: MWFrequency) -> AnyPublisher<MWDataProcessorSignal, MWError> {
         let period = UInt32(rate.periodMs)
         let subject = _MWDataProcessorSubject()
         let code = mbl_mw_dataprocessor_time_create(self, mode.cppValue, period, bridge(obj: subject)) { (context, threshold) in
@@ -274,15 +274,24 @@ public extension MWDataSignalOrBoard {
     }
 }
 
+extension Publisher where Output == MWDataSignalOrBoard {
+
+    func throttle(mode: MWThrottleMutationMode = .passthrough, rate: MWFrequency) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError()
+            .flatMap { $0.throttle(mode: mode, rate: rate) }
+            .eraseToAnyPublisher()
+    }
+}
+
 // MARK: - Swift Enums
 
 public enum MWThrottleMutationMode: UInt32, CaseIterable, IdentifiableByRawValue {
-    case noMutation = 0, delta
+    case passthrough = 0, computeDelta
 
     public var cppValue: MblMwTimeMode {
         switch self {
-            case .noMutation: return MBL_MW_TIME_ABSOLUTE
-            case .delta: return MBL_MW_TIME_DIFFERENTIAL
+            case .passthrough: return MBL_MW_TIME_ABSOLUTE
+            case .computeDelta: return MBL_MW_TIME_DIFFERENTIAL
         }
     }
 
