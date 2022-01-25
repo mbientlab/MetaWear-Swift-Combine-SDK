@@ -81,6 +81,17 @@ class DiscoveredDeviceRowVM: ObservableObject {
 #endif
     }
 
+    func reset() {
+        device
+            .publishWhenConnected()
+            .first()
+            .command(.resetFactoryDefaults)
+            .sink { _ in } receiveValue: { _ in }
+            .store(in: &subs)
+
+        device.connect()
+    }
+
     private unowned let device: MetaWear
     private var subs = Set<AnyCancellable>()
 
@@ -178,6 +189,7 @@ struct DiscoveredDeviceRow: View {
     var body: some View {
         Button(action: vm.copy, label: { label })
             .buttonStyle(.borderless)
+            .contextMenu { Button("Reset") { vm.reset() } }
     }
 
     var label: some View {
