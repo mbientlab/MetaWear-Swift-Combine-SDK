@@ -82,4 +82,77 @@ class EventTests: XCTestCase {
                 ._sinkNoFailure(&subs, finished: {}, receiveValue: { _ in exp.fulfill() })
         }
     }
+
+    static func makeThrottledSensorFusionSUT(_ metawear: MetaWear) throws
+    -> AnyPublisher<MetaWear, MWError> {
+
+        let config = MWSensorFusion.EulerAngles(mode: .ndof)
+
+        config.loggerConfigure(board: metawear.board)
+
+        guard let eulerSignal = try config.loggerDataSignal(board: metawear.board)
+        else { fatalError() }
+
+        let throttled = eulerSignal
+            .throttled(mode: .noMutation, rate: .hz1)
+            .eraseToAnyPublisher()
+
+        return metawear
+            .publish()
+            .flatMap { _ in throttled }
+            .log(board: metawear.board,
+                 overwriting: false,
+                 startImmediately: true,
+                 start: { config.loggerStart(board: metawear.board) }
+            )
+            .map { loggerID in print("-> ", loggerID); return metawear }
+            .eraseToAnyPublisher()
+    }
+
+    func test_EventTimer_SlowSensorFusion_Download() throws {
+        connectNearbyMetaWear(timeout: .download, useLogger: true) { metawear, exp, subs in
+            // Arrange
+            let mockCachedDate = Date()
+            let sut = try Self.makeThrottledSensorFusionSUT(metawear)
+
+            sut
+                .delay(for: 10, tolerance: 0, scheduler: metawear.bleQueue)
+                .downloadLogs(startDate: mockCachedDate)
+                .drop(while: { $0.percentComplete < 1 })
+                .map(\.data)
+                ._sinkNoFailure(&subs, finished: { }) { dataTables in
+                    XCTAssertGreaterThan(dataTables.first?.rows.endIndex ?? 0, 0)
+                    XCTAssertLessThanOrEqual(dataTables.first?.rows.endIndex ?? 0, 10)
+                    exp.fulfill()
+                }
+        }
+    }
+
+    func test_EventTimer_SlowSensorFusion_ReadLength() throws {
+        connectNearbyMetaWear(timeout: .download, useLogger: true) { metawear, exp, subs in
+            // Arrange
+            let sut = try Self.makeThrottledSensorFusionSUT(metawear)
+
+            sut
+            // Assert
+                .delay(for: 10, tolerance: 0, scheduler: metawear.bleQueue)
+                .read(.logLength)
+                ._sinkNoFailure(&subs, finished: { }) { bytes in
+                    XCTAssertGreaterThan(bytes.value, 1)
+                    exp.fulfill()
+                }
+        }
+    }
+
+    func test_EventTimer_SlowSensorFusion_VerifySignals() throws {
+        connectNearbyMetaWear(timeout: .download, useLogger: true) { metawear, exp, subs in
+            let sut = try Self.makeThrottledSensorFusionSUT(metawear)
+
+            sut
+            // Assert
+                .delay(for: 10, tolerance: 0, scheduler: metawear.bleQueue)
+                ._assertLoggers([.eulerAngles], metawear: metawear)
+                ._sinkNoFailure(&subs, finished: { }) { _ in exp.fulfill() }
+        }
+    }
 }
