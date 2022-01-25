@@ -35,6 +35,13 @@ public extension MWDataSignalOrBoard {
         _dataprocessor(mbl_mw_dataprocessor_accumulator_create_size, self, size)
     }
 
+    /// Combine interface for `mbl_mw_dataprocessor_buffer_create`
+    /// Buffer
+    ///
+    func bufferCreate() -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        _dataprocessor(mbl_mw_dataprocessor_buffer_create, self)
+    }
+
     /// Combine interface for `mbl_mw_dataprocessor_counter_create`
     /// Counter
     ///
@@ -69,13 +76,6 @@ public extension MWDataSignalOrBoard {
         _dataprocessor(mbl_mw_dataprocessor_lowpass_create, self, size)
     }
 
-    /// Combine interface for `mbl_mw_dataprocessor_buffer_create`
-    /// Buffer
-    ///
-    func bufferCreate() -> AnyPublisher<MWDataProcessorSignal, MWError> {
-        _dataprocessor(mbl_mw_dataprocessor_buffer_create, self)
-    }
-
     /// Combine interface for `mbl_mw_dataprocessor_rms_create`
     /// RMS
     ///
@@ -90,13 +90,12 @@ public extension MWDataSignalOrBoard {
         _dataprocessor(mbl_mw_dataprocessor_rss_create, self)
     }
 
-    /// Combine interface for `mbl_mw_dataprocessor_multi_comparator_create`
-    /// Compare
+    /// A Swifty wrapper for `mbl_mw_dataprocessor_comparator_create`, which creates an on-board data processor that emits a value only when the comparison is satisfied.
     ///
-    func simpleComparatorCreate(op: MblMwComparatorOperation, reference: Float) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+    func filter(_ op: MWComparatorOption, reference: Float) -> AnyPublisher<MWDataProcessorSignal, MWError> {
 
         let subject = _MWDataProcessorSubject()
-        let code = mbl_mw_dataprocessor_comparator_create(self, op, reference, bridge(obj: subject)) { (context, comparator) in
+        let code = mbl_mw_dataprocessor_comparator_create(self, op.cppValue, reference, bridge(obj: subject)) { (context, comparator) in
             let _subject: _MWDataProcessorSubject = bridge(ptr: context!)
 
             if let comparator = comparator {
@@ -111,12 +110,12 @@ public extension MWDataSignalOrBoard {
     /// Combine interface for `mbl_mw_dataprocessor_multi_comparator_create`
     /// Compare
     ///
-    func comparatorCreate(op: MblMwComparatorOperation, mode: MblMwComparatorMode, references: [Float]) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+    func filter(_ op: MWComparatorOption, mode: MblMwComparatorMode, references: [Float]) -> AnyPublisher<MWDataProcessorSignal, MWError> {
 
         let subject = _MWDataProcessorSubject()
         var references = references
 
-        mbl_mw_dataprocessor_multi_comparator_create(self, op, mode, &references, UInt8(references.count), bridge(obj: subject)) { (context, comparator) in
+        mbl_mw_dataprocessor_multi_comparator_create(self, op.cppValue, mode, &references, UInt8(references.count), bridge(obj: subject)) { (context, comparator) in
             let _subject: _MWDataProcessorSubject = bridge(ptr: context!)
 
             if let comparator = comparator {
@@ -256,26 +255,57 @@ public extension MWDataSignalOrBoard {
             return subject.erasedWithDataProcessorError(code: code)
         }
     }
+
+    /// Throttles a data signal to the desired period, optionally computing the difference between the previous value and the most recently received value.
+    ///
+    func throttled(mode: MWThrottleMutationMode = .noMutation, rate: MWFrequency) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        let period = UInt32(rate.periodMs)
+        let subject = _MWDataProcessorSubject()
+        let code = mbl_mw_dataprocessor_time_create(self, mode.cppValue, period, bridge(obj: subject)) { (context, threshold) in
+            let _subject: _MWDataProcessorSubject = bridge(ptr: context!)
+
+            if let threshold = threshold {
+                _subject.send(threshold)
+            } else {
+                _subject.send(completion: .failure(.operationFailed("could not create throttle processor")))
+            }
+        }
+        return subject.erasedWithDataProcessorError(code: code)
+    }
+}
+
+// MARK: - Swift Enums
+
+public enum MWThrottleMutationMode: UInt32, CaseIterable, IdentifiableByRawValue {
+    case noMutation = 0, delta
+
+    public var cppValue: MblMwTimeMode {
+        switch self {
+            case .noMutation: return MBL_MW_TIME_ABSOLUTE
+            case .delta: return MBL_MW_TIME_DIFFERENTIAL
+        }
+    }
+
 }
 
 /// Data processor Comparator options against a given threshold value. If successful, a signal is emitted that a subsequent event can listen for.
 ///
 public enum MWComparatorOption: Int, CaseIterable, IdentifiableByRawValue {
-    case equal = 0
-    case notEqual
+    case equals = 0
+    case notEqualTo
     case lessThan
-    case lessThanOrEqual
+    case lessThanOrEqualTo
     case greaterThan
-    case greaterThanOrEqual
+    case greaterThanOrEqualTo
 
     public var cppValue: MblMwComparatorOperation {
         switch self {
-            case .equal: return MBL_MW_COMPARATOR_OP_EQ
-            case .notEqual: return MBL_MW_COMPARATOR_OP_NEQ
+            case .equals: return MBL_MW_COMPARATOR_OP_EQ
+            case .notEqualTo: return MBL_MW_COMPARATOR_OP_NEQ
             case .lessThan: return MBL_MW_COMPARATOR_OP_LT
-            case .lessThanOrEqual: return MBL_MW_COMPARATOR_OP_LTE
+            case .lessThanOrEqualTo: return MBL_MW_COMPARATOR_OP_LTE
             case .greaterThan: return MBL_MW_COMPARATOR_OP_GT
-            case .greaterThanOrEqual: return MBL_MW_COMPARATOR_OP_GTE
+            case .greaterThanOrEqualTo: return MBL_MW_COMPARATOR_OP_GTE
         }
     }
 }
