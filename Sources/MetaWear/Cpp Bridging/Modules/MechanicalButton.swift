@@ -17,7 +17,7 @@ public extension MWLoggable where Self == MWMechanicalButton {
 // MARK: - Signals
 
 public struct MWMechanicalButton: MWStreamable, MWLoggable {
-
+    public init() { }
     public typealias DataType = MWMechanicalButton.State
     public typealias RawDataType = UInt32
     public let signalName: MWNamedSignal = .mechanicalButton
