@@ -37,18 +37,20 @@ public struct MWDataTable {
         self.headerRow = dateColumns.updatingHeader(utilities.columnHeadings)
 
         guard dateColumns.isEmpty == false else {
+            /// Only includes the epoch column, nothing else
             self.rows = utilities.convertRawDataToCSVColumns(download.data)
             return
         }
 
+        /// Add in date stamp with (custom) formatting and time elapsed optional columns
         self.rows = utilities.convertRawDataToCSVColumns(download.data)
         .compactMap { row -> [String]? in
-            guard let first = row.first, let interval = Double(first) else { return nil }
-            let date = Date(timeIntervalSince1970: interval)
-            let extras = dateColumns.makeDataColumns(for: date, startDate: startDate)
-            var columns = row
-            columns.insert(contentsOf: extras, at: 1)
-            return columns
+            guard let first = row.first, let epoch = Double(first) else { return nil }
+            let date = Date(timeIntervalSince1970: epoch)
+            let extras = dateColumns.makeDateColumns(for: date, startDate: startDate)
+            var mutableRow = row
+            mutableRow.insert(contentsOf: extras, at: 1)
+            return mutableRow
         }
     }
 
@@ -65,7 +67,7 @@ public struct MWDataTable {
         self.rows = streamed.map {
             var columns = streamable.asColumns($0)
             if dateColumns.isEmpty { return columns }
-            let extras = dateColumns.makeDataColumns(for: $0.time, startDate: startDate)
+            let extras = dateColumns.makeDateColumns(for: $0.time, startDate: startDate)
             columns.insert(contentsOf: extras, at: 1)
             return columns
         }
@@ -85,7 +87,7 @@ public struct MWDataTable {
         self.rows = streamed.map {
             var columns = streamable.asColumns($0)
             if dateColumns.isEmpty { return columns }
-            let extras = dateColumns.makeDataColumns(for: $0.time, startDate: startDate)
+            let extras = dateColumns.makeDateColumns(for: $0.time, startDate: startDate)
             columns.insert(contentsOf: extras, at: 1)
             return columns
         }
@@ -145,7 +147,7 @@ internal extension Array where Element == MWDataTable.ExtraDateColumns {
         return update
     }
 
-    func makeDataColumns(for date: Date, startDate: Date) -> [String] {
+    func makeDateColumns(for date: Date, startDate: Date) -> [String] {
         map { column in
             column.string(date: date, startdate: startDate)
         }
