@@ -2,6 +2,7 @@
 
 import MetaWearCpp
 import Combine
+import SwiftUI
 
 // MARK: - Data Processor C++ Functions
 
@@ -15,7 +16,7 @@ extension Publisher where Output == MWDataSignal {
     ///
     /// - Returns: Processed data signal
     ///
-    func throttle(mode: MWThrottleMutationMode = .passthrough, rate: MWFrequency) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+    func throttle(mode: MWDataProcessor.ThrottleMutation = .passthrough, rate: MWFrequency) -> AnyPublisher<MWDataProcessorSignal, MWError> {
         mapToMWError()
             .flatMap { $0.throttle(mode: mode, rate: rate) }
             .eraseToAnyPublisher()
@@ -113,6 +114,41 @@ extension Publisher where Output == MWDataSignal {
     ///
     func sampleCreate(binSize: UInt8) -> AnyPublisher<MWDataProcessorSignal, MWError> {
         mapToMWError().flatMap { $0.sampleCreate(binSize: binSize) }.eraseToAnyPublisher()
+    }
+
+    /// Combine interface for `mbl_mw_dataprocessor_delta_create`
+    /// Change
+    ///
+    func deltaCreate(mode: MWDataProcessor.DeltaMode, magnitude: Float) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.deltaCreate(mode: mode, magnitude: magnitude) }.eraseToAnyPublisher()
+    }
+
+    func filter(_ op: MWDataProcessor.ComparatorOption, reference: Float) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.filter(op, reference: reference) }.eraseToAnyPublisher()
+    }
+
+    func filter(_ op: MWDataProcessor.ComparatorOption, mode: MWDataProcessor.ComparatorMode, references: [Float]) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.filter(op, mode: mode, references: references) }.eraseToAnyPublisher()
+    }
+
+    func fuserCreate(with signal: OpaquePointer?) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.fuserCreate(with: signal) }.eraseToAnyPublisher()
+    }
+
+    func mathCreate(op: MWDataProcessor.MathOperation, rhs: Float, signed: Bool? = nil) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.mathCreate(op: op, rhs: rhs, signed: signed) }.eraseToAnyPublisher()
+    }
+
+    func passthroughCreate(mode: MWDataProcessor.PassthroughMode, count: UInt16) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.passthroughCreate(mode: mode, count: count) }.eraseToAnyPublisher()
+    }
+
+    func pulseCreate(operation: MWDataProcessor.PulseOutput, threshold: Float, width: UInt16) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.pulseCreate(operation: operation, threshold: threshold, width: width) }.eraseToAnyPublisher()
+    }
+
+    func thresholdCreate(mode: MWDataProcessor.ThresholdMode, boundary: Float, hysteresis: Float) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.thresholdCreate(mode: mode, boundary: boundary, hysteresis: hysteresis) }.eraseToAnyPublisher()
     }
 }
 
@@ -225,10 +261,10 @@ public extension MWDataSignal {
     /// Combine interface for `mbl_mw_dataprocessor_delta_create`
     /// Change
     ///
-    func deltaCreate(mode: MblMwDeltaMode, magnitude: Float) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+    func deltaCreate(mode: MWDataProcessor.DeltaMode, magnitude: Float) -> AnyPublisher<MWDataProcessorSignal, MWError> {
 
         let subject = _MWDataProcessorSubject()
-        let code = mbl_mw_dataprocessor_delta_create(self, mode, magnitude, bridge(obj: subject)) { (context, delta) in
+        let code = mbl_mw_dataprocessor_delta_create(self, mode.cppValue, magnitude, bridge(obj: subject)) { (context, delta) in
             let _subject: _MWDataProcessorSubject = bridge(ptr: context!)
             if let delta = delta {
                 _subject.send(delta)
@@ -241,7 +277,7 @@ public extension MWDataSignal {
 
     /// A Swifty wrapper for `mbl_mw_dataprocessor_comparator_create`, which creates an on-board data processor that emits a value only when the comparison is satisfied.
     ///
-    func filter(_ op: MWComparatorOption, reference: Float) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+    func filter(_ op: MWDataProcessor.ComparatorOption, reference: Float) -> AnyPublisher<MWDataProcessorSignal, MWError> {
 
         let subject = _MWDataProcessorSubject()
         let code = mbl_mw_dataprocessor_comparator_create(self, op.cppValue, reference, bridge(obj: subject)) { (context, comparator) in
@@ -259,12 +295,12 @@ public extension MWDataSignal {
     /// Combine interface for `mbl_mw_dataprocessor_multi_comparator_create`
     /// Compare
     ///
-    func filter(_ op: MWComparatorOption, mode: MblMwComparatorMode, references: [Float]) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+    func filter(_ op: MWDataProcessor.ComparatorOption, mode: MWDataProcessor.ComparatorMode, references: [Float]) -> AnyPublisher<MWDataProcessorSignal, MWError> {
 
         let subject = _MWDataProcessorSubject()
         var references = references
 
-        mbl_mw_dataprocessor_multi_comparator_create(self, op.cppValue, mode, &references, UInt8(references.count), bridge(obj: subject)) { (context, comparator) in
+        mbl_mw_dataprocessor_multi_comparator_create(self, op.cppValue, mode.cppValue, &references, UInt8(references.count), bridge(obj: subject)) { (context, comparator) in
             let _subject: _MWDataProcessorSubject = bridge(ptr: context!)
 
             if let comparator = comparator {
@@ -276,9 +312,9 @@ public extension MWDataSignal {
         return subject.eraseToAnyPublisher()
     }
 
-    func fuserCreate(with: OpaquePointer?) -> AnyPublisher<MWDataProcessorSignal, MWError> {
-        withUnsafePointer(to: with) { w in
-            let mutable = UnsafeMutablePointer<OpaquePointer?>(mutating: w)
+    func fuserCreate(with signal: OpaquePointer?) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        withUnsafePointer(to: signal) { sig in
+            let mutable = UnsafeMutablePointer<OpaquePointer?>(mutating: sig)
             let subject = _MWDataProcessorSubject()
 
             let code = mbl_mw_dataprocessor_fuser_create(self, mutable, 1,  bridge(obj: subject)) { (context, delta) in
@@ -297,7 +333,7 @@ public extension MWDataSignal {
     /// Combine interface for `mbl_mw_dataprocessor_math_create`
     /// Simple math ops
     ///
-    func mathCreate(op: MblMwMathOperation, rhs: Float, signed: Bool? = nil) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+    func mathCreate(op: MWDataProcessor.MathOperation, rhs: Float, signed: Bool? = nil) -> AnyPublisher<MWDataProcessorSignal, MWError> {
 
         let subject = _MWDataProcessorSubject()
         let handler: MblMwFnDataProcessor = { (context, math) in
@@ -313,11 +349,11 @@ public extension MWDataSignal {
         let code: Int32
         switch signed {
             case .none:
-                code = mbl_mw_dataprocessor_math_create(self, op, rhs, bridge(obj: subject), handler)
+                code = mbl_mw_dataprocessor_math_create(self, op.cppValue, rhs, bridge(obj: subject), handler)
             case .some(true):
-                code = mbl_mw_dataprocessor_math_create_signed(self, op, rhs, bridge(obj: subject), handler)
+                code = mbl_mw_dataprocessor_math_create_signed(self, op.cppValue, rhs, bridge(obj: subject), handler)
             case .some(false):
-                code = mbl_mw_dataprocessor_math_create_unsigned(self, op, rhs, bridge(obj: subject), handler)
+                code = mbl_mw_dataprocessor_math_create_unsigned(self, op.cppValue, rhs, bridge(obj: subject), handler)
         }
         return subject.erasedWithDataProcessorError(code: code)
     }
@@ -325,9 +361,9 @@ public extension MWDataSignal {
     /// Combine interface for `mbl_mw_dataprocessor_passthrough_create`
     /// Passthrough
     ///
-    func passthroughCreate(mode: MblMwPassthroughMode, count: UInt16) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+    func passthroughCreate(mode: MWDataProcessor.PassthroughMode, count: UInt16) -> AnyPublisher<MWDataProcessorSignal, MWError> {
         let subject = _MWDataProcessorSubject()
-        let code = mbl_mw_dataprocessor_passthrough_create(self, mode, count, bridge(obj: subject)) { (context, passthrough) in
+        let code = mbl_mw_dataprocessor_passthrough_create(self, mode.cppValue, count, bridge(obj: subject)) { (context, passthrough) in
             let _subject: _MWDataProcessorSubject = bridge(ptr: context!)
 
             if let passthrough = passthrough {
@@ -342,10 +378,10 @@ public extension MWDataSignal {
     /// Combine interface for `mbl_mw_dataprocessor_pulse_create`
     /// Pulse detector
     ///
-    func pulseCreate(operation: MblMwPulseOutput, threshold: Float, width: UInt16) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+    func pulseCreate(operation: MWDataProcessor.PulseOutput, threshold: Float, width: UInt16) -> AnyPublisher<MWDataProcessorSignal, MWError> {
 
         let subject = _MWDataProcessorSubject()
-        let code = mbl_mw_dataprocessor_pulse_create(self, operation, threshold, width, bridge(obj: subject)) { (context, success) in
+        let code = mbl_mw_dataprocessor_pulse_create(self, operation.cppValue, threshold, width, bridge(obj: subject)) { (context, success) in
             let _subject: _MWDataProcessorSubject = bridge(ptr: context!)
 
             if let success = success {
@@ -359,10 +395,10 @@ public extension MWDataSignal {
 
     /// Combine interface for `mbl_mw_dataprocessor_threshold_create`
     ///
-    func thresholdCreate(mode: MblMwThresholdMode, boundary: Float, hysteresis: Float) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+    func thresholdCreate(mode: MWDataProcessor.ThresholdMode, boundary: Float, hysteresis: Float) -> AnyPublisher<MWDataProcessorSignal, MWError> {
 
         let subject = _MWDataProcessorSubject()
-        let code = mbl_mw_dataprocessor_threshold_create(self, mode, boundary, hysteresis, bridge(obj: subject)) { (context, threshold) in
+        let code = mbl_mw_dataprocessor_threshold_create(self, mode.cppValue, boundary, hysteresis, bridge(obj: subject)) { (context, threshold) in
             let _subject: _MWDataProcessorSubject = bridge(ptr: context!)
 
             if let threshold = threshold {
@@ -382,7 +418,7 @@ public extension MWDataSignal {
     ///
     /// - Returns: Processed data signal
     ///
-    func throttle(mode: MWThrottleMutationMode = .passthrough, rate: MWFrequency) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+    func throttle(mode: MWDataProcessor.ThrottleMutation = .passthrough, rate: MWFrequency) -> AnyPublisher<MWDataProcessorSignal, MWError> {
         let period = UInt32(rate.periodMs)
         let subject = _MWDataProcessorSubject()
         let code = mbl_mw_dataprocessor_time_create(self, mode.cppValue, period, bridge(obj: subject)) { (context, threshold) in
