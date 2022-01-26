@@ -1,8 +1,6 @@
 import Foundation
 import MetaWearCpp
 
-public struct MWDataProcessor { private init() {} }
-
 extension MWDataProcessor {
 
     /// Whether to simply emit the throttled value or emit the difference between the current and prior value.

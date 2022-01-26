@@ -145,6 +145,7 @@ The `.command()`, `.log()`, `.read()`, and `.stream()` operators accept value ty
 - ``MWReadableMerged``
 - ``MWStreamable``
 - ``MWFrequency``
+- ``MWDataProcessor``
 
 ### Data Output
 
