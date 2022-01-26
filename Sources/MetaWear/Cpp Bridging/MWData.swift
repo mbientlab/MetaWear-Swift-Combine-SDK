@@ -58,6 +58,7 @@ extension MblMwData {
     /// Directly translates the `epoch` value into a calendar date.
     ///
     public var timestamp: Date {
+        print("-> Raw Epoch Int64: ", epoch)
         let date = Date(timeIntervalSince1970: Double(epoch) / 1000.0)
         let nanosecondsRemainder = Int(epoch % 1000)
         return Calendar.current.date(byAdding: .nanosecond, value: nanosecondsRemainder, to: date)!
