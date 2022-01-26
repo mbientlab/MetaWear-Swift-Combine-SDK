@@ -5,7 +5,120 @@ import Combine
 
 // MARK: - Data Processor C++ Functions
 
-public extension MWDataSignalOrBoard {
+extension Publisher where Output == MWDataSignal {
+
+    /// Downsample a signal to a lower throughput rate.
+    ///
+    /// - Parameters:
+    ///   - mode: Either passthrough (no changes) or delta (compute difference between last value)
+    ///   - rate: One value will emit per period
+    ///
+    /// - Returns: Processed data signal
+    ///
+    func throttle(mode: MWThrottleMutationMode = .passthrough, rate: MWFrequency) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError()
+            .flatMap { $0.throttle(mode: mode, rate: rate) }
+            .eraseToAnyPublisher()
+    }
+
+    func accounterCreate() -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.accounterCreate() }.eraseToAnyPublisher()
+    }
+
+    /// Combine interface for `mbl_mw_dataprocessor_accounter_create_count`
+    /// Add counter to packet
+    ///
+    func accounterCreateCount() -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.accounterCreate() }.eraseToAnyPublisher()
+    }
+
+    /// Combine interface for `mbl_mw_dataprocessor_accounter_create`
+    /// Continuous sum
+    ///
+    func accumulatorCreate() -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.accounterCreate() }.eraseToAnyPublisher()
+    }
+
+    /// Combine interface for `mbl_mw_dataprocessor_accumulator_create_size`
+    /// Continuous sum
+    ///
+    func accumulatorCreateWithSize(size: UInt8) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.accumulatorCreateWithSize(size: size) }.eraseToAnyPublisher()
+    }
+
+    /// Combine interface for `mbl_mw_dataprocessor_buffer_create`
+    /// Buffer
+    ///
+    func bufferCreate() -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.bufferCreate() }.eraseToAnyPublisher()
+    }
+
+    /// Combine interface for `mbl_mw_dataprocessor_counter_create`
+    /// Counter
+    ///
+    func counterCreate() -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.counterCreate() }.eraseToAnyPublisher()
+    }
+
+    /// Combine interface for `mbl_mw_dataprocessor_counter_create_size`
+    /// Counter with size
+    func counterCreateWithSize(size: UInt8) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.counterCreateWithSize(size: size) }.eraseToAnyPublisher()
+    }
+
+    /// Combine interface for `mbl_mw_dataprocessor_average_create`
+    /// Create an averager
+    ///
+    func averagerCreate(size: UInt8) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.averagerCreate(size: size) }.eraseToAnyPublisher()
+    }
+
+    /// Combine interface for `mbl_mw_dataprocessor_highpass_create`
+    /// Create a high pass filter
+    ///
+    func highpassFilterCreate(size: UInt8) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.highpassFilterCreate(size: size) }.eraseToAnyPublisher()
+    }
+
+    /// Combine interface for `mbl_mw_dataprocessor_lowpass_create`
+    /// Create a low pass filter
+    ///
+    func lowpassFilterCreate(size: UInt8) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.lowpassFilterCreate(size: size) }.eraseToAnyPublisher()
+    }
+
+    /// Combine interface for `mbl_mw_dataprocessor_packer_create`
+    /// Pack
+    ///
+    func packerCreate(count: UInt8) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.packerCreate(count: count) }.eraseToAnyPublisher()
+    }
+
+    /// Combine interface for `mbl_mw_dataprocessor_rms_create`
+    /// RMS
+    ///
+    func rmsCreate() -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.rmsCreate() }.eraseToAnyPublisher()
+    }
+
+    /// Combine interface for `mbl_mw_dataprocessor_rss_create`
+    /// RSS
+    ///
+    func rssCreate() -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.rssCreate() }.eraseToAnyPublisher()
+    }
+
+    /// Combine interface for `mbl_mw_dataprocessor_sample_create`
+    /// Sample
+    ///
+    func sampleCreate(binSize: UInt8) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        mapToMWError().flatMap { $0.sampleCreate(binSize: binSize) }.eraseToAnyPublisher()
+    }
+}
+
+// MARK: - Methods with UInt8 or no parameters
+
+public extension MWDataSignal {
 
     /// Combine interface for `mbl_mw_dataprocessor_accounter_create_count`
     /// Add timer to packet
@@ -76,6 +189,13 @@ public extension MWDataSignalOrBoard {
         _dataprocessor(mbl_mw_dataprocessor_lowpass_create, self, size)
     }
 
+    /// Combine interface for `mbl_mw_dataprocessor_packer_create`
+    /// Pack
+    ///
+    func packerCreate(count: UInt8) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        _dataprocessor(mbl_mw_dataprocessor_packer_create, self, count)
+    }
+
     /// Combine interface for `mbl_mw_dataprocessor_rms_create`
     /// RMS
     ///
@@ -88,6 +208,35 @@ public extension MWDataSignalOrBoard {
     ///
     func rssCreate() -> AnyPublisher<MWDataProcessorSignal, MWError> {
         _dataprocessor(mbl_mw_dataprocessor_rss_create, self)
+    }
+
+    /// Combine interface for `mbl_mw_dataprocessor_sample_create`
+    /// Sample
+    ///
+    func sampleCreate(binSize: UInt8) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        _dataprocessor(mbl_mw_dataprocessor_sample_create, self, binSize)
+    }
+}
+
+// MARK: - Methods with extra parameters
+
+public extension MWDataSignal {
+
+    /// Combine interface for `mbl_mw_dataprocessor_delta_create`
+    /// Change
+    ///
+    func deltaCreate(mode: MblMwDeltaMode, magnitude: Float) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+
+        let subject = _MWDataProcessorSubject()
+        let code = mbl_mw_dataprocessor_delta_create(self, mode, magnitude, bridge(obj: subject)) { (context, delta) in
+            let _subject: _MWDataProcessorSubject = bridge(ptr: context!)
+            if let delta = delta {
+                _subject.send(delta)
+            } else {
+                _subject.send(completion: .failure(.operationFailed("could not create delta")))
+            }
+        }
+        return subject.erasedWithDataProcessorError(code: code)
     }
 
     /// A Swifty wrapper for `mbl_mw_dataprocessor_comparator_create`, which creates an on-board data processor that emits a value only when the comparison is satisfied.
@@ -127,21 +276,22 @@ public extension MWDataSignalOrBoard {
         return subject.eraseToAnyPublisher()
     }
 
-    /// Combine interface for `mbl_mw_dataprocessor_delta_create`
-    /// Change
-    ///
-    func deltaCreate(mode: MblMwDeltaMode, magnitude: Float) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+    func fuserCreate(with: OpaquePointer?) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+        withUnsafePointer(to: with) { w in
+            let mutable = UnsafeMutablePointer<OpaquePointer?>(mutating: w)
+            let subject = _MWDataProcessorSubject()
 
-        let subject = _MWDataProcessorSubject()
-        let code = mbl_mw_dataprocessor_delta_create(self, mode, magnitude, bridge(obj: subject)) { (context, delta) in
-            let _subject: _MWDataProcessorSubject = bridge(ptr: context!)
-            if let delta = delta {
-                _subject.send(delta)
-            } else {
-                _subject.send(completion: .failure(.operationFailed("could not create delta")))
+            let code = mbl_mw_dataprocessor_fuser_create(self, mutable, 1,  bridge(obj: subject)) { (context, delta) in
+                let _subject: _MWDataProcessorSubject = bridge(ptr: context!)
+
+                if let delta = delta {
+                    _subject.send(delta)
+                } else {
+                    _subject.send(completion: .failure(.operationFailed("could not create fuser")))
+                }
             }
+            return subject.erasedWithDataProcessorError(code: code)
         }
-        return subject.erasedWithDataProcessorError(code: code)
     }
 
     /// Combine interface for `mbl_mw_dataprocessor_math_create`
@@ -170,13 +320,6 @@ public extension MWDataSignalOrBoard {
                 code = mbl_mw_dataprocessor_math_create_unsigned(self, op, rhs, bridge(obj: subject), handler)
         }
         return subject.erasedWithDataProcessorError(code: code)
-    }
-
-    /// Combine interface for `mbl_mw_dataprocessor_packer_create`
-    /// Pack
-    ///
-    func packerCreate(count: UInt8) -> AnyPublisher<MWDataProcessorSignal, MWError> {
-        _dataprocessor(mbl_mw_dataprocessor_packer_create, self, count)
     }
 
     /// Combine interface for `mbl_mw_dataprocessor_passthrough_create`
@@ -214,13 +357,6 @@ public extension MWDataSignalOrBoard {
         return subject.erasedWithDataProcessorError(code: code)
     }
 
-    /// Combine interface for `mbl_mw_dataprocessor_sample_create`
-    /// Sample
-    ///
-    func sampleCreate(binSize: UInt8) -> AnyPublisher<MWDataProcessorSignal, MWError> {
-        _dataprocessor(mbl_mw_dataprocessor_sample_create, self, binSize)
-    }
-
     /// Combine interface for `mbl_mw_dataprocessor_threshold_create`
     ///
     func thresholdCreate(mode: MblMwThresholdMode, boundary: Float, hysteresis: Float) -> AnyPublisher<MWDataProcessorSignal, MWError> {
@@ -238,25 +374,13 @@ public extension MWDataSignalOrBoard {
         return subject.erasedWithDataProcessorError(code: code)
     }
 
-    func fuserCreate(with: OpaquePointer?) -> AnyPublisher<MWDataProcessorSignal, MWError> {
-        withUnsafePointer(to: with) { w in
-            let mutable = UnsafeMutablePointer<OpaquePointer?>(mutating: w)
-            let subject = _MWDataProcessorSubject()
-
-            let code = mbl_mw_dataprocessor_fuser_create(self, mutable, 1,  bridge(obj: subject)) { (context, delta) in
-                let _subject: _MWDataProcessorSubject = bridge(ptr: context!)
-
-                if let delta = delta {
-                    _subject.send(delta)
-                } else {
-                    _subject.send(completion: .failure(.operationFailed("could not create fuser")))
-                }
-            }
-            return subject.erasedWithDataProcessorError(code: code)
-        }
-    }
-
-    /// Throttles a data signal to the desired period, optionally computing the difference between the previous value and the most recently received value.
+    /// Downsample a signal to a lower throughput rate.
+    ///
+    /// - Parameters:
+    ///   - mode: Either passthrough (no changes) or delta (compute difference between last value)
+    ///   - rate: One value will emit per period
+    ///
+    /// - Returns: Processed data signal
     ///
     func throttle(mode: MWThrottleMutationMode = .passthrough, rate: MWFrequency) -> AnyPublisher<MWDataProcessorSignal, MWError> {
         let period = UInt32(rate.periodMs)
@@ -271,51 +395,6 @@ public extension MWDataSignalOrBoard {
             }
         }
         return subject.erasedWithDataProcessorError(code: code)
-    }
-}
-
-extension Publisher where Output == MWDataSignalOrBoard {
-
-    func throttle(mode: MWThrottleMutationMode = .passthrough, rate: MWFrequency) -> AnyPublisher<MWDataProcessorSignal, MWError> {
-        mapToMWError()
-            .flatMap { $0.throttle(mode: mode, rate: rate) }
-            .eraseToAnyPublisher()
-    }
-}
-
-// MARK: - Swift Enums
-
-public enum MWThrottleMutationMode: UInt32, CaseIterable, IdentifiableByRawValue {
-    case passthrough = 0, computeDelta
-
-    public var cppValue: MblMwTimeMode {
-        switch self {
-            case .passthrough: return MBL_MW_TIME_ABSOLUTE
-            case .computeDelta: return MBL_MW_TIME_DIFFERENTIAL
-        }
-    }
-
-}
-
-/// Data processor Comparator options against a given threshold value. If successful, a signal is emitted that a subsequent event can listen for.
-///
-public enum MWComparatorOption: Int, CaseIterable, IdentifiableByRawValue {
-    case equals = 0
-    case notEqualTo
-    case lessThan
-    case lessThanOrEqualTo
-    case greaterThan
-    case greaterThanOrEqualTo
-
-    public var cppValue: MblMwComparatorOperation {
-        switch self {
-            case .equals: return MBL_MW_COMPARATOR_OP_EQ
-            case .notEqualTo: return MBL_MW_COMPARATOR_OP_NEQ
-            case .lessThan: return MBL_MW_COMPARATOR_OP_LT
-            case .lessThanOrEqualTo: return MBL_MW_COMPARATOR_OP_LTE
-            case .greaterThan: return MBL_MW_COMPARATOR_OP_GT
-            case .greaterThanOrEqualTo: return MBL_MW_COMPARATOR_OP_GTE
-        }
     }
 }
 
