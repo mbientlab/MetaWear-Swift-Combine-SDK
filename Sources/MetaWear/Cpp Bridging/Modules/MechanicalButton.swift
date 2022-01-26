@@ -40,7 +40,7 @@ public extension MWMechanicalButton {
         guard let stream = mbl_mw_switch_get_state_data_signal(board) else {
             return _Fail(mw: .operationFailed("Could not create button signal"))
         }
-        return stream.simpleComparatorCreate(op: MBL_MW_COMPARATOR_OP_EQ, reference: 1)
+        return stream.filter(.equals, reference: 1)
     }
 
     /// When the button is released
@@ -49,7 +49,7 @@ public extension MWMechanicalButton {
         guard let stream = mbl_mw_switch_get_state_data_signal(board) else {
             return _Fail(mw: .operationFailed("Could not create button signal"))
         }
-        return stream.simpleComparatorCreate(op: MBL_MW_COMPARATOR_OP_EQ, reference: 0)
+        return stream.filter(.equals, reference: 0)
     }
 
 }

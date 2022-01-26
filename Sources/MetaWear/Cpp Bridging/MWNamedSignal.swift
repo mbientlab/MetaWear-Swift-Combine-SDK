@@ -47,10 +47,7 @@ public enum MWNamedSignal: Equatable, Hashable, Identifiable {
             case .quaternion:               return "quaternion"
             case .orientation:              return "orientation"
             case .temperature:              return "temperature"
-            case .steps:
-#warning("The step counter and detector sensors can currently be streamed, but have a bug when logging them. Fix forthcoming.")
-                print("MetaWear Combine SDK Beta: Steps logging has bugs.")
-                return "steps"
+            case .steps:                    return "steps"
             case .custom(let string):       return string
         }
     }
@@ -89,15 +86,23 @@ public enum MWNamedSignal: Equatable, Hashable, Identifiable {
             signal = Self.allCases.first(where: { $0.name == isolatedName })
 
         } else if identifier.isEmpty && Self.customDownloads[""] == nil {
-            // Workaround
+            print("MetaWear Combine SDK Beta: Steps logging has bugs. Fixing this week.")
+            #warning("Workaround until bug fix in C++ library is pushed to resolve step counter streaming and logging.")
             signal = .steps
 
         } else if Self.customDownloads.keys.contains(identifier) {
             signal = .custom(identifier)
 
+        } else if let rescue = Self.rescueDataProcessedLogger(isolatedName) {
+            signal = rescue
+
         } else { fatalError("customDownloads id not set for \(identifier)") }
 
         self = signal!
+    }
+
+    private static func rescueDataProcessedLogger(_ withNonMutatedDataType: String) -> MWNamedSignal? {
+        Self.allCases.first(where: { $0.name == withNonMutatedDataType })
     }
 
     /// Removes source type and any other labeling (e.g., temperature[1]:account?id=0)
