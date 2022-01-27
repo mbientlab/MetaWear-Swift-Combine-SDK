@@ -10,9 +10,9 @@ public struct MWDataTable {
     /// Maximum decimal places used for string formatting
     public static var stringDecimalDigits = 4
     public let source: MWNamedSignal
-    public let headerRow: [String]
+    public var headerRow: [String]
     /// Outer: Row. Inner: Data columns, starting with epoch.
-    public let rows: [[String]]
+    public var rows: [[String]]
 
     /// Make a CSV with a labeled header row, optionally with other delimiters like a pipe |
     public func makeCSV(delimiter: String = ",") -> String {
@@ -91,6 +91,19 @@ public struct MWDataTable {
             columns.insert(contentsOf: extras, at: 1)
             return columns
         }
+    }
+
+    /// For manually manipulating downloaded data
+    ///
+    public init(
+        source: MWNamedSignal,
+        startDate: Date,
+        dateColumns: [ExtraDateColumns] = ExtraDateColumns.allCases,
+        rows: [[String]]
+    ) {
+        self.source = source
+        self.headerRow = dateColumns.updatingHeader(source.downloadUtilities.columnHeadings)
+        self.rows = rows
     }
 }
 
