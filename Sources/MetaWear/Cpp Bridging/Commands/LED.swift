@@ -52,6 +52,9 @@ public extension MWLED {
 
         public func command(board: MWBoard) {
             guard MWModules.lookup(in: board, .led) != nil else { return }
+
+            mbl_mw_led_stop_and_clear(board)
+
             let scale = MWLED.Flash.Pattern.scaleChannel
             var cppPattern = self.pattern._convertedToCPP()
 
@@ -121,7 +124,7 @@ public extension MWLED {
     enum Preset: Int, IdentifiableByRawValue, CaseIterable {
         case zero, one, two, three, four, five, six, seven, eight, nine
 
-        var color: MBLColor {
+        public var color: MBLColor {
             switch self {
                 case .zero, .three, .six:  return .cyan
                 case .one, .four, .seven:  return .orange
@@ -130,7 +133,7 @@ public extension MWLED {
             }
         }
 
-        var pattern: MWLED.Flash.Pattern {
+        public var pattern: MWLED.Flash.Pattern {
             switch self {
                 case .zero, .one, .two:    return .easeInOut(repetitions: 2)
                 case .three, .four, .five: return .blink(repetitions: 4, lowIntensity: 0.25)
@@ -318,6 +321,7 @@ public extension MWLED.Flash {
     /// in a SwiftUI view or by subscribing to the `ledIsOnPublisher`.
     class Emulator: ObservableObject {
 
+        @Published public var color: MWLED.MBLColor
         @Published public var pattern: MWLED.Flash.Pattern
         public var ledIsOn: Bool { _ledSubject.value }
         public private(set) lazy var ledIsOnPublisher = _ledSubject.share().eraseToAnyPublisher()
@@ -340,15 +344,16 @@ public extension MWLED.Flash {
             }
         }
 
-        public init(_ pattern: MWLED.Flash.Pattern) {
+        public init(_ pattern: MWLED.Flash.Pattern, _ color: MWLED.MBLColor) {
             self.pattern = pattern
+            self.color = color
             _objectWillChange = self._ledSubject.sink { [weak self] _ in
                 self?.objectWillChange.send()
             }
         }
 
         public convenience init(preset: MWLED.Preset) {
-            self.init(preset.pattern)
+            self.init(preset.pattern, preset.color)
         }
 
         private let _ledSubject = CurrentValueSubject<Bool,Never>(false)
