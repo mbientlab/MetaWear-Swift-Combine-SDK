@@ -35,7 +35,7 @@ class UnknownDeviceUseCase: ObservableObject {
         self.connection = .connecting
         sync?.connectAndRemember(unknown: id, didAdd: { (device, metadata) in
             device?.publishIfConnected()
-                .command(.ledFlash(.Presets.one.pattern))
+                .command(.led(.orange, .pulse(repetitions: 2)))
                 .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
                 .store(in: tasks.subs)
         })

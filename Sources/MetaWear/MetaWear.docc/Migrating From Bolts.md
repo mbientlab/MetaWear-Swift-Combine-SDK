@@ -16,14 +16,14 @@ State changes are observed not through delegates, but publishers on the objects 
 
 The scanner no longer mandates LED flashes upon connection. If you liked this, just use:
 ```
-let pattern: MWLED.FlashPattern = ...
+let pattern: MWLED.Flash.Pattern = ...
 metawear
    .whenConnected()
-   .command(.ledFlash(pattern))
+   .command(.ledFlash(.red, pattern))
    .sink { _ in }
    .store(in: &subs)
 ```
-You can also use the new ``MWLED/Flash/Pattern/Emulator`` to depict the same event in your UI.
+You can also use the new ``MWLED/Flash/Emulator`` to depict the same event in your UI.
 
 #### Other namespacing changes
 
@@ -78,6 +78,6 @@ Persistence | Many keys, fixed UserDefaults suite | One or two keys, customizabl
 
 Aspect | Prior SDK | Combine SDK
 --- | --- | ---
-UI Assist | Imperative ScannerModel/Item | Publishers or cloud-synced metadata store `MetaWearSyncStore` and ``MWLED/Flash/Pattern/Emulator``
+UI Assist | Imperative ScannerModel/Item | Publishers or cloud-synced metadata store `MetaWearSyncStore` and ``MWLED/Flash/Emulator``
 Demo Apps | UIKit + SwiftUI | Bare test host, basic tutorial, MetaBase (all SwiftUI)
 Install Base | Wider | New, but same [community forum](https://mbientlab.com/community/)
