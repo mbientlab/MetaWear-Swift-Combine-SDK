@@ -113,7 +113,7 @@
             @Step {
                 Let's use that callback to flash the LEDs on the MetaWear. We'll ask the MetaWear to kickoff a Combine pipeline, then issue our command. For brevity, we'll choose one of the color/pattern presets.
                 
-                ``MetaWear/MWLED/Flash/Pattern/Emulator`` can drive UI that mimics the flash command. For an example use of the emulator, see the [mbientSwiftUI](https://github.com/mbientlab/mbientSwiftUI/blob/52350efd57865ee4f7ac982293fb3e356b1c48c8/Sources/mbientSwiftUI/Device/MetaWearWithLED.swift) repo.
+                ``MetaWear/MWLED/Flash/Emulator`` can drive UI that mimics the flash command. For an example use of the emulator, see the [mbientSwiftUI](https://github.com/mbientlab/mbientSwiftUI/blob/52350efd57865ee4f7ac982293fb3e356b1c48c8/Sources/mbientSwiftUI/Device/MetaWearWithLED.swift) repo.
                 @Code(name: "UnknownDevice.swift", file: 02-connecting-02-06.swift) 
             }
 

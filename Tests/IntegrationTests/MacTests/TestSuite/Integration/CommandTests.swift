@@ -87,29 +87,81 @@ class CommandTests: XCTestCase {
 
     // MARK: - REQUIRES MANUALLY WATCHING FOR LED FLASHES
 
-    func test_LEDFlash() {
+    func test_LED_EaseInOut() {
         TestDevices.useOnly(.metamotionS)
         connectNearbyMetaWear(timeout: .download) { metawear, exp, subs in
-            let sut = MWLED.Flash.Pattern(color: .brown, intensity: 1, repetitions: 10, duration: 500, period: 1000)
             metawear.publish()
-                .command(.ledFlash(sut))
-                .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
+                .command(.led(.purple, .easeInOut(repetitions: 5) ))
+                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
+                .command(.ledOff)
                 ._sinkNoFailure(&subs, receiveValue: { _ in exp.fulfill() })
         }
     }
 
-    func testCommand_LEDOff() {
+    func test_LED_Pulse() {
+        TestDevices.useOnly(.metamotionS)
+        connectNearbyMetaWear(timeout: .download) { metawear, exp, subs in
+            metawear.publish()
+                .command(.led(.orange, .pulse(repetitions: 5) ))
+                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
+                .command(.ledOff)
+                ._sinkNoFailure(&subs, receiveValue: { _ in exp.fulfill() })
+        }
+    }
+
+    func test_LED_Blink() {
+        TestDevices.useOnly(.metamotionS)
+        connectNearbyMetaWear(timeout: .download) { metawear, exp, subs in
+            metawear.publish()
+                .command(.led(.blue, .blink(repetitions: 5) ))
+                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
+                .command(.ledOff)
+                ._sinkNoFailure(&subs, receiveValue: { _ in exp.fulfill() })
+        }
+    }
+
+
+    func test_LED_BlinkQuickly() {
+        TestDevices.useOnly(.metamotionS)
+        connectNearbyMetaWear(timeout: .download) { metawear, exp, subs in
+            metawear.publish()
+                .command(.led(.green, .blinkQuickly(repetitions: 5) ))
+                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
+                .command(.ledOff)
+                ._sinkNoFailure(&subs, receiveValue: { _ in exp.fulfill() })
+        }
+    }
+
+    func test_LED_BlinkInfrequently() {
+        TestDevices.useOnly(.metamotionS)
+        connectNearbyMetaWear(timeout: .download) { metawear, exp, subs in
+            metawear.publish()
+                .command(.led(.blue, .blinkInfrequently(repetitions: 5) ))
+                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
+                .command(.ledOff)
+                ._sinkNoFailure(&subs, receiveValue: { _ in exp.fulfill() })
+        }
+    }
+
+    func test_LED_BlinkSlowly_RaisedLowIntensityMode() {
+        TestDevices.useOnly(.metamotionS)
+        connectNearbyMetaWear(timeout: .download) { metawear, exp, subs in
+            metawear.publish()
+                .command(.led(.red, .blink(repetitions: 5, lowIntensity: 0.25) ))
+                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
+                .command(.ledOff)
+                ._sinkNoFailure(&subs, receiveValue: { _ in exp.fulfill() })
+        }
+    }
+
+    func testCommand_Solid_LEDOff() {
         TestDevices.useOnly(.metamotionS)
         connectNearbyMetaWear(timeout: .download) { metawear, exp, subs in
             // Prepare
             metawear
                 .publish()
-                .command(.ledFlash(
-                    color: .green,
-                    intensity: .init(1),
-                    repetitions: 10)
-                )
-                .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
+                .command(.led(.yellow, .solid()))
+                .delay(for: 2, tolerance: 0, scheduler: metawear.bleQueue)
 
             // Act
                 .command(.ledOff)

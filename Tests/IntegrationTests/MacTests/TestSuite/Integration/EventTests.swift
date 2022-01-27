@@ -29,7 +29,7 @@ class EventTests: XCTestCase {
             metawear
                 .publish()
                 .recordEvents(for: .buttonUp, { recording in
-                    recording.command(.ledFlash(.Presets.eight.pattern))
+                    recording.command(.led(groupIndex: 9))
                 })
                 .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
             // Cleanup
@@ -45,7 +45,7 @@ class EventTests: XCTestCase {
             metawear
                 .publish()
                 .recordEvents(for: .buttonDown, { recording in
-                    recording.command(.ledFlash(.Presets.zero.pattern))
+                    recording.command(.led(groupPreset: .zero))
                 })
                 .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
             // Cleanup
@@ -63,10 +63,10 @@ class EventTests: XCTestCase {
             // Act
                 .command(.macroStartRecording(runOnStartup: true))
                 .recordEvents(for: .buttonUp, { recording in
-                    recording.command(.ledFlash(.Presets.eight.pattern))
+                    recording.command(.led(.blue, .pulse(repetitions: 2)))
                 })
                 .recordEvents(for: .buttonDown, { recording in
-                    recording.command(.ledFlash(.Presets.zero.pattern))
+                    recording.command(.led(.purple, .pulse(repetitions: 2)))
                 })
                 .command(.macroStopRecordingAndGenerateIdentifier)
             // Assert
