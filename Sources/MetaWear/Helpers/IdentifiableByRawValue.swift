@@ -2,7 +2,7 @@
 
 import Foundation
 
-public protocol IdentifiableByRawValue: RawRepresentable, Identifiable {
+public protocol IdentifiableByRawValue: RawRepresentable, Identifiable, Hashable {
     var id: RawValue { get }
 }
 
