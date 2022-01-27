@@ -12,6 +12,8 @@ import UIKit
 import SwiftUI
 #endif
 
+/// Control the onboard LED by specifying a color to emulate and an activation pattern to repeat
+///
 public struct MWLED {
     private init() { }
 #if os(macOS)
@@ -30,101 +32,45 @@ public extension MWLED {
         }
     }
 
-    /// Simplify common LED operations with a straightforward interface
-    /// Use mbl_mw_led_write_pattern for precise control
+    /// Program the LEDs to display a color in a pattern (e.g., pulsing, flashing, solid).
+    ///
+    /// The MetaWear LEDs have 31 intensity levels for each RGB channel,
+    /// so screen colors may not replicate exactly.
     ///
     struct Flash: MWCommand {
 
-        var color: MWLED.MBLColor
-        var intensity: Float
-        var repetitions: UInt8
-        var duration: UInt16
-        var period: UInt16
+        /// RGB color to mimic in the onboard LED color space
+        let color: (red: Float, green: Float, blue: Float)
+        let pattern: Pattern
 
-        /// Program a one-time LED flash pattern.
-        /// - Parameters:
-        ///   - color: RGB color to mimic
-        ///   - intensity: 0 to 1 brightness value
-        ///   - repetitions: Flash count (UInt8.max for infinite)
-        ///   - duration: A flash's duration in milliseconds
-        ///   - period: Spacing between flashes in milliseconds
+        /// Program and play an LED flash pattern.
         ///
-        public init(color: MWLED.MBLColor,
-                    intensity: Float,
-                    repetitions: UInt8 = 0xFF,
-                    duration: UInt16 = 200,
-                    period: UInt16 = 800) {
-            self.color = color
-            self.intensity = max(0, min(1, intensity))
-            self.repetitions = repetitions
-            self.duration = duration
-            self.period = period
-        }
-
-        public init(pattern: MWLED.Flash.Pattern) {
-            self.color = pattern.color
-            self.intensity = pattern.intensity
-            self.repetitions = pattern.repetitions
-            self.duration = pattern.duration
-            self.period = pattern.period
+        public init(color: MBLColor, pattern: MWLED.Flash.Pattern) {
+            self.pattern = pattern
+            self.color = MWLED.getRGBChannels(color: color)
         }
 
         public func command(board: MWBoard) {
             guard MWModules.lookup(in: board, .led) != nil else { return }
-            let scaledIntensity = CGFloat(intensity) * 31.0
-            let rtime = duration / 2
-            let ftime = duration / 2
-            let offset: UInt16 = 0
+            let scale = MWLED.Flash.Pattern.scaleChannel
+            var cppPattern = self.pattern._convertedToCPP()
 
-            var red: CGFloat = 0
-            var blue: CGFloat = 0
-            var green: CGFloat = 0
+            cppPattern.low_intensity  = scale(color.red, pattern.intensityFloor)
+            cppPattern.high_intensity = scale(color.red, pattern.intensityCeiling)
+            mbl_mw_led_write_pattern(board, &cppPattern, MBL_MW_LED_COLOR_RED)
 
-            var _color = color
-            #if os(macOS)
-            if [NSColorSpace.sRGB, NSColorSpace.extendedSRGB].contains(color) == false {
-                _color = color.usingColorSpace(.sRGB) ?? .white
-            }
-            if _color.numberOfComponents == 2 {
-                _color.getWhite(&red, alpha: nil)
-                (blue, green) = (red, red)
-            } else {
-                _color.getRed(&red, green: &green, blue: &blue, alpha: nil)
-            }
-            #else
-            _color.getRed(&red, green: &green, blue: &blue, alpha: nil)
-            #endif
+            cppPattern.low_intensity  = scale(color.green, pattern.intensityFloor)
+            cppPattern.high_intensity = scale(color.green, pattern.intensityCeiling)
+            mbl_mw_led_write_pattern(board, &cppPattern, MBL_MW_LED_COLOR_GREEN)
 
-            let scaledRed = UInt8(round(red * scaledIntensity))
-            let scaledBlue = UInt8(round(blue * scaledIntensity))
-            let scaledGreen = UInt8(round(green * scaledIntensity))
+            cppPattern.low_intensity  = scale(color.blue, pattern.intensityFloor)
+            cppPattern.high_intensity = scale(color.blue, pattern.intensityCeiling)
+            mbl_mw_led_write_pattern(board, &cppPattern, MBL_MW_LED_COLOR_BLUE)
 
-            var pattern = MblMwLedPattern(high_intensity: 31,
-                                          low_intensity: 0,
-                                          rise_time_ms: rtime,
-                                          high_time_ms: duration,
-                                          fall_time_ms: ftime,
-                                          pulse_duration_ms: period,
-                                          delay_time_ms: offset,
-                                          repeat_count: repetitions)
-            mbl_mw_led_stop_and_clear(board)
-            if (scaledRed > 0) {
-                pattern.high_intensity = scaledRed
-                mbl_mw_led_write_pattern(board, &pattern, MBL_MW_LED_COLOR_RED)
-            }
-            if (scaledGreen > 0) {
-                pattern.high_intensity = scaledGreen
-                mbl_mw_led_write_pattern(board, &pattern, MBL_MW_LED_COLOR_GREEN)
-            }
-            if (scaledBlue > 0) {
-                pattern.high_intensity = scaledBlue
-                mbl_mw_led_write_pattern(board, &pattern, MBL_MW_LED_COLOR_BLUE)
-            }
             mbl_mw_led_play(board)
         }
     }
 }
-
 
 
 // MARK: - Public Presets
@@ -134,137 +80,239 @@ public extension MWCommand where Self == MWLED.Off {
 }
 
 public extension MWCommand where Self == MWLED.Flash {
-    /// Start a one-time LED flash pattern.
+
+    /// Start an LED flash pattern.
     /// - Parameters:
     ///   - color: RGB color to mimic
-    ///   - intensity: 0 to 1 brightness value
-    ///   - repetitions: Flash count (UInt8.max for infinite)
-    ///   - duration: A flash's duration in milliseconds (e.g., 200)
-    ///   - period: Spacing between flashes in milliseconds (e.g., 800)
+    ///   - pattern: Dynamics for how the LED turns on and off
     ///
-    static func ledFlash(color: MWLED.MBLColor,
-                         intensity: Float,
-                         repetitions: UInt8 = 0xFF,
-                         duration: UInt16 = 200,
-                         period: UInt16 = 800) -> Self {
-        Self.init(color: color, intensity: intensity, repetitions: repetitions, duration: duration, period: period)
+    static func led(_ color: MWLED.MBLColor, _ pattern: MWLED.Flash.Pattern) -> Self {
+        Self.init(color: color, pattern: pattern)
     }
 
-    static func ledFlash(_ pattern: MWLED.Flash.Pattern) -> Self {
-        Self.init(pattern: pattern)
+    /// Start a preset LED flash pattern. You can iterate over ``MWLED.Preset``
+    /// for easy identification of a MetaWear in a list.
+    ///
+    /// - Parameters:
+    ///   - color: RGB color to mimic
+    ///   - pattern: Dynamics for how the LED turns on and off
+    ///
+    static func led(groupPreset preset: MWLED.Preset) -> Self {
+        preset.command
+    }
+
+    /// Start a preset LED flash pattern. You can iterate over ``MWLED.Preset``
+    /// for easy identification of a MetaWear in a list.
+    ///
+    /// - Parameters:
+    ///   - color: RGB color to mimic
+    ///   - pattern: Dynamics for how the LED turns on and off
+    ///
+    static func led(groupIndex: Int) -> Self {
+        let index = max(0, min(groupIndex % 10, MWLED.Preset.allCases.endIndex - 1))
+        return MWLED.Preset.allCases[index].command
     }
 }
+
+public extension MWLED {
+
+    /// Colors and patterns convenient for identifying devices in groups.
+    ///
+    enum Preset: Int, IdentifiableByRawValue, CaseIterable {
+        case zero, one, two, three, four, five, six, seven, eight, nine
+
+        var color: MBLColor {
+            switch self {
+                case .zero, .three, .six:  return .cyan
+                case .one, .four, .seven:  return .orange
+                case .two, .five, .eight:  return .white
+                case .nine:                return .purple
+            }
+        }
+
+        var pattern: MWLED.Flash.Pattern {
+            switch self {
+                case .zero, .one, .two:    return .easeInOut(repetitions: 2)
+                case .three, .four, .five: return .blink(repetitions: 4, lowIntensity: 0.25)
+                case .six, .seven, .eight: return .blinkQuickly(repetitions: 6)
+                case .nine:                return .easeInOut(repetitions: 3)
+            }
+        }
+
+        var command: MWLED.Flash { .init(color: color, pattern: pattern) }
+    }
+}
+
+// MARK: - Flash Patterns
 
 public extension MWLED.Flash {
 
-    /// A one-time LED flash pattern.
-    ///
-    /// Duration specifies the length of a flash in milliseconds (e.g., 400).
-    /// Period specifies the spacing between the start of flashes (e.g., 800).
+    /// Dynamics of the LED strobe pattern and its repetition.
     ///
     struct Pattern: Equatable, Hashable {
 
-        /// RGB color to mimic
-        public var color: MWLED.MBLColor
+        /// Highest intensity. Percentage in 0 to 1 format. (MetaWears only support 31 steps of intensity.)
+        public var intensityCeiling: Float
 
-        /// 0 to 1 brightness value (MetaWears support 31 intermediate steps)
-        public var intensity: Float
+        /// Lowest intensity. Percentage in 0 to 1 format. (MetaWears only support 31 steps of intensity.)
+        public var intensityFloor: Float
 
-        /// Flash count (UInt8.max for infinite)
+        /// Pattern repeat count or UInt8.max for infinite
         public var repetitions: UInt8
 
-        /// A flash's duration in milliseconds
-        public var duration: UInt16
-
-        /// Spacing between flashes in milliseconds
+        /// Time for one cycle (off, rise, high, fall) in milliseconds
         public var period: UInt16
 
-        /// For UI state that reflects the end of a flashing pattern
+        /// Ramp time from off to on, in milliseconds
+        public var riseTime: UInt16
+
+        /// Time at max intensity in milliseconds
+        public var highTime: UInt16
+
+        /// Ramp time from on to off, in milliseconds
+        public var fallTime: UInt16
+
+        /// Offset the pattern repetition
+        public var offset: UInt16
+
+        /// For UI that reflects the end of a flashing pattern
         public var totalDuration: Double {
-            Double(repetitions) * Double(duration / 1000)
+            Double(repetitions) * Double(period / 1000)
         }
 
-        /// A one-time LED flash pattern.
-        ///
-        /// - Parameters:
-        ///   - color: RGB color to mimic
-        ///   - intensity: 0 to 1 brightness value
-        ///   - repetitions: Flash count (UInt8.max for infinite)
-        ///   - duration: A flash's duration in milliseconds (e.g., 200)
-        ///   - period: Spacing between flashes in milliseconds (e.g., 800)
-        ///
-        public init(color: MWLED.MBLColor, intensity: Float, repetitions: UInt8, duration: UInt16, period: UInt16) {
-            self.color = color
-            self.intensity = max(0, min(1, intensity))
-            self.repetitions = repetitions
-            self.duration = duration
-            self.period = period
+        /// For UI that reflects the led's activation
+        public var ledActiveTime: Double {
+            Double(riseTime + highTime + fallTime)
         }
-
-        #if canImport(SwiftUI)
-        /// A one-time LED flash pattern.
-        ///
-        /// - Parameters:
-        ///   - color: RGB color to mimic
-        ///   - intensity: 0 to 1 brightness value
-        ///   - repetitions: Flash count (UInt8.max for infinite)
-        ///   - duration: A flash's duration in milliseconds (e.g., 200)
-        ///   - period: Spacing between flashes in milliseconds (e.g., 800)
-        ///
-        @available(iOS 14.0, macOS 12.0, *)
-        public init(_ color: Color, intensity: Float, repetitions: UInt8, duration: UInt16, period: UInt16) {
-            let converted = color.cgColor?.converted(to: CGColorSpace(name: CGColorSpace.sRGB)!, intent: .defaultIntent, options: nil) ?? .init(srgbRed: 1, green: 1, blue: 1, alpha: 1)
-            #if os(macOS)
-            self.color = .init(cgColor: converted) ?? .white
-            #else
-            self.color = .init(cgColor: converted)
-            #endif
-            self.intensity = intensity
-            self.repetitions = repetitions
-            self.duration = duration
-            self.period = period
-        }
-        #endif
     }
 }
 
-// MARK: - Flash Pattern Presets
-
 public extension MWLED.Flash.Pattern {
 
-    /// Color blindness accommodating unique flash patterns for identifying devices in groups.
-    enum Presets: Int, IdentifiableByRawValue, CaseIterable {
-        case zero
-        case one
-        case two
-        case three
-        case four
-        case five
-        case six
-        case seven
-        case eight
-        case nine
+    /// Solid, forever-activated LED
+    /// - Parameters:
+    ///   - intensity: Maximum brightness (1)
+    /// - Returns: Pattern ready for programming
+    ///
+    static func solid(intensity: Float = 1) -> MWLED.Flash.Pattern {
+        .init(intensityCeiling: intensity,
+              intensityFloor: intensity,
+              repetitions: 0xff,
+              period: 1000, riseTime: 0, highTime: 500, fallTime: 0, offset: 0)
+    }
 
-        public var pattern: MWLED.Flash.Pattern {
-            switch self {
-                case .zero: return .init(color: .cyan, intensity: 1, repetitions: 2, duration: 300, period: 800)
-                case .one: return .init(color: .orange, intensity: 1, repetitions: 2, duration: 300, period: 800)
-                case .two: return .init(color: .white, intensity: 1, repetitions: 2, duration: 300, period: 800)
-                case .three: return .init(color: .cyan, intensity: 1, repetitions: 1, duration: 400, period: 800)
-                case .four: return .init(color: .orange, intensity: 1, repetitions: 1, duration: 400, period: 800)
-                case .five: return .init(color: .white, intensity: 1, repetitions: 1, duration: 400, period: 800)
-                case .six: return .init(color: .cyan, intensity: 1, repetitions: 3, duration: 150, period: 700)
-                case .seven: return .init(color: .orange, intensity: 1, repetitions: 3, duration: 150, period: 700)
-                case .eight: return .init(color: .white, intensity: 1, repetitions: 3, duration: 150, period: 700)
-                case .nine: return .init(color: .purple, intensity: 1, repetitions: 5, duration: 100, period: 500)
-            }
-        }
+    /// Equal rise-fall-on pulse of the LED
+    ///
+    /// - Parameters:
+    ///   - repetitions: Times LED will be activated (.max for forever)
+    ///   - onDuration: Time LED is active (ms)
+    ///   - offDuration: Time between repetitions (ms)
+    ///   - highIntensity: Maximum brightness (1)
+    /// - Returns: Pattern ready for programming
+    ///
+    static func easeInOut(repetitions:   UInt8,
+                          onDuration:    UInt16 = 1700,
+                          offDuration:   UInt16 = 300,
+                          highIntensity: Float = 1) -> MWLED.Flash.Pattern {
+        let ramp = UInt16(Float(onDuration) * 0.33)
+        let high = onDuration - (ramp * 2)
+        return .init(intensityCeiling: highIntensity,
+                     intensityFloor: 0,
+                     repetitions: repetitions,
+                     period: offDuration + onDuration,
+                     riseTime: ramp,
+                     highTime: high,
+                     fallTime: ramp,
+                     offset: 0)
+    }
+
+    /// 1.2 second long pulse that rises more quickly than it falls.
+    /// - Parameters:
+    ///   - repetitions: Times LED will be activated (.max for forever)
+    ///   - lowIntensity: Minimum brightness (0)
+    ///
+    static func pulse(repetitions: UInt8) -> MWLED.Flash.Pattern {
+        .init(intensityCeiling: 1,
+              intensityFloor: 0,
+              repetitions: repetitions,
+              period: 1200,
+              riseTime: 150,
+              highTime: 380,
+              fallTime: 400,
+              offset: 0)
+    }
+
+    /// One 70 ms sharp blink every 0.4 seconds
+    /// - Parameters:
+    ///   - repetitions: Times LED will be activated (.max for forever)
+    ///   - lowIntensity: Minimum brightness (0)
+    ///
+    static func blinkQuickly(repetitions: UInt8, lowIntensity: Float = 0) -> MWLED.Flash.Pattern {
+        .init(intensityCeiling: 1,
+              intensityFloor: lowIntensity,
+              repetitions: repetitions,
+              period: 400,
+              riseTime: 0,
+              highTime: 70,
+              fallTime: 0,
+              offset: 0)
+    }
+
+    /// One 100 ms sharp blink every second
+    /// - Parameters:
+    ///   - repetitions: Times LED will be activated (.max for forever)
+    ///   - lowIntensity: Minimum brightness (0)
+    ///
+    static func blink(repetitions: UInt8, lowIntensity: Float = 0) -> MWLED.Flash.Pattern {
+        .init(intensityCeiling: 1,
+              intensityFloor: lowIntensity,
+              repetitions: repetitions,
+              period: 1000,
+              riseTime: 0,
+              highTime: 100,
+              fallTime: 0,
+              offset: 0)
+    }
+
+    /// One 100 ms sharp blink every 5 seconds (or as specified, down to 1500 ms)
+    /// - Parameters:
+    ///   - repetitions: Times LED will be activated (.max for forever)
+    ///   - lowIntensity: Minimum brightness (0)
+    ///   - period: Time for one cycle (off, rise, high, fall) in milliseconds (min 1500 ms)
+    ///
+    static func blinkInfrequently(repetitions: UInt8, period: UInt16 = 5000, lowIntensity: Float = 0) -> MWLED.Flash.Pattern {
+        .init(intensityCeiling: 1,
+              intensityFloor: lowIntensity,
+              repetitions: repetitions,
+              period: max(1500, period),
+              riseTime: 0,
+              highTime: 100,
+              fallTime: 0,
+              offset: 0)
+    }
+
+    /// Custom LED activation dynamics
+    ///
+    /// - Parameters:
+    ///   - repetitions: Pattern repeat count or UInt8.max for infinite
+    ///   - period: Time for one cycle (off, rise, high, fall) in milliseconds
+    ///   - riseTime: Ramp time from off to on, in milliseconds
+    ///   - highTime: Time at max intensity in milliseconds
+    ///   - fallTime: Ramp time from on to off, in milliseconds
+    ///   - offset: Time offset for a cycle
+    ///   - intensityCeiling: Highest intensity. Percentage in 0 to 1 format. (MetaWears only support 31 steps of intensity.)
+    ///   - intensityFloor: Lowest intensity. Percentage in 0 to 1 format. (MetaWears only support 31 steps of intensity.)
+    ///
+    /// - Returns: Flash pattern
+    ///
+    static func custom(repetitions: UInt8, period: UInt16, riseTime: UInt16, highTime: UInt16, fallTime: UInt16, offset: UInt16, intensityCeiling: Float, intensityFloor: Float) -> MWLED.Flash.Pattern {
+        .init(intensityCeiling: intensityCeiling, intensityFloor: intensityFloor, repetitions: repetitions, period: period, riseTime: riseTime, highTime: highTime, fallTime: fallTime, offset: offset)
     }
 }
 
 // MARK: - Flash Emulator
 
-public extension MWLED.Flash.Pattern {
+public extension MWLED.Flash {
 
     /// Load your own pattern and call `emulate` to recreate the MetaWear's LED behavior
     /// in a SwiftUI view or by subscribing to the `ledIsOnPublisher`.
@@ -276,20 +324,19 @@ public extension MWLED.Flash.Pattern {
 
         public func emulate() {
             let cycleDuration = Double(pattern.period) / 1000
-            let flashDuration = Double(pattern.duration) / 1000
-            let now = DispatchTime.now()
+            let flashDuration = Double(pattern.ledActiveTime) / 1000
+            let start = DispatchTime.now()
 
             Array(1...pattern.repetitions).forEach { rep in
-                let startDelay = cycleDuration * Double(rep - 1)
+                let cycleStart = cycleDuration * Double(rep - 1)
 
-                DispatchQueue.main.asyncAfter(deadline: now + startDelay) { [weak self] in
+                DispatchQueue.main.asyncAfter(deadline: start + cycleStart) { [weak self] in
                     self?._ledSubject.send(true)
 
-                    DispatchQueue.main.asyncAfter(deadline: now + startDelay + flashDuration) { [weak self] in
+                    DispatchQueue.main.asyncAfter(deadline: start + cycleStart + flashDuration) { [weak self] in
                         self?._ledSubject.send(false)
                     }
                 }
-
             }
         }
 
@@ -300,11 +347,75 @@ public extension MWLED.Flash.Pattern {
             }
         }
 
-        public convenience init(preset: MWLED.Flash.Pattern.Presets) {
+        public convenience init(preset: MWLED.Preset) {
             self.init(preset.pattern)
         }
 
         private let _ledSubject = CurrentValueSubject<Bool,Never>(false)
         private var _objectWillChange: AnyCancellable? = nil
+    }
+}
+
+
+// MARK: - Internal conversion methods
+
+extension MWLED {
+
+    private static func getRGBChannels(color: MBLColor) -> (red: Float, green: Float, blue: Float) {
+        var red:   CGFloat = 0
+        var green: CGFloat = 0
+        var blue:  CGFloat = 0
+        var _color = color
+#if os(macOS)
+        if [NSColorSpace.sRGB, NSColorSpace.extendedSRGB].contains(color) == false {
+            _color = color.usingColorSpace(.sRGB) ?? .white
+        }
+        if _color.numberOfComponents == 2 {
+            _color.getWhite(&red, alpha: nil)
+            (blue, green) = (red, red)
+        } else {
+            _color.getRed(&red, green: &green, blue: &blue, alpha: nil)
+        }
+#else
+        _color.getRed(&red, green: &green, blue: &blue, alpha: nil)
+#endif
+        return (Float(red), Float(green), Float(blue))
+    }
+
+#if canImport(SwiftUI)
+    @available(iOS 14.0, macOS 11.0, *)
+    private static func getRGBChannels(swiftUI color: Color) -> (red: Float, green: Float, blue: Float) {
+        let converted = color.cgColor?.converted(to: CGColorSpace(name: CGColorSpace.sRGB)!, intent: .defaultIntent, options: nil) ?? .init(srgbRed: 1, green: 1, blue: 1, alpha: 1)
+#if os(macOS)
+        let _color = NSColor(cgColor: converted) ?? .white
+#else
+        let _color = UIColor(cgColor: converted)
+#endif
+        return getRGBChannels(color: _color)
+    }
+#endif
+}
+
+extension MWLED.Flash.Pattern {
+
+    fileprivate static let maxIntensityScale = UInt8(31)
+
+    fileprivate static func scaleChannel(_ value: Float, intensity: Float) -> UInt8 {
+        let scaledChannel = value * intensity
+        let metawearColorSpace = UInt8(round( scaledChannel * (Float(Self.maxIntensityScale)) ))
+        return max(0, min(Self.maxIntensityScale, metawearColorSpace))
+    }
+
+    public func _convertedToCPP() -> MblMwLedPattern {
+        return .init(
+            high_intensity: UInt8(self.intensityCeiling * Float(Self.maxIntensityScale)),
+            low_intensity: UInt8(self.intensityFloor * Float(Self.maxIntensityScale)),
+            rise_time_ms: self.riseTime,
+            high_time_ms: self.highTime,
+            fall_time_ms: self.fallTime,
+            pulse_duration_ms: self.period,
+            delay_time_ms: self.offset,
+            repeat_count: self.repetitions
+        )
     }
 }
