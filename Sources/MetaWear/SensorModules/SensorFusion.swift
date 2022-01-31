@@ -3,6 +3,7 @@
 import Foundation
 import MetaWearCpp
 import Combine
+import simd
 
 // MARK: - Signals
 
@@ -32,7 +33,7 @@ public extension MWSensorFusion {
     struct Quaternion: MWStreamable, MWLoggable {
 
         /// WXYZ
-        public typealias DataType = SIMD4<Float>
+        public typealias DataType = simd_quatf
         public typealias RawDataType = MblMwQuaternion
         public let signalName: MWNamedSignal = .quaternion
         public let output: OutputType = .quaternion
@@ -45,7 +46,7 @@ public extension MWSensorFusion {
 
         public func convert(data: MWData) -> Timestamped<DataType> {
             let raw = data.valueAs() as MblMwQuaternion
-            return (data.timestamp, .init(x: raw.x, y: raw.y, z: raw.z, w: raw.w))
+            return (data.timestamp, .init(ix: raw.x, iy: raw.y, iz: raw.z, r: raw.w))
         }
     }
 

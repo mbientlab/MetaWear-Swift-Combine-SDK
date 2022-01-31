@@ -3,6 +3,7 @@
 import Foundation
 import Combine
 import MetaWearCpp
+import simd
 
 // MARK: - Type Safe Data Conversions
 
@@ -95,6 +96,21 @@ DataType    == SIMD4<Float> {
 
     func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
         (raw.time, .init(quaternion: raw.value))
+    }
+
+    func asColumns(_ datum: Timestamped<DataType>) -> [String] {
+        return [datum.time.metaWearEpochMS] + datum.value.stringify()
+    }
+
+    var columnHeadings: [String] { ["Epoch", "X", "Y", "Z", "W"] }
+}
+
+public extension MWDataConvertible where
+RawDataType == MblMwQuaternion,
+DataType    == simd_quatf {
+
+    func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
+        (raw.time, .init(mblQuaternion: raw.value))
     }
 
     func asColumns(_ datum: Timestamped<DataType>) -> [String] {
@@ -276,6 +292,12 @@ public extension SIMD4 where Scalar == Float {
     }
 }
 
+public extension simd_quatf {
+    init(mblQuaternion raw: MblMwQuaternion) {
+        self.init(ix: raw.x, iy: raw.y, iz: raw.z, r: raw.w)
+    }
+}
+
 
 // MARK: - String Utilities
 
@@ -294,6 +316,14 @@ public extension SIMD4 where Scalar == Float {
         }
     }
 }
+
+public extension simd_quatf {
+    func stringify() -> [String] {
+        let vector = self.vector
+        return vector.indices.map { String(mwDecimals: vector[$0]) }
+    }
+}
+
 
 public extension String {
     init(mwDecimals: CVarArg) {
