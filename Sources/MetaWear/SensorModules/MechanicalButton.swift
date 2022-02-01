@@ -59,15 +59,42 @@ public extension MWMechanicalButton {
 
 public extension MWMechanicalButton {
 
-    enum State: String, CaseIterable, IdentifiableByRawValue {
+    enum State: CaseIterable, IdentifiableByRawValue {
+
+
         case up
         case down
+        case custom(UInt8)
 
         public init(value: UInt32) {
-            if value == 0 { self = .up }
-            else { self = .down }
+            switch value {
+                case 0: self = .up
+                case 1: self = .down
+                default: self = .custom(UInt8(value))
+            }
         }
 
-        public var label: String { self.rawValue.localizedCapitalized }
+        public var label: String { self.rawValue }
+
+        public var rawValue: String {
+            switch self {
+                case .up: return "Up"
+                case .down: return "Down"
+                case .custom(let flag): return "\(flag)"
+            }
+        }
+
+        public init?(rawValue: String) {
+            switch rawValue {
+                case "Up": self = .up
+                case "Down": self = .down
+                default:
+                    if let int = UInt8(rawValue) { self = .custom(int) }
+                    else { return nil }
+            }
+        }
+
+        public static var allCases: [MWMechanicalButton.State] = [.up, .down]
+
     }
 }

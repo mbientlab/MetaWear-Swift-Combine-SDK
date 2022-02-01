@@ -176,9 +176,37 @@ class LogTests: XCTestCase {
         _testLog( .mechanicalButton )
     }
 
-    #warning("Await C++ library update for Bosch Motion")
+    func test_LogFakeButtonCommands_MechanicalButton() {
+        let testValue = UInt8(4)
+
+        connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
+            metawear.publish()
+                ._assertLoggers([], metawear: metawear)
+                .log(.mechanicalButton)
+                ._assertLoggers([.mechanicalButton], metawear: metawear)
+                .share()
+                .command(.logUserEvent(flag: testValue))
+                .command(.logUserEvent(flag: testValue))
+                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
+                .downloadLog(.mechanicalButton)
+
+            // Assert
+                .drop(while: { $0.percentComplete < 1 })
+                .map(\.data)
+                .handleEvents(receiveOutput: { data in
+                    data.map(\.value).forEach {
+                        XCTAssertEqual($0, .custom(testValue))
+                    }
+                    XCTAssertEqual(data.count, 2)
+                })
+                ._assertLoggers([], metawear: metawear)
+                ._sinkNoFailure(&subs, finished: { exp.fulfill() }, receiveValue: { output in exp.fulfill() })
+        }
+    }
+
+#warning("Await C++ library update for Bosch Motion")
     /// Disabled until C++ library support complete
-//    /// Remember to move
+    //    /// Remember to move
 //    func test_LogThenDownload_Motion_ActivityClassification() {
 //        _testLog( .motionActivityClassification )
 //    }

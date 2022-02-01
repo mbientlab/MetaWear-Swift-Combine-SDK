@@ -85,11 +85,6 @@ public enum MWNamedSignal: Equatable, Hashable, Identifiable {
         if (isolatedName.endIndex == identifier.endIndex || isolatedName == "temperature") && identifier.isEmpty == false {
             signal = Self.allCases.first(where: { $0.name == isolatedName })
 
-        } else if identifier.isEmpty && Self.customDownloads[""] == nil {
-            print("MetaWear Combine SDK Beta: Steps logging has bugs. Fixing this week.")
-            #warning("Workaround until bug fix in C++ library is pushed to resolve step counter streaming and logging.")
-            signal = .steps
-
         } else if Self.customDownloads.keys.contains(identifier) {
             signal = .custom(identifier)
 
