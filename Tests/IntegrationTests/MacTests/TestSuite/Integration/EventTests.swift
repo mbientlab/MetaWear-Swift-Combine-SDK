@@ -90,7 +90,7 @@ class EventTests: XCTestCase {
                 .publishWhenConnected()
             // Act
                 .log(.sensorFusionEulerAngles(mode: .ndof)) { signal in
-                    signal.throttle(mode: .passthrough, rate: .hz1)
+                    signal.throttleData(mode: .passthrough, rate: .hz1)
                 }
             // Assert
                 .delay(for: 10, tolerance: 0, scheduler: metawear.bleQueue)
@@ -113,7 +113,7 @@ class EventTests: XCTestCase {
                 .publish()
             // Act
                 .getLoggerMutablePointer(.sensorFusionEulerAngles(mode: .ndof))
-                .throttle(mode: .passthrough, rate: .hz1)
+                .throttleData(mode: .passthrough, rate: .hz1)
                 .logUpstreamPointer(
                     ofType: .sensorFusionEulerAngles(mode: .ndof),
                     board: metawear.board,

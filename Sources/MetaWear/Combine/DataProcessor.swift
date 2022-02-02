@@ -201,7 +201,7 @@ extension Publisher where Output == MWDataSignal {
     ///
     /// - Returns: Processed data signal
     ///
-    func throttle(mode: MWDataProcessor.ThrottleMutation = .passthrough, rate: MWFrequency) -> AnyPublisher<MWDataProcessorSignal, MWError> {
+    func throttleData(mode: MWDataProcessor.ThrottleMutation = .passthrough, rate: MWFrequency) -> AnyPublisher<MWDataProcessorSignal, MWError> {
         mapToMWError()
             .flatMap { $0.throttle(mode: mode, rate: rate) }
             .eraseToAnyPublisher()
