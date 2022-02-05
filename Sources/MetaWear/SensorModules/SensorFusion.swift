@@ -7,6 +7,7 @@ import simd
 
 // MARK: - Signals
 
+/// Built in Kalman filter - returns linear acceleration, quaternio, euler, and more
 public struct MWSensorFusion { }
 
 public extension MWSensorFusion {

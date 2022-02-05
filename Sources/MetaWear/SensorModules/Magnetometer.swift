@@ -6,6 +6,7 @@ import Combine
 
 // MARK: - Signals
 
+/// Geomagnetic sensor (compass - magnetic field) - returns micro Tesla (µT)
 public struct MWMagnetometer: MWStreamable, MWLoggable {
 
     public typealias DataType = SIMD3<Float>

@@ -40,6 +40,7 @@ extension MWLoggable where Self == MWAccelerometer {
 
 // MARK: - Signals
 
+/// Acceleration sensor - returns acceleration in gs (m/s^2)
 public struct MWAccelerometer: MWLoggable, MWStreamable {
 
     public typealias DataType = SIMD3<Float>

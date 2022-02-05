@@ -18,6 +18,7 @@ extension MWLoggable where Self == MWOrientationSensor {
 
 // MARK: - Signals
 
+/// Orientation detector on the MMR/MMRL
 public struct MWOrientationSensor: MWStreamable, MWLoggable {
     public typealias DataType = MWAccelerometer.Orientation
     public typealias RawDataType = MblMwSensorOrientation

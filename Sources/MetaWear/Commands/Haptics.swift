@@ -4,8 +4,7 @@ import Foundation
 import MetaWearCpp
 
 
-/// The haptic module controls a high current driver to power a motor or buzzer (or similar devices).
-///
+/// Controls a high current driver to power a noise making buzzer
 public struct MWBuzzer: MWCommand {
 
     /// Milliseconds. Specifying .max will run indefinitely. There is no direct stop command (i.e., restart).
@@ -25,9 +24,8 @@ public struct MWBuzzer: MWCommand {
     }
 }
 
-/// In the MMR+ model, the coin vibration motor provides haptic feedback.
-/// It does not provide pulse-width modulation capability.
-///
+/// Controls a high current driver to power a coin vibration motor which provides haptic feedback.
+/// This module does not provide pulse-width modulation capability
 public struct MWHapticMotor: MWCommand {
 
     /// Milliseconds

@@ -1,7 +1,7 @@
 @Tutorials(name: "MetaWear") {
     @Intro(title: "From Zero to Machine Learning") {
         
-        Control MetaWear wearable sensors to classify movement. Let's build _Streamy_, a barebones app using `Swift`, `Combine`, `CoreML`, and `SwiftUI`.
+        Use MetaWear motion sensors to classify movement. Let's build _Streamy_, a barebones app using `Swift`, `Combine`, `CoreML`, and `SwiftUI`.
         
         @Image(source: streamyIcon.png, alt: "The Streamy app icon: A hummingbird flying above binary code.")
     }
