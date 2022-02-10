@@ -6,7 +6,7 @@ import Combine
 
 // MARK: - Signals
 
-/// Celcius
+/// Ambient temperature sensor - returns celcius
 public struct MWThermometer: MWReadable, MWPollable {
 
     /// Celcius

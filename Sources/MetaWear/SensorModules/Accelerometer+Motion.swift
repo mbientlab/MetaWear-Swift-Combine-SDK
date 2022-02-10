@@ -59,6 +59,7 @@ extension MWStreamable where Self == MWMotion.NoMotion {
 
 // MARK: - Signals
 
+/// User activity detector on the MMS
 public struct MWMotion { }
 
 public extension MWMotion {

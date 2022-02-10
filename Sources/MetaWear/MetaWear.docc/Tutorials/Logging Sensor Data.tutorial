@@ -1,24 +1,24 @@
 @Tutorial(time: 15, projectFiles: "Streamy.zip") {
     @Intro(title: "Logging Sensor Data") {
-        Configure an arbitrary number of sensors for logging, exporting time-synced data as CSVs.
+        Log data from an arbitrary number of sensors and export time-synced data in CSV format.
         @Image(source: streamyIcon.png, alt: "Streamy app icon")
     }
     
     @Section(title: "To Log or Download?") {
         @ContentAndMedia {
-            Users of _Streamy_ might start logging sensors and then, days later, launch the app to download data. To offer relevant buttons, let's write a tiny use case to look at onboard flash memory usage.
+            Users of _Streamy_ might start logging sensors and then, days later, launch the app to download data. Let's write a `use case` to look at onboard flash memory usage.
             @Image(source: bird-rainbow.png, alt: "Bird art")
         }
         
         @Steps {
             @Step {
-                Issuing the `logLength` command returns the used flash storage in bytes, as counted by pages occupied. 
+                In this NextSteps `use case`, issuing the `logLength` command returns the used flash storage in bytes, as counted by pages occupied. 
                 
-                _FYI: In the next few examples, our use case objects will receive a valid MetaWear reference, but the device might not be connected or nearby. When our commands run, we will always call .connect() to ensure MetaWear magic happens._
+                **FYI:** _In the next few examples, our use case objects will receive a valid MetaWear reference, but the device might not be connected or nearby. When our commands run, we will always call .connect() to ensure MetaWear magic happens._
                 @Code(name: "NextSteps.swift", file: 03-recording-00-00.swift, previousFile: 03-recording-00-00_mask.swift) 
             }  
             @Step {              
-                If any bytes are used, we can offer to download data. Otherwise, we will offer to setup a new logging session.
+                If the result is non-zero (bytes in memory are used), we can offer to download data. Otherwise, we will offer to setup a new data logging session.
                 @Code(name: "NextSteps.swift", file: 03-recording-00-01.swift) 
             }  
         }
@@ -26,7 +26,7 @@
     
     @Section(title: "Configure logging commands") {
         @ContentAndMedia {
-            Users may only wish to log certain sensors. Some options are mutually exclusive, so we'll validate the selection before issuing commands that start logging data.
+            Users may only wish to log data from certain sensors. Some options are mutually exclusive, so we'll validate the selection before issuing commands that start logging data.
             @Image(source: bird-rainbow.png, alt: "Bird art")
         }
         
@@ -36,13 +36,13 @@
                 @Code(name: "NewSession.swift", file: 03-recording-01-00.swift, previousFile: 03-recording-01-00_mask.swift) 
             }  
             @Step {
-                For the menu of sensors users can pick from, we will reuse the identifiers that a MetaWear uses internally for the logging activity. The SDK catalogs these identifiers in the enum ``MetaWear/MWNamedSignal``.
+                For the list of sensors users can pick from, we will reuse the identifiers that a MetaWear uses internally for the logging activity. The SDK catalogs these identifiers in the enum ``MetaWear/MWNamedSignal``.
                 
-                The code here offers up the accelerometer and gyroscope, plus two modes that fuse those two sensors' output together to compute a more useful view of a user's motion.
+                The code here offers up the accelerometer and gyroscope, plus two modes that fuse those two sensors' data using sensor fusion to output useful 3D motion data.
                 @Code(name: "NewSession.swift", file: 03-recording-01-01.swift, previousFile: 03-recording-01-01_mask.swift) 
             }  
             @Step {
-                When fusing the accelerometer and gyroscope, hardware limitations means their output cannot be logged separately. The fused `.quaternion` and `.linearAcceleration` are therefore exclusive choices, both to the solo sensors _and_ to each other.
+                When fusing the accelerometer and gyroscope, hardware limitations means their output cannot be logged separately. The fused `.quaternion` and `.linearAcceleration` are therefore exclusive choices, both to the solo sensors _and_ to each other (i.e you can log accelerometer OR quaternion OR linear acceleration).
                 
                 The logic for this is available from the SDK via `removeConflicts(for:)`.
                 @Code(name: "NewSession.swift", file: 03-recording-01-02A.swift) 
@@ -54,26 +54,26 @@
             }
             
             @Step {
-                Tapping this "start logging" button might require us to kickoff a connection attempt. That could take a few seconds, so we'll throw a busy indicator up.
+                Tapping the "start logging" button might require us to kickoff a connection attempt. That could take a few seconds, so we'll throw a busy indicator up in the UI to let the user know.
                 @Code(name: "NewSession.swift", file: 03-recording-01-03.swift) 
             }
             
             @Step {
                 The `.optionallyLog` or `.log` methods ask for an ``MetaWear/MWLoggable`` instance. This protocol is how the SDK reasons about generating loggable sensor signals. Options like ``MetaWear/MWLoggable/accelerometer(rate:gravity:)`` will code-complete for you.
                 
-                **TL;DR:** Methods like `.stream`, `.read`, and `.command` use ``MetaWear/MWStreamable``, ``MetaWear/MWReadable``, and ``MetaWear/MWCommand`` instances. Stream and logging methods also overload to accept ``MetaWear/MWPollable`` for sensors whose hardware, like ``MetaWear/MWPollable/thermometer(rate:type:board:)``, precludes continuous data flow.
+                **TL;DR:** Methods like `.stream`, `.read`, and `.command` use ``MetaWear/MWStreamable``, ``MetaWear/MWReadable``, and ``MetaWear/MWCommand`` instances. Stream and logging methods also overload to accept ``MetaWear/MWPollable`` for sensors whose hardware, like the ``MetaWear/MWPollable/thermometer(rate:type:board:)``, precludes continuous data flow.
                 @Code(name: "NewSession.swift", file: 03-recording-01-04.swift) 
             }  
             
             @Step {
                 To better organize a series of `.optionallyLog` calls, let's use a configuration container pattern.
                 
-                **Tip:** Streaming from multiple sensors requires a different approach because each pipeline emits a different data type. Our open source [_MetaBase 5_](https://github.com/mbientlab/MetaWear-MetaBase-iOS-macOS-App) uses Combine's `MergeMany` publisher, `.prefix(untilOutputFrom:)` operator, and a configuration container to compose arbitrary groups of streaming publishers.
+                **Tip:** Streaming from multiple sensors requires a different approach because each pipeline emits a different data type. Our open source [MetaBase App](https://github.com/mbientlab/MetaWear-MetaBase-iOS-macOS-App) uses Combine's `MergeMany` publisher, `.prefix(untilOutputFrom:)` operator, and a configuration container to compose arbitrary groups of streaming publishers.
                 @Code(name: "NewSession.swift", file: 03-recording-01-05.swift) 
             }  
             
             @Step {
-                Once the commands complete, we'll offer a download button.
+                Once the commands complete, we'll offer a download button in the UI.
                 @Code(name: "NewSession.swift", file: 03-recording-01-06.swift, previousFile: 03-recording-01-06_mask.swift) 
             }
         }
@@ -89,14 +89,14 @@
             @Step {
                 The SDK's `.downloadLogs` command asks for a `Date` when logging started. It's used to align the timestamps of datapoints across groups of MetaWears.
                 
-                In the _Streamy_ demo app, we just pass the current time. Your app should cache a timestamp when the logging commands issue.
+                In the _Streamy_ companion app, we pass the current date and time. Your app should cache a timestamp when the logging commands is first issued.
                 @Code(name: "Download.swift", file: 03-recording-02-01.swift, previousFile: 03-recording-02-01_mask.swift) 
             }    
             
             @Step {
-                About every 4%, `downloadLogs` operators will emit a progress update. The `.handleEvents(receiveOutput:)` Combine operator simply runs a closure when a value arrives, without modifying it.
+                Every time 4% of the data is downloaded via Bluetooth, `downloadLogs` operators will emit a progress update. The `.handleEvents(receiveOutput:)` Combine operator simply runs a closure when a value arrives, without modifying it.
                 
-                Note: This percentage is a rough estimate from counting flash storage pages. If the last page was only minimally filled with data, you'll see progress leap to 100%.
+                **Note:** This percentage is a rough estimate from counting flash storage pages. If the last page was only minimally filled with data, you'll see progress leap to 100%.
                 @Code(name: "Download.swift", file: 03-recording-02-02.swift) 
             }  
             
@@ -106,21 +106,23 @@
             }  
             
             @Step {
-                And then shuttle the received data tables off to CSV formatting.
+                And then send the received data tables to be formatted into a CSV file using prepareForExport().
+                
+                **Note:** Each table represents one sensor.
                 @Code(name: "Download.swift", file: 03-recording-02-03B.swift) 
             }  
             
             @Step {
                 Translating the array of ``MetaWear/MWDataTable`` into CSV-formatted `Data` simply requires calling ``MetaWear/MWDataTable/makeCSV(delimiter:)``.
                 
-                Each table represents one sensor. Use ``MetaWear/MWDataTable/source`` for its name. You can customize timestamp columns (e.g., time elapsed). Values in these tables are stringly typed. When streaming data, the SDK returns timestamped `SIMD<Float>` and other native types.
+                Use ``MetaWear/MWDataTable/source`` for its name. You can customize timestamp columns (e.g., time elapsed). Values in these tables are stringly typed. When streaming data, the SDK returns timestamped `SIMD<Float>` and other native types.
                 @Code(name: "Download.swift", file: 03-recording-02-04.swift, previousFile: 03-recording-02-04_mask.swift) 
             }  
             
             @Step {
-                Export and archive these CSVs as needed.
+                Export and archive the CSVs as needed.
                 
-                _Streamy_ writes these files to a temp folder. A `FileWrapper` for that folder is embedded in a `FileDocument` to align with a SwiftUI API. _MetaBase_ archives the files to CoreData and iCloud and exports them using AppKit and UIKit APIs.
+                **Note:** _Streamy_ writes the CSV files to a temp folder. A `FileWrapper` for that folder is embedded in a `FileDocument` to align with a SwiftUI API. _MetaBase_ archives the files to CoreData and iCloud and exports them using AppKit and UIKit APIs.
                 @Code(name: "Download.swift", file: 03-recording-02-05.swift) 
             } 
         }

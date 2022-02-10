@@ -6,6 +6,7 @@ import Combine
 
 // MARK: - Signals
 
+/// Humidity sensor - returns relative humidity as a percentage
 public struct MWHumidity: MWPollable, MWReadable {
 
     public typealias DataType = Float

@@ -6,6 +6,7 @@ import Combine
 
 // MARK: - Signals
 
+/// Gyroscope sensor - returns angular velocity (rotation) in deg/s (degrees per second)
 public struct MWGyroscope: MWStreamable, MWLoggable {
 
     public typealias DataType = SIMD3<Float>

@@ -38,7 +38,7 @@ extension MWLoggable where Self == MWStepCounter {
 
 // MARK: - Signals
 
-/// Emits each time a step is detected, leaving summation to you.
+/// Detects a step and emits a notification
 public struct MWStepDetector: MWStreamable, MWLoggable {
 
     public typealias DataType = Int
@@ -62,7 +62,7 @@ public struct MWStepDetector: MWStreamable, MWLoggable {
 
 }
 
-/// Emits steps detected in 20 step intervals.
+/// Counts steps
 public struct MWStepCounter: MWStreamable, MWLoggable {
 
     public typealias DataType = Int

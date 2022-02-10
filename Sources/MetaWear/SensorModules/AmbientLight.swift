@@ -6,7 +6,7 @@ import Combine
 
 // MARK: - Signals
 
-/// Lux (Illuminance)
+/// Ambient light intensity sensor - returns lux (illuminance)
 public struct MWAmbientLight: MWStreamable, MWLoggable {
 
     /// Lux (Illuminance)

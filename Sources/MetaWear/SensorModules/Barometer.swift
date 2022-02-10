@@ -6,6 +6,7 @@ import Combine
 
 // MARK: - Signals
 
+/// Pressure sensor - returns atmospheric pressure in pascals or altitude in meters
 public struct MWBarometer { }
 
 extension MWBarometer {

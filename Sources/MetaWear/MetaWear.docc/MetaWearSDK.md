@@ -1,8 +1,8 @@
 # ``MetaWear``
 
-Develop Bluetooth Low Energy apps using our sensors and `Combine`
+Develop Bluetooth Low Energy apps using our MetaWear Sensors and [Combine](https://developer.apple.com/documentation/combine)
 
-This SDK abstracts `CoreBluetooth` and our MetaWear C/C++ API using concise `Combine` publishers and presets. It offers three optional imports:
+This SDK abstracts `CoreBluetooth` and our [MetaWear C/C++ API](https://github.com/mbientlab/MetaWear-SDK-Cpp) using concise `Combine` publishers and presets. It offers three optional imports:
 
 * `MetaWearSync`  —  track groups of MetaWears across Apple devices using iCloud key-value storage
 * `MetaWearCpp`  —  mix our C/C++ API with `Combine` publishers for additional flexibility
@@ -10,65 +10,75 @@ This SDK abstracts `CoreBluetooth` and our MetaWear C/C++ API using concise `Com
 
 ![MetaMotion S.](metamotion.png)
 
-
 ## Getting Started
 
-Beyond this guide, you can ramp up with an interactive <doc:/tutorials/MetaWear> tutorial to build a simple app, similar to our barebones [integration test host app](https://github.com/mbientlab/MetaWear-Swift-Combine-SDK/tree/main/Tests/IntegrationTests).  Existing MetaWear developers can orient with <doc:Migrating-From-Bolts>. You can also examine the [source code of our cross-platform MetaBase app](https://github.com/mbientlab/MetaWear-MetaBase-iOS-macOS-App).
+Beyond this guide, you can ramp up with an interactive <doc:/tutorials/MetaWear> tutorial to build a simple app, similar to our barebones [integration test host app](https://github.com/mbientlab/MetaWear-Swift-Combine-SDK/tree/main/Tests/IntegrationTests).  
+
+Existing MetaWear developers can orient themselves with <doc:Migrating-From-Bolts>. You can also examine the [source code of our cross-platform MetaBase app](https://github.com/mbientlab/MetaWear-MetaBase-iOS-macOS-App).
 
 #### 1. Entitlements
-For each target in your project, go to the **Signing & Capabilities** tab. For macOS, go to *App Sandbox* and check **Bluetooth**. For iOS, add *Background Modes* and check **Uses Bluetooth LE accessories**. 
 
-Optionally, for `MetaWearSync`, add *iCloud* and check **Key value storage**. If your plan to update MetaWear firmware in your app using `MetaWearFirmware`, for macOS in *App Sandbox* check **Outgoing Connections**.
+For each target in your project, go to the **Signing & Capabilities** tab. 
+  *  For macOS, go to *App Sandbox* and check **Bluetooth**. 
+  *  For iOS, add *Background Modes* and check **Uses Bluetooth LE accessories**. 
 
+Optionally, for `MetaWearSync`, add *iCloud* and check **Key value storage**. 
+
+If you plan to update MetaWear firmware in your app using `MetaWearFirmware`, for macOS in *App Sandbox* check **Outgoing Connections**.
 
 For all platforms, go to the **Info** tab and add and provide a message for:
 - Privacy - Bluetooth Always Usage Description
 - Privacy - Bluetooth Peripheral Usage Description
 
-
 #### 2. Find nearby MetaWears
-Create a ``MetaWearScanner`` instance or use the ``MetaWearScanner/sharedRestore`` singleton.
 
-Goal | API
---- | ---
-Search | ``MetaWearScanner/startScan(higherPerformanceMode:)``
-Stop searching | ``MetaWearScanner/stopScan()``
-Individual discovery events | ``MetaWearScanner/didDiscover``
-Refreshing dictionary of devices | ``MetaWearScanner/discoveredDevicesPublisher``
+To scan for a MetaWear device using Bluetooth, create a ``MetaWearScanner`` instance or use the ``MetaWearScanner/sharedRestore`` singleton.
+
+Goal                              | API
+----------------------------------| ---
+Search                            | ``MetaWearScanner/startScan(higherPerformanceMode:)``
+Stop searching                    | ``MetaWearScanner/stopScan()``
+Individual discovery events       | ``MetaWearScanner/didDiscover``
+Refreshing dictionary of devices  | ``MetaWearScanner/discoveredDevicesPublisher``
 Bluetooth power and authorization | ``MetaWearScanner/bluetoothState``
 
-A restored device may not be nearby right now, but was connected in a previous session. As with all MetaWear interactions, you'll receive updates on that scanner's ``MetaWearScanner/bleQueue``. 
+A restored device may not be nearby right now, but may have been connected in a previous session. As with all MetaWear interactions, you'll receive updates on that scanner's ``MetaWearScanner/bleQueue``. 
 
 **If you wish to sync MetaWear identities via iCloud, only use the scanner to start/stop scanning and observe Bluetooth state.** Use the `MetaWearSyncStore` to retrieve, remember, and forget MetaWears. It will monitor the scanner's output for you.
 
 #### 3. Interact
 
-First, to connect to a MetaWear, call ``MetaWear/MetaWear/connect()`` or use  the ``MetaWear/MetaWear/connectPublisher()``. You can observe connection state via the ``MetaWear/MetaWear/connectionStatePublisher``.
+First, to connect to a MetaWear, call ``MetaWear/MetaWear/connect()`` or use  the ``MetaWear/MetaWear/connectPublisher()``. 
 
-Since nearly every MetaWear interaction is an asynchronous call and response over a potentially low strength Bluetooth connection, this SDK reasons about these events and streams of data through Apple's `Combine` framework. If unfamiliar with Combine, the  <doc:/tutorials/MetaWear> tutorial has some basics. A good reference is [Joseph Heck's Using Combine](https://heckj.github.io/swiftui-notes/).
+You can observe the connection state via the ``MetaWear/MetaWear/connectionStatePublisher``.
+
+Since nearly every MetaWear interaction is an asynchronous call and response over a potentially low strength Bluetooth connection, this SDK reasons about these events and streams of data through Apple's `Combine` framework. If you are unfamiliar with Combine, the  <doc:/tutorials/MetaWear> tutorial has some basics. A good reference is [Joseph Heck's Using Combine](https://heckj.github.io/swiftui-notes/).
 
 Most of this SDK's functions extend Combine publishers that emit a ``MetaWear``.
 
-Fires | API
---- | ---
-On every connection | ``MetaWear/MetaWear/publishWhenConnected()``
-First connection only | ``MetaWear/MetaWear/publishWhenConnected()`` `.first()`
-On every disconnection | ``MetaWear/MetaWear/publishWhenDisconnected()``
+Fires                         | API
+----------------------------- | ---
+On every connection           | ``MetaWear/MetaWear/publishWhenConnected()``
+First connection only         | ``MetaWear/MetaWear/publishWhenConnected()`` `.first()`
+On every disconnection        | ``MetaWear/MetaWear/publishWhenDisconnected()``
 Now, failing if not connected | ``MetaWear/MetaWear/publishIfConnected()``
-Now | ``MetaWear/MetaWear/publish()``
+Now                           | ``MetaWear/MetaWear/publish()``
 
 From those publishers, autocompletion will reveal MetaWear operators.
 
-Operator | Example
---- | ---
-`.command()` | ``MetaWear/MWCommand/rename(advertisingName:)``
-`.read()` | ``MetaWear/MWReadable/batteryLevel``
-`.stream()` | ``MetaWear/MWStreamable/sensorFusionQuaternion(mode:)``
-`.log()` | ``MetaWear/MWLoggable/gyroscope(rate:range:)``
+Operator           | Example
+------------------ | ---
+`.command()`       | ``MetaWear/MWCommand/rename(advertisingName:)``
+`.read()`          | ``MetaWear/MWReadable/batteryLevel``
+`.stream()`        | ``MetaWear/MWStreamable/sensorFusionQuaternion(mode:)``
+`.log()`           | ``MetaWear/MWLoggable/gyroscope(rate:range:)``
 `.downloadLogs(:)` | Returns ``MetaWear/MWDataTable`` array and percent progress
 
 
-###### Example: Wait until first connection, stream accelerometer vectors, update UI on main ######
+###### Example:
+
+Wait until the first connection, then stream accelerometer values, and update UI on main:
+
 ```swift
 metawear
    .publishWhenConnected()
@@ -85,37 +95,48 @@ metawear.connect()
 ```
 
 ###### Performing multiple interactions at once
+
 To chain logging or other commands, you can use `.optionallyLog()` and/or `.macro(executeOnBoot:actions:)`.
 
-To stream an arbitrary number of sensors, you can setup individual pipelines, perhaps coordinated by `prefix(untilOutputFrom:)`. You could also convert the myriad ``MWStreamable`` outputs to the same type, such as ``MWDataTable``, and form an array of publishers consumable by Combine's `MergeMany`. 
+To stream an arbitrary number of sensors, you can setup individual pipelines (perhaps coordinated by `prefix(untilOutputFrom:)`). You can also convert ``MWStreamable`` outputs to the same type, such as ``MWDataTable``, and form an array of publishers consumable by Combine's `MergeMany`. 
 
-Beware that Bluetooth Low Energy usually can't deliver above 100 Hz without dropping some data. Also, the `prefix(untilOutputFrom:)` operator must output on the ``MetaWear/MetaWear/bleQueue`` to avoid undefined behavior.
+**Beware that Bluetooth Low Energy can't stream data above 100Hz without dropping some data.** 
+
+Note that the `prefix(untilOutputFrom:)` operator must output on the ``MetaWear/MetaWear/bleQueue`` to avoid undefined behavior.
 
 ###### Using onboard timers
-For logging, you can program a MetaWear to fire an onboard timer to poll a signal (direct from sensor or after some data processing) or fire an event after some trigger.
 
-Operator | Output Reference Pointer | Input
---- | --- | ---
+MetaWears have on-board timers that are typically used to read periodically from analog sensors.
+
+You can use the following functions to fire an onboard timer to poll a signal (direct from the sensor or after some data processing) or fire an event after some trigger.
+
+Operator                | Output Reference Pointer          | Input
+----------------------- | --------------------------------- | ---
 `.createPollingTimer()` | Data signal embedded in the timer | Publisher<(MetaWear, MWDataSignal)>
-`.createTimer()` | Timer | Publisher<(MetaWear, MWDataSignal)>
-`.createTimedEvent()` | Event timer | Publisher<MetaWear> and a closure of commands to execute upon firing
+`.createTimer()`        | Timer                             | Publisher<(MetaWear, MWDataSignal)>
+`.createTimedEvent()`   | Event timer                       | Publisher<MetaWear> and a closure of commands to execute upon firing
 
 An ``MWDataSignal`` is a type alias for `OpaquePointer`, which is simply a reference to a C type not exposed to Swift.
 
-
 ##### 4. Debugging
+
 Bytes transmitted over Bluetooth and other MetaWear actions can be viewed using the ``MWConsoleLogger``. Just assign a reference to that logger to a MetaWear's ``MetaWear/MetaWear/logDelegate`` property.
 
-Sometimes an incomplete or incorrect command can put a MetaWear in a bad state, which will crash when you reconnect. If reseting the device via unit test our apps fails, manually reset by connecting the MetaWear to power at the same time as pressing the mechanical button for 10 seconds.
+```swift
+MyMetawear.logDelegate = MWConsoleLogger.shared
+```
 
+```swift
+MWConsoleLogger.activateConsoleLoggingOnAllMetaWears = true
+```
+
+**Sometimes an incomplete or incorrect command can put a MetaWear in a bad state, which will crash when you reconnect.** In this case, you should manually reset the device by connecting the MetaWear to power at the same time as pressing the mechanical button for 10 seconds. It can also help to use our MetaWear App on the App store to reset the device to Factory settings. A good last resort is to update the Firmware.
 
 ##### 5. Testing
 
-Unit test targets can call on a host app that exposes a MetaWearScanner, but XCTest cannot instantiate its own MetaWearScanner with Bluetooth permission on its own. 
+Unit test targets can call on a host app that exposes a ``MetaWearScanner``, but `XCTest` cannot instantiate its own ``MetaWearScanner`` with Bluetooth permission on its own. 
 
-UI test targets may also improperly parse Swift Package Manager dependencies. (If encountered, please file feedback with Apple.)
-
-
+UI test targets may also improperly parse Swift Package Manager dependencies. (If you encounter an issue, please file your feedback with Apple.)
 
 ## Topics
 
@@ -135,7 +156,7 @@ Using any ``MWPublisher`` ensures calls into the C++ library and reads of any pr
 
 ### Interact
 
-The `.command()`, `.log()`, `.read()`, and `.stream()` operators accept value types conforming to these protocols, which describe communication methods with the MetaWear.
+A MetaWear can log sensor data, stream sensor data, read data from a sensor once, or take commands.  The `.command()`, `.log()`, `.read()`, and `.stream()` operators accept value types conforming to these protocols, which describe communication methods with the MetaWear.
 
 - ``MWCommand``
 - ``MWCommandWithResponse``
@@ -149,7 +170,7 @@ The `.command()`, `.log()`, `.read()`, and `.stream()` operators accept value ty
 
 ### Data Output
 
-Streaming data arrives in Swift types, such as `SIMD3<Float>`. Logs download in a string-based ``MWDataTable`` that can output a .csv file.
+When getting sensor data from a MetaWear, data arrives in Swift types, such as `SIMD3<Float>`. Logs download in a string-based ``MWDataTable`` that can output a .csv file.
 
 - ``MWDataTable``
 - ``MWData``
@@ -158,6 +179,8 @@ Streaming data arrives in Swift types, such as `SIMD3<Float>`. Logs download in 
 - ``Timestamped``
 
 ### Modules
+
+The MetaWear is equiped with sensors and peripherals such an accelerometer or LED called modules.
 
 - ``MWAccelerometer``
 - ``MWAmbientLight``
@@ -180,6 +203,8 @@ Streaming data arrives in Swift types, such as `SIMD3<Float>`. Logs download in 
 
 ### Misc Signals & Commands
 
+Additional MetaWear features.
+
 - ``MWBatteryLevel``
 - ``MWChargingStatus``
 - ``MWChangeAdvertisingName``
@@ -191,17 +216,22 @@ Streaming data arrives in Swift types, such as `SIMD3<Float>`. Logs download in 
 
 ### Reset or Restart Commands
 
+Best for soft reset.
+
 - ``MWFactoryReset``
 - ``MWActivitiesReset``
 - ``MWRestart``
 
 ### Utilities
+
+Best for debugging.
+
 - ``MWConsoleLogger``
 - ``MWConsoleLoggerDelegate``
 
 ### Identifiers
 
-Each machine assigns a MetaWear a unique local UUID, but once connected ``MetaWear/MetaWear/info`` contains a stable MAC address.
+Each Apple device assigns a MetaWear a unique local UUID, but once connected ``MetaWear/MetaWear/info`` contains a stable unique MAC address.
 
 - ``CBPeripheralIdentifier``
 - ``MACAddress``
@@ -244,7 +274,7 @@ Useful only when interacting with the C++ library.
 
 ### C++ Constants
 
-Useful only when interacting with the C++ library.
+Useful only when interacting with the C++ library (see bindings file)
 
 - ``MBL_MW_MODULE_ACC_TYPE_BMI270``
 - ``MBL_MW_MODULE_ACC_TYPE_BMI160``

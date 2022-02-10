@@ -1,39 +1,41 @@
 @Tutorial(time: 5, projectFiles: "Streamy.zip") {
-    @Intro(title: "Adding MetaWear to a Project") {
-        This tutorial examines the dependencies and permissions needed for the SDK.
+    @Intro(title: "Adding MetaWear to your Project") {
+        Learn how to add the required SDK dependencies and permissions to your App.
         @Image(source: streamyIcon.png, alt: "Streamy app icon")
     }
     
     @Section(title: "What's Ahead") {
         @ContentAndMedia {
-            In this tutorial series, we will tour the SDK by writing small logic layer use case components for an app that collects sensor data.
+            In this tutorial series, you will sample the SDK by writing small logic layer "use case" components for an app that collects sensor data.
             
             Next, we'll train and implement a CoreML activity classifier for writing letters in the air. (Yes, at some point we will YMCA.)
+            
+            First, an introduction.
             @Image(source: bird-streamy.png, alt: "Bird art")
         }
         @Steps {
 
             @Step {
-                If you wish, you can clone a companion demo app, [Streamy](https://github.com/mbientlab/Streamy), that implements the components we build in this series. 
+                This tutorial includes a companion app called Streamy that implements the components we build in this series. You should clone [Streamy](https://github.com/mbientlab/Streamy) before getting started.
                 @Image(source: tut-streamy-mac-ios.png, alt: "Screenshot of Streamy on macOS and iOS")
             }
 
             @Step { 
-                This tutorial will not cover UI or write every line of an app. Our focus is simply the ins and outs of this SDK.
+                This tutorial will not cover UI or every line of the Streamy app. We will focus on the ins and outs of this SDK.
                 
-                _Streamy_ happens to use SwiftUI, but this tutorial series is UI framework agnostic.
+                _Streamy_ uses SwiftUI but this tutorial series is UI framework agnostic.
                 @Code(name: "StreamyApp.swift", file: 00-root-01-01.swift) {
                     @Image(source: tut-streamy-mac-ios.png, alt: "Screenshot of Streamy on macOS and iOS")
                 }
             }
             
             @Step {
-                You can also reference the source code of [Metabase 5](https://github.com/mbientlab/MetaWear-MetaBase-iOS-macOS-App), our easy-mode app for collecting MetaWear sensor data.
+                A secondary resource is the [Metabase](https://github.com/mbientlab/MetaWear-MetaBase-iOS-macOS-App) source code, our simple app for collecting MetaWear sensor data.
                 @Image(source: tut-metabase-mac-ios.png, alt: "Screenshot of MetaBase on macOS and iOS")
             }
             
             @Step {
-                A final resource for tinkering is using the SDK's [integration test host](https://github.com/mbientlab/MetaWear-Swift-Combine-SDK/tree/main/Tests/IntegrationTests) to write one-off tests.
+                A final resource for understanding the SDK is the [integration test host](https://github.com/mbientlab/MetaWear-Swift-Combine-SDK/tree/main/Tests/IntegrationTests) to write one-off tests.
                 @Code(name: "ExampleTests.swift", file: 00-root-01-02.swift) { }
             }
         }
@@ -46,30 +48,29 @@
         }
         @Steps {
             @Step { 
-                In the File menu, choose Add Package...
-                https://github.com/mbientlab/MetaWear-Swift-Combine-SDK
+                In the File menu, choose Add Package and enter the URL: `https://github.com/mbientlab/MetaWear-Swift-Combine-SDK`.
                 
                 By default, Xcode will update the MetaWear package when minor versions are released, but not for a major release. You can also depend on a branch head or a commit. 
                 @Image(source: tut-AddPackage.png, alt: "Xcode screenshot while adding a package")
             }
             @Step { 
-                In this tutorial, we'll use all frameworks except the one to update device Firmware. 
+                In this tutorial, we'll use all frameworks except the one to update device Firmware. You can de-select `MetaWearFirmware`.
                 @Image(source: tut-AddPackageProducts.png, alt: "Xcode screenshot while selecting frameworks")
             }
             @Step { 
-                Xcode will likely only add these frameworks to one of your targets. Remedy this by tapping the + icon inside the `Frameworks, Libraries and Embedded Content` section to add the same frameworks as above. 
+                Xcode will likely only add these frameworks to one of your targets. Remedy this by tapping the `+` icon inside the `Frameworks, Libraries and Embedded Content` section to add the same frameworks as above. 
                 @Image(source: tut-ManuallyAddProducts.png, alt: ".")
             }
             @Step { 
-                Don't forget to set the two Info.plist Bluetooth privacy usage descriptions. Your app will not function otherwise.
+                Don't forget to set the two `Info.plist` Bluetooth privacy usage descriptions. This adds Bluetooth capability to your App. Your app will not function otherwise.
                 @Image(source: tut-Plist.png, alt: "Xcode screenshot of an Info.plist with two Privacy - Bluetooth keys")
             }
             @Step { 
-                For macOS, match permissions to this screenshot. Ensure App Sandbox -> Bluetooth and iCloud -> CloudKit permissions are enabled.
+                For macOS, match permissions to this screenshot. In the `Signing & Capabilities` section, under `App Sandbox` select `Bluetooth` and under `iCloud` select `CloudKit` to ensure permissions are enabled.
                 @Image(source: tut-MacPermissions.png, alt: "Xcode screenshot while adding Capabilities selections")
             }
             @Step { 
-                For iOS, we need to check different boxes. Add Background Modes and check Uses Bluetooth LE accessories. Add iCloud, checking Key value storage.
+                For iOS, match permissions to this screenshot. In the `Signing & Capabilities` section, under `Add Background Modes` select `Uses Bluetooth LE accessories`. Under `iCloud` -> `Services` select `Key value storage`.
                 @Image(source: tut-iOSPermissions.png, alt: "Xcode screenshot while adding Capabilities selections")
             }
         }
@@ -77,30 +78,32 @@
     
     @Section(title: "The Core SDK Classes") {
         @ContentAndMedia {
-            We'll use three core classes: ``MetaWear/MetaWear``, ``MetaWear/MetaWearScanner``, and `MetaWearSyncStore`. 
+            We will cover the three core classes: ``MetaWear/MetaWear``, ``MetaWear/MetaWearScanner``, and `MetaWearSyncStore`. 
             
-            When debugging, the ``MetaWear/MWConsoleLogger`` can visualize Bluetooth communications.
+            To help with debugging, the ``MetaWear/MWConsoleLogger`` can visualize Bluetooth communications.
             @Image(source: bird-red-yellow.png, alt: "Bird art")
         }
         @Steps {
             @Step { 
-                Let's look at how we could wire up the SDK inside an app's root object.
+                Let's wire up the SDK inside the app's root object.
                 @Code(name: "Root.swift", file: 01-root-01-01.swift) {}
             }    
             @Step { 
-                The ``MetaWear/MetaWearScanner`` abstracts the CoreBluetooth framework for you, finding nearby ``MetaWear`` devices. The ``MetaWear/MetaWearScanner/sharedRestore`` singleton enables CoreBluetooth to recognize this app and vend it previously used peripherals.
+                The ``MetaWear/MetaWearScanner`` abstracts the CoreBluetooth framework for you, finding nearby ``MetaWear`` devices. 
+                
+                The ``MetaWear/MetaWearScanner/sharedRestore`` singleton enables CoreBluetooth to recognize this app and access previously used peripherals.
                 @Code(name: "Root.swift", file: 01-root-01-02.swift, previousFile: 01-root-01-02_mask.swift) {}
             } 
             @Step { 
-                To persist names, capabilities, and other data about previously connected MetaWears, the scanner and other SDK components use UserDefaults storage. 
+                To store names, capabilities, and other data about previously connected MetaWears, the scanner and other SDK components use `UserDefaults` storage. 
                 
-                **FYI** - You can inspect the keys used and specify the container at `UserDefaults.MetaWear.suite`. By default, the SDK uses `.standard`. 
+                **Note:** You can inspect the keys used and specify the container at `UserDefaults.MetaWear.suite`. By default, the SDK uses `.standard`. 
                 @Code(name: "Root.swift", file: 01-root-01-03.swift) {}
             }
             @Step { 
-                Apple randomizes Bluetooth device identifiers between devices. It also blocks inspecting advertised MAC addresses. 
+                Apple randomizes Bluetooth device identifiers between devices and blocks advertised MAC addresses. 
     
-                The `MetaWearSyncStore` allows you to stably identify MetaWears across devices by saving de-identifying metadata to iCloud key value storage, including a device's name, serial number, and sensor capabilities. If you choose to use this feature, obtain and manage MetaWears exclusively through the sync store, rather than the Scanner.
+                The `MetaWearSyncStore` allows you to stably identify MetaWears across devices by saving de-identifying metadata to iCloud key value storage, including a device's name, serial number, and sensor capabilities. If you choose to use this feature, you can obtain and manage MetaWears exclusively through the sync store, rather than the Scanner.
                 @Code(name: "Root.swift", file: 01-root-01-04.swift) {}
             }
             @Step { 
@@ -110,7 +113,7 @@
             @Step { 
                 When debugging, you might find the ``MetaWear/MWConsoleLogger`` helpful. If you set ``MetaWear/MWConsoleLogger/activateConsoleLoggingOnAllMetaWears`` to true at startup, all MetaWears will report activities (e.g., Bluetooth packets) to the console in Debug mode.
                 
-                **Tip** _If you wish to log just one MetaWear, assign a delegate conforming to ``MetaWear/MWConsoleLoggerDelegate`` to its ``MetaWear/MetaWear/logDelegate`` property._
+                **Tip:** _If you wish to log just one MetaWear, assign a delegate conforming to ``MetaWear/MWConsoleLoggerDelegate`` to its ``MetaWear/MetaWear/logDelegate`` property._
                 @Code(name: "Root.swift", file: 01-root-01-06.swift) {}
             }
         }

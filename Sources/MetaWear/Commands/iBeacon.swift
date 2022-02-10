@@ -4,6 +4,7 @@ import Foundation
 import Combine
 import MetaWearCpp
 
+/// Controls the iBeacon capability of the device
 public struct MWiBeacon {
     private init() { }
 }

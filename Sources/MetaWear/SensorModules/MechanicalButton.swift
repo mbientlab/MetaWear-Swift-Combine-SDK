@@ -16,6 +16,7 @@ public extension MWLoggable where Self == MWMechanicalButton {
 
 // MARK: - Signals
 
+/// Controls the push button switch on the device
 public struct MWMechanicalButton: MWStreamable, MWLoggable {
     public init() { }
     public typealias DataType = MWMechanicalButton.State
