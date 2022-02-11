@@ -31,7 +31,7 @@ public struct MWDataProcessor { private init() {} }
 
 // MARK: - Data Processor Operators
 
-extension Publisher where Output == MWDataSignal {
+public extension Publisher where Output == MWDataSignal {
 
     /// Not typically used. The accounter processor adds additional information to the BTLE packet to reconstruct the data's timestamp from a counter, typically used with streaming raw accelerometer, gyro, and magnetometer data.
     ///
