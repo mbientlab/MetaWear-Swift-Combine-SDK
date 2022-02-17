@@ -28,6 +28,20 @@ public func _datasignal_subscribe(_ signal: OpaquePointer) -> _MWDataSubject {
     return dataStream
 }
 
+public func _anonymous_datasignal_subscribe(_ signal: OpaquePointer) -> _MWDataSubject {
+    let dataStream = _MWDataSubject()
+    mbl_mw_anonymous_datasignal_subscribe(signal, bridge(obj: dataStream)) { context, dataPtr in
+        let _subject: _MWDataSubject = bridge(ptr: context!)
+        if let data = dataPtr {
+            _subject.send(data.pointee.copy())
+        } else {
+            let error = MWError.operationFailed("Could not subscribe")
+            _subject.send(completion: .failure(error))
+        }
+    }
+    return dataStream
+}
+
 public func _logger_subscribe_accumulate(_ signal: OpaquePointer) -> _MWDataArraySubject {
     let subject = _MWDataArraySubject([])
     mbl_mw_logger_subscribe(signal, bridge(obj: subject)) { _context, dataPtr in
@@ -37,7 +51,6 @@ public func _logger_subscribe_accumulate(_ signal: OpaquePointer) -> _MWDataArra
     }
     return subject
 }
-
 
 public func _anonymous_datasignal_subscribe_accumulate(_ signal: OpaquePointer) -> _MWDataArraySubject {
     let subject = _MWDataArraySubject([])
