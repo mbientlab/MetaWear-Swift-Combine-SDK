@@ -82,6 +82,33 @@ class EventTests: XCTestCase {
         }
     }
 
+    /// Remember to manually tap button to observe LED flashes (even = purple, odd = blue)
+    func test_MacroEventRecording_OddAndEvenButtonPressesTriggerLEDFlash() {
+        connectNearbyMetaWear(timeout: .download, useLogger: true) { metawear, exp, subs in
+            metawear
+                .publish()
+            // Act
+                .command(.macroStartRecording(runOnStartup: true))
+                .recordEvents(for: .buttonPressEvens, { recording in
+                    recording.command(.led(.purple, .blink(repetitions: 1) ))
+                })
+                .recordEvents(for: .buttonPressOdds, { recording in
+                    recording.command(.led(.blue, .blink(repetitions: 1) ))
+                })
+                .command(.macroStopRecordingAndGenerateIdentifier)
+            // Assert
+                .handleEvents(receiveOutput: { macroId in
+                    XCTAssertEqual(Int(macroId.result), 0)
+                })
+                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
+                .map { _ in metawear }
+            // Cleanup
+                .command(.resetActivities)
+                .command(.macroEraseAll)
+                ._sinkNoFailure(&subs, finished: {}, receiveValue: { _ in exp.fulfill() })
+        }
+    }
+
     func test_EventTimeThrottling_SlowSensorFusion_Download_AbstractedConstruction() throws {
         connectNearbyMetaWear(timeout: .download, useLogger: true) { metawear, exp, subs in
             let mockCachedDate = Date()

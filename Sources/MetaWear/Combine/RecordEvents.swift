@@ -31,16 +31,38 @@ public extension Publisher where Output == MetaWear {
 }
 
 public enum MWEventSignal {
-    case buttonDown, buttonUp
+    /// When the button is pressed
+    case buttonDown
+    /// When the button is released
+    case buttonUp
+    /// On the 2nd, 4th, etc. button releases
+    case buttonPressEvens
+    /// On the 1st, 3rd, etc. button releases
+    case buttonPressOdds
 
     public func signal(_ upstream: MWPublisher<MetaWear>) -> MWPublisher<MWDataProcessorSignal> {
         switch self {
-            case .buttonDown:
-                let source = MWMechanicalButton()
-                return upstream.map(\.board).flatMap(source.getDownEventSignal).eraseToAnyPublisher()
-            case .buttonUp:
-                let source = MWMechanicalButton()
-                return upstream.map(\.board).flatMap(source.getUpEventSignal).eraseToAnyPublisher()
+        case .buttonDown:
+            let source = MWMechanicalButton()
+            return upstream.map(\.board).flatMap(source.getDownEventSignal).eraseToAnyPublisher()
+
+        case .buttonUp:
+            let source = MWMechanicalButton()
+            return upstream.map(\.board).flatMap(source.getUpEventSignal).eraseToAnyPublisher()
+
+        case .buttonPressEvens:
+            let source = MWEventSignal.buttonUp.signal(upstream)
+            return source
+                .counted(size: nil)
+                .math(.modulus, rhs: 2)
+                .filter(.equals, reference: 0)
+
+        case .buttonPressOdds:
+            let source = MWEventSignal.buttonUp.signal(upstream)
+            return source
+                .counted(size: nil)
+                .math(.modulus, rhs: 2)
+                .filter(.notEqualTo, reference: 0)
         }
     }
 }
