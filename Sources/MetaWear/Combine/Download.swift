@@ -13,7 +13,7 @@ public extension Publisher where Output == MetaWear {
     ///
     /// - Parameter startDate: A timestamp you have cached for when the logging session started. Used to calculate elapsed time in an output CSV files, potentially synchronized across multiple devices. (A MetaWear ticks time, but lacks a calendar-aware clock.)
     ///
-    /// - Returns: Publishes percent complete. At 100% complete, publishes all logged data.
+    /// - Returns: Publishes percent complete and data accumulated so far.
     ///
     func downloadLogs(startDate: Date) -> MWPublisher<Download<[MWDataTable]>> {
         _logDownloadData()
@@ -40,26 +40,23 @@ public extension Publisher where Output == MetaWear {
 
                 // Download
                 var (handler, percentComplete) = _trackDownloadProgress()
-                mbl_mw_logging_download(metawear.board, 50, &handler)
+                mbl_mw_logging_download(metawear.board, 100, &handler)
 
-                // Extend OpaquePointer lifetime
                 return Publishers.CombineLatest(_JustMW((metawear, loggers)), percentComplete)
-                // Only pass data when 100% downloaded
-                    .eraseToAnyPublisher()
+                // Collect the latest data from the accumulating individual logs
                     .map({ (refs, download) -> (
                         refs: (device: MetaWear, logs: [(id: MWNamedSignal, log: OpaquePointer)] ),
                         download: Download<[MWData.LogDownload]>
                     ) in
-                        let data = download.percentComplete == 1 ? downloads.latest() : []
-                        return (refs, (data, download.percentComplete))
+                        (refs, (downloads.latest(), download.percentComplete))
                     })
+                // Clear and complete the download
                     .handleEvents(receiveOutput: { output in
-                        guard output.download.percentComplete == 1
-                                && output.download.data.contains(where: { !$0.data.isEmpty })
-                        else { return }
+                        guard output.download.percentComplete == 1 else { return }
                         output.refs.logs.forEach { mbl_mw_logger_remove($0.log) }
                         mbl_mw_logging_clear_entries(output.refs.device.board)
                     })
+                // Pass only the downloaded data (thus far) and status
                     .map(\.download)
                     .erase(subscribeOn: metawear.bleQueue)
             }
@@ -67,7 +64,7 @@ public extension Publisher where Output == MetaWear {
     }
 
     /// Downloads only the specific logger signal that you specify, ignoring all others.
-    /// - Returns: Publishes percent complete. At 100% complete, publishes all logged data.
+    /// - Returns: Publishes percent complete and data accumulated so far.
     ///
     func downloadLog<L: MWLoggable>(_ loggable: L)
     -> MWPublisher<Download<[Timestamped<L.DataType>]>> {
@@ -94,7 +91,7 @@ public extension Publisher where Output == (MetaWear, MWLoggerSignal) {
     /// - Parameters:
     ///   - metawear: Connected MetaWear
     ///   - loggerCleanup: Closure to perform to stop the signal being logged
-    /// - Returns: Publishes percentage complete, with an empty array of data until 100% (1.0) downloaded
+    /// - Returns: Publishes percent complete and data accumulated so far.
     ///
     func download<L: MWLoggable>(_ loggable: L, startDate: Date)
     -> MWPublisher<Download<MWDataTable>> {
@@ -110,7 +107,7 @@ public extension Publisher where Output == (MetaWear, MWLoggerSignal) {
     /// - Parameters:
     ///   - metawear: Connected MetaWear
     ///   - loggerCleanup: Closure to perform to stop the signal being logged
-    /// - Returns: Publishes percentage complete, with an empty array of data until 100% (1.0) downloaded
+    /// - Returns: Publishes percent complete and data accumulated so far.
     ///
     func download<L: MWLoggable>(_ loggable: L)
     -> MWPublisher<Download<[Timestamped<L.DataType>]>> {
@@ -126,7 +123,7 @@ public extension Publisher where Output == (MetaWear, MWLoggerSignal) {
     /// - Parameters:
     ///   - metawear: Connected MetaWear
     ///   - loggerCleanup: Closure to perform to stop the signal being logged
-    /// - Returns: Publishes percentage complete, with an empty array of data until 100% (1.0) downloaded
+    /// - Returns: Publishes percent complete and data accumulated so far.
     ///
     func download(_ loggerName: MWNamedSignal,
                   loggerCleanup: @escaping (MWBoard) -> Void
@@ -142,7 +139,7 @@ public extension Publisher where Output == (MetaWear, MWLoggerSignal) {
                 // Download
                 let data = _anonymous_datasignal_subscribe_accumulate(logger)
                 var (handler, percentComplete) = _trackDownloadProgress()
-                mbl_mw_logging_download(metawear.board, 25, &handler)
+                mbl_mw_logging_download(metawear.board, 100, &handler)
 
                 // Extend OpaquePointer lifetime
                 return Publishers.CombineLatest(_JustMW((metawear, logger)), percentComplete)
@@ -151,14 +148,12 @@ public extension Publisher where Output == (MetaWear, MWLoggerSignal) {
                         refs: (device: MetaWear, log: OpaquePointer),
                         download: Download<MWData.LogDownload>
                     ) in
-                        let data = download.percentComplete == 1 ? data.value : []
-                        let dataContainer = MWData.LogDownload(logger: loggerName, data: data)
+                        let dataContainer = MWData.LogDownload(logger: loggerName, data: data.value)
                         return (refs, (dataContainer, download.percentComplete))
                     }
                 // Clear logger upon completion
                     .handleEvents(receiveOutput: { output in
-                        guard !output.download.data.data.isEmpty && output.download.percentComplete == 1
-                        else { return }
+                        guard output.download.percentComplete == 1 else { return }
                         mbl_mw_logger_remove(output.refs.log)
                         mbl_mw_logging_clear_entries(output.refs.device.board)
                     })
