@@ -11,7 +11,7 @@ import CoreBluetooth
 extension TestDevices {
 
     /// Designate a stable of known devices to use
-    static var machine: HostMachine = .RyanMacMini
+    static var machine: HostMachine = .RyanMacBook
 
 }
 
