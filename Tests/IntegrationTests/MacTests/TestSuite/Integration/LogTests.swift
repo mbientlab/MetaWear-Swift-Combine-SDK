@@ -335,11 +335,11 @@ extension XCTestCase {
             // Assert
                 .handleEvents(receiveOutput: { data, percentComplete in
                     _printProgress(percentComplete)
-                    if percentComplete < 1 { XCTAssertTrue(data.isEmpty, file: file, line: line) }
+                    if percentComplete > 0 { XCTAssertFalse(data.isEmpty, file: file, line: line) }
                     guard percentComplete == 1.0 else { return }
                     // Assert log obtains data
                     XCTAssertGreaterThan(data.endIndex, 0, file: file, line: line)
-                    XCTAssertGreaterThan(start.distance(to: data.last!.time), 4)
+                    XCTAssertGreaterThan(start.distance(to: data.last!.time), 4, "\(percentComplete) \(data)", file: file, line: line)
                 })
 
             // Skip any updates before complete
@@ -377,8 +377,6 @@ extension XCTestCase {
             // Assert
                 .handleEvents(receiveOutput: { tables, percentComplete in
                     _printProgress(percentComplete)
-                    if percentComplete < 1 { XCTAssertTrue(tables.isEmpty, file: file, line: line) }
-                    guard percentComplete == 1 else { return }
 
                     // Assert all dates are unique
                     tables.forEach { table in
@@ -393,7 +391,8 @@ extension XCTestCase {
                     // Assert both logs contain expected data, labeled for that logger
                     XCTAssertEqual(tables.endIndex, 2, file: file, line: line)
                     XCTAssertEqual(Set(tables.map(\.source)), Set([sut1.signalName, sut2.signalName]), file: file, line: line)
-                    XCTAssertTrue(tables.allSatisfy({ $0.rows.isEmpty == false }), file: file, line: line)
+                    guard percentComplete > 0.1 else { return }
+                    XCTAssertTrue(tables.allSatisfy({ $0.rows.isEmpty == false }), "\(tables)", file: file, line: line)
                 })
 
             // Skip any updates before complete
