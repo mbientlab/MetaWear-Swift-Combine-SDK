@@ -15,8 +15,9 @@ public struct MWDataTable {
     public var rows: [[String]]
 
     /// Make a CSV with a labeled header row, optionally with other delimiters like a pipe |
-    public func makeCSV(delimiter: String = ",") -> String {
-        rows.reduce(into: makeRow(row: headerRow)) { csv, row in
+    public func makeCSV(withHeaderRow: Bool = true, delimiter: String = ",") -> String {
+        let header = withHeaderRow ? makeRow(row: headerRow) : ""
+        return rows.reduce(into: header) { csv, row in
             csv.append(makeRow(row: row))
         }.trimmingCharacters(in: .whitespacesAndNewlines)
     }
