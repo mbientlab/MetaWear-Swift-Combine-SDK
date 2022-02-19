@@ -132,11 +132,45 @@ class LogTests: XCTestCase {
 
     // MARK: - Single
 
+    func test_RecoversLoggers() {
+        connectNearbyMetaWear(timeout: .download, useLogger: true) { metawear, exp, subs in
+            let logger = MWGyroscope(rate: .hz100, range: .dps1000)
+
+            metawear.publish()
+                ._assertLoggers([], metawear: metawear)
+                .command(.macroStartRecording(runOnStartup: true))
+                .optionallyLog(logger)
+                .command(.macroStopRecordingAndGenerateIdentifier)
+                .map(\.metawear)
+                ._assertLoggers([logger.signalName], metawear: metawear)
+                .share()
+                .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
+                .handleEvents(receiveOutput: { output in
+        // Act
+                    output.disconnect()
+                })
+                ._sinkNoFailure(&subs)
+
+            metawear.publishWhenDisconnected()
+                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
+                .sink { mw in mw.connect() }
+                .store(in: &subs)
+
+            metawear.publishWhenConnected()
+                .dropFirst()
+                .first()
+                ._assertLoggers([logger.signalName], metawear: metawear)
+                .command(.resetActivities)
+                .command(.macroEraseAll)
+                ._sinkNoFailure(&subs, finished: { exp.fulfill() }, receiveValue: { _ in })
+        }
+    }
+
     func test_NotLogging() {
         connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
             metawear.publish()
                 .loggerSignalsCollectAll()
-                ._sinkNoFailure(&subs, finished: {  }, receiveValue: { signals in
+                ._sinkNoFailure(&subs, finished: { exp.fulfill() }, receiveValue: { signals in
                     XCTAssertEqual(signals.map(\.id), [])
                 })
         }
