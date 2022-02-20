@@ -36,10 +36,11 @@ let package = Package(
                 "./Doxyfile",
                 "./LICENSE.md",
                 "./Makefile",
-                "./metawear_src.tar",
                 "./project_version.mk",
                 "./README.md",
                 "./test",
+                "./MetaWear.Win32.vcxproj",
+                "./MetaWear.WinRT.vcxproj"
             ],
             publicHeadersPath: "./src",
             cxxSettings: [
