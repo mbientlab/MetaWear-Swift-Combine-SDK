@@ -58,6 +58,7 @@ public struct MWDeleteLoggedData: MWCommand {
     /// Wipes logged data from onboard flash storage.
     public init() {}
     public func command(board: MWBoard) {
+        mbl_mw_logging_flush_page(board)
         mbl_mw_logging_clear_entries(board)
     }
 }
