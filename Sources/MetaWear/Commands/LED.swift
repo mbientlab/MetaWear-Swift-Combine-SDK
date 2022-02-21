@@ -58,17 +58,26 @@ public extension MWLED {
             let scale = MWLED.Flash.Pattern.scaleChannel
             var cppPattern = self.pattern._convertedToCPP()
 
-            cppPattern.low_intensity  = scale(color.red, pattern.intensityFloor)
-            cppPattern.high_intensity = scale(color.red, pattern.intensityCeiling)
-            mbl_mw_led_write_pattern(board, &cppPattern, MBL_MW_LED_COLOR_RED)
+            let maxRed = scale(color.red, pattern.intensityCeiling)
+            if maxRed > 0 {
+                cppPattern.low_intensity  = scale(color.red, pattern.intensityFloor)
+                cppPattern.high_intensity = maxRed
+                mbl_mw_led_write_pattern(board, &cppPattern, MBL_MW_LED_COLOR_RED)
+            }
 
-            cppPattern.low_intensity  = scale(color.green, pattern.intensityFloor)
-            cppPattern.high_intensity = scale(color.green, pattern.intensityCeiling)
-            mbl_mw_led_write_pattern(board, &cppPattern, MBL_MW_LED_COLOR_GREEN)
+            let maxGreen = scale(color.green, pattern.intensityCeiling)
+            if maxGreen > 0 {
+                cppPattern.low_intensity  = scale(color.green, pattern.intensityFloor)
+                cppPattern.high_intensity = maxGreen
+                mbl_mw_led_write_pattern(board, &cppPattern, MBL_MW_LED_COLOR_GREEN)
+            }
 
-            cppPattern.low_intensity  = scale(color.blue, pattern.intensityFloor)
-            cppPattern.high_intensity = scale(color.blue, pattern.intensityCeiling)
-            mbl_mw_led_write_pattern(board, &cppPattern, MBL_MW_LED_COLOR_BLUE)
+            let maxBlue = scale(color.blue, pattern.intensityCeiling)
+            if maxBlue > 0 {
+                cppPattern.low_intensity  = scale(color.blue, pattern.intensityFloor)
+                cppPattern.high_intensity = maxBlue
+                mbl_mw_led_write_pattern(board, &cppPattern, MBL_MW_LED_COLOR_BLUE)
+            }
 
             mbl_mw_led_play(board)
         }
@@ -405,9 +414,11 @@ extension MWLED.Flash.Pattern {
 
     fileprivate static let maxIntensityScale = UInt8(31)
 
+    /// Scales a 0 to 1 value to 0 31 MetaWear
     fileprivate static func scaleChannel(_ value: Float, intensity: Float) -> UInt8 {
         let scaledChannel = value * intensity
-        let metawearColorSpace = UInt8(round( scaledChannel * (Float(Self.maxIntensityScale)) ))
+        let scaledToMetaWear = scaledChannel * Float(Self.maxIntensityScale)
+        let metawearColorSpace = UInt8(round(scaledToMetaWear))
         return max(0, min(Self.maxIntensityScale, metawearColorSpace))
     }
 
