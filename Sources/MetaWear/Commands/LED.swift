@@ -336,6 +336,11 @@ public extension MWLED.Flash {
         public private(set) lazy var ledIsOnPublisher = _ledSubject.share().eraseToAnyPublisher()
 
         public func emulate() {
+            if pattern == .solid() {
+                self._ledSubject.value.toggle()
+                return
+            }
+
             let cycleDuration = Double(pattern.period) / 1000
             let flashDuration = Double(pattern.ledActiveTime) / 1000
             let start = DispatchTime.now()
