@@ -35,35 +35,55 @@ public extension Publisher where Output == MetaWear {
 }
 
 public enum MWEventSignal {
-    /// When the button is pressed
-    case buttonDown
-    /// When the button is released
-    case buttonUp
-    /// On the 2nd, 4th, etc. button releases
+    /// When the button is pressed down
+    case buttonPress
+    /// On the 2nd, 4th, etc. button depress
     case buttonPressEvens
-    /// On the 1st, 3rd, etc. button releases
+    /// On the 1st, 3rd, etc. button depress
     case buttonPressOdds
+
+    /// When the button is released
+    case buttonRelease
+    /// On the 2nd, 4th, etc. button releases
+    case buttonReleaseEvens
+    /// On the 1st, 3rd, etc. button releases
+    case buttonReleaseOdds
+
 
     /// Constructs data processor signals asynchronously
     public func signal(_ upstream: MWPublisher<MetaWear>) -> MWPublisher<MWDataProcessorSignal> {
         switch self {
-        case .buttonDown:
+        case .buttonPress:
             let source = MWMechanicalButton()
             return upstream.map(\.board).flatMap(source.getDownEventSignal).eraseToAnyPublisher()
 
-        case .buttonUp:
+        case .buttonRelease:
             let source = MWMechanicalButton()
             return upstream.map(\.board).flatMap(source.getUpEventSignal).eraseToAnyPublisher()
 
+        case .buttonReleaseEvens:
+            let source = MWEventSignal.buttonRelease.signal(upstream)
+            return source
+                .counted(size: nil)
+                .math(.modulus, rhs: 2)
+                .filter(.equals, reference: 0)
+
+        case .buttonReleaseOdds:
+            let source = MWEventSignal.buttonRelease.signal(upstream)
+            return source
+                .counted(size: nil)
+                .math(.modulus, rhs: 2)
+                .filter(.notEqualTo, reference: 0)
+
         case .buttonPressEvens:
-            let source = MWEventSignal.buttonUp.signal(upstream)
+            let source = MWEventSignal.buttonPress.signal(upstream)
             return source
                 .counted(size: nil)
                 .math(.modulus, rhs: 2)
                 .filter(.equals, reference: 0)
 
         case .buttonPressOdds:
-            let source = MWEventSignal.buttonUp.signal(upstream)
+            let source = MWEventSignal.buttonPress.signal(upstream)
             return source
                 .counted(size: nil)
                 .math(.modulus, rhs: 2)

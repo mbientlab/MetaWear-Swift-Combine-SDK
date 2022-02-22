@@ -28,7 +28,7 @@ class EventTests: XCTestCase {
         connectNearbyMetaWear(timeout: .download, useLogger: true) { metawear, exp, subs in
             metawear
                 .publish()
-                .recordEvents(for: .buttonUp, { recording in
+                .recordEvents(for: .buttonRelease, { recording in
                     recording.command(.led(groupIndex: 9))
                 })
                 .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
@@ -44,7 +44,7 @@ class EventTests: XCTestCase {
         connectNearbyMetaWear(timeout: .download, useLogger: true) { metawear, exp, subs in
             metawear
                 .publish()
-                .recordEvents(for: .buttonDown, { recording in
+                .recordEvents(for: .buttonPress, { recording in
                     recording.command(.led(groupPreset: .zero))
                 })
                 .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
@@ -62,10 +62,10 @@ class EventTests: XCTestCase {
                 .publish()
             // Act
                 .command(.macroStartRecording(runOnStartup: true))
-                .recordEvents(for: .buttonUp, { recording in
+                .recordEvents(for: .buttonRelease, { recording in
                     recording.command(.led(.blue, .pulse(repetitions: 2)))
                 })
-                .recordEvents(for: .buttonDown, { recording in
+                .recordEvents(for: .buttonPress, { recording in
                     recording.command(.led(.purple, .pulse(repetitions: 2)))
                 })
                 .command(.macroStopRecordingAndGenerateIdentifier)
@@ -89,10 +89,10 @@ class EventTests: XCTestCase {
                 .publish()
             // Act
                 .command(.macroStartRecording(runOnStartup: true))
-                .recordEvents(for: .buttonPressEvens, { recording in
+                .recordEvents(for: .buttonReleaseEvens, { recording in
                     recording.command(.led(.purple, .blink(repetitions: 1) ))
                 })
-                .recordEvents(for: .buttonPressOdds, { recording in
+                .recordEvents(for: .buttonReleaseOdds, { recording in
                     recording.command(.led(.blue, .blink(repetitions: 1) ))
                 })
                 .command(.macroStopRecordingAndGenerateIdentifier)
