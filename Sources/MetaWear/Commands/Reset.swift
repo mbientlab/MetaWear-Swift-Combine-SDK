@@ -33,6 +33,7 @@ public struct MWActivitiesReset: MWCommand {
     /// so any configuration changes will be preserved.
     public init() {}
     public func command(board: MWBoard) {
+        mbl_mw_event_remove_all(board)
         mbl_mw_metawearboard_tear_down(board)
     }
 }
