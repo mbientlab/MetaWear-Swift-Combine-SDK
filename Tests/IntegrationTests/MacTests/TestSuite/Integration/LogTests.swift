@@ -132,24 +132,29 @@ class LogTests: XCTestCase {
 
     // MARK: - Single
 
+    private func setupGyroLoggerThenDisconnect(metawear: MetaWear, subs: inout Set<AnyCancellable>) -> MWGyroscope {
+        let logger = MWGyroscope(rate: .hz100, range: .dps1000)
+
+        metawear.publish()
+            ._assertLoggers([], metawear: metawear)
+            .command(.macroStartRecording(runOnStartup: true))
+            .optionallyLog(logger)
+            .command(.macroStopRecordingAndGenerateIdentifier)
+            .map(\.metawear)
+            ._assertLoggers([logger.signalName], metawear: metawear)
+            .share()
+            .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
+            .handleEvents(receiveOutput: { output in
+                output.disconnect()
+            })
+            ._sinkNoFailure(&subs)
+
+        return logger
+    }
+
     func test_RecoversLoggers() {
         connectNearbyMetaWear(timeout: .download, useLogger: true) { metawear, exp, subs in
-            let logger = MWGyroscope(rate: .hz100, range: .dps1000)
-
-            metawear.publish()
-                ._assertLoggers([], metawear: metawear)
-                .command(.macroStartRecording(runOnStartup: true))
-                .optionallyLog(logger)
-                .command(.macroStopRecordingAndGenerateIdentifier)
-                .map(\.metawear)
-                ._assertLoggers([logger.signalName], metawear: metawear)
-                .share()
-                .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
-                .handleEvents(receiveOutput: { output in
-        // Act
-                    output.disconnect()
-                })
-                ._sinkNoFailure(&subs)
+            let logger = self.setupGyroLoggerThenDisconnect(metawear: metawear, subs: &subs)
 
             metawear.publishWhenDisconnected()
                 .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
@@ -159,6 +164,28 @@ class LogTests: XCTestCase {
             metawear.publishWhenConnected()
                 .dropFirst()
                 .first()
+                ._assertLoggers([logger.signalName], metawear: metawear)
+                .command(.resetActivities)
+                .command(.macroEraseAll)
+                ._sinkNoFailure(&subs, finished: { exp.fulfill() }, receiveValue: { _ in })
+        }
+    }
+
+    func test_RecoversLoggersAfterRead() {
+        connectNearbyMetaWear(timeout: .download, useLogger: true) { metawear, exp, subs in
+            let logger = self.setupGyroLoggerThenDisconnect(metawear: metawear, subs: &subs)
+
+            metawear.publishWhenDisconnected()
+                .delay(for: 5, tolerance: 0, scheduler: metawear.bleQueue)
+                .sink { mw in mw.connect() }
+                .store(in: &subs)
+
+            metawear.publishWhenConnected()
+                .dropFirst()
+                .first()
+                .read(.logLength)
+                .map { _ in metawear }
+                .delay(for: 1, tolerance: 0, scheduler: metawear.bleQueue)
                 ._assertLoggers([logger.signalName], metawear: metawear)
                 .command(.resetActivities)
                 .command(.macroEraseAll)
