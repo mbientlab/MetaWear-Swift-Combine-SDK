@@ -9,6 +9,7 @@ import MetaWearCpp
 /// Interface with the MbientLab firmware server
 ///
 public class MWFirmwareServer {
+  static let sdkVersion = "3.2.0"
     private init() { }
     public static let session = URLSession(configuration: .ephemeral)
 }
