@@ -45,5 +45,20 @@ public extension MetaWear {
                 case .motionS: return "MetaMotion S"
             }
         }
+
+      /// Internally determined model ID for hardware
+      public var modelID: Int {
+        switch self {
+        case .wearR: return 0
+        case .wearRG, .wearRPRO: return 1
+        case .wearC, .wearCPRO, .environment, .detector: return 2
+        case .health: return 3
+        case .tracker: return 4
+        case .motionR, .motionRL: return 5
+        case .motionC: return 6
+        case .motionS: return 8
+        default: return 7
+        }
+      }
     }
 }
