@@ -5,7 +5,7 @@ import Foundation
 public extension MWFirmwareServer {
     /// Errors when retrieving firmwares from the MbientLab servers
     ///
-    enum Error: Swift.Error {
+  enum Error: Swift.Error, LocalizedError {
         /// If server is down or not responding
         case badServerResponse
         /// If JSON decoding fails
@@ -15,7 +15,7 @@ public extension MWFirmwareServer {
         /// Likely to never occur, unless device runs out of space
         case cannotSaveFile(_ message: String)
 
-        var localizedDescription: String {
+    public var errorDescription: String? {
              switch self {
                  case .badServerResponse: return "Bad server response"
                  case .invalidServerResponse(message: let message): return "Invalid Server Response: \(message)"
