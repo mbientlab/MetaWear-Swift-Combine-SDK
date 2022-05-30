@@ -17,6 +17,9 @@
 		947D58BD276A8800001A1D0B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 947D58AA276A8800001A1D0B /* Assets.xcassets */; };
 		9496E00B276AC190003784A2 /* Publisher+Assertions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9496E00A276AC190003784A2 /* Publisher+Assertions.swift */; };
 		9496E00D276AF550003784A2 /* ResetUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9496E00C276AF550003784A2 /* ResetUtility.swift */; };
+		94A0CD7328443746007F63DB /* MetaWearFirmware in Frameworks */ = {isa = PBXBuildFile; productRef = 94A0CD7228443746007F63DB /* MetaWearFirmware */; };
+		94A0CD7528443753007F63DB /* MetaWearFirmware in Frameworks */ = {isa = PBXBuildFile; productRef = 94A0CD7428443753007F63DB /* MetaWearFirmware */; };
+		94A0CD7728443783007F63DB /* FirmwareTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A0CD7628443783007F63DB /* FirmwareTests.swift */; };
 		94A45B4E276A9A2F00B3075D /* ConnectNearbyMetaWear.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A45B3F276A9A2F00B3075D /* ConnectNearbyMetaWear.swift */; };
 		94A45B4F276A9A2F00B3075D /* TestDevices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A45B40276A9A2F00B3075D /* TestDevices.swift */; };
 		94A45B52276A9A2F00B3075D /* ReadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A45B45276A9A2F00B3075D /* ReadTests.swift */; };
@@ -49,6 +52,7 @@
 		947D58B7276A8800001A1D0B /* macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = macOS.entitlements; sourceTree = "<group>"; };
 		9496E00A276AC190003784A2 /* Publisher+Assertions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Publisher+Assertions.swift"; sourceTree = "<group>"; };
 		9496E00C276AF550003784A2 /* ResetUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetUtility.swift; sourceTree = "<group>"; };
+		94A0CD7628443783007F63DB /* FirmwareTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FirmwareTests.swift; path = MacTests/TestSuite/Unit/FirmwareTests.swift; sourceTree = "<group>"; };
 		94A45B3F276A9A2F00B3075D /* ConnectNearbyMetaWear.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConnectNearbyMetaWear.swift; sourceTree = "<group>"; };
 		94A45B40276A9A2F00B3075D /* TestDevices.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestDevices.swift; sourceTree = "<group>"; };
 		94A45B45276A9A2F00B3075D /* ReadTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadTests.swift; sourceTree = "<group>"; };
@@ -74,6 +78,7 @@
 			files = (
 				945A9CD3276A887C001A00FD /* MetaWearCpp in Frameworks */,
 				945A9CD1276A887C001A00FD /* MetaWear in Frameworks */,
+				94A0CD7328443746007F63DB /* MetaWearFirmware in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -83,6 +88,7 @@
 			files = (
 				945A9CD7276A8887001A00FD /* MetaWearCpp in Frameworks */,
 				945A9CD5276A8887001A00FD /* MetaWear in Frameworks */,
+				94A0CD7528443753007F63DB /* MetaWearFirmware in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -107,6 +113,7 @@
 		947D58A2276A87FF001A1D0B = {
 			isa = PBXGroup;
 			children = (
+				94A0CD7628443783007F63DB /* FirmwareTests.swift */,
 				945A9CD8276A88F0001A00FD /* SwiftCombineSDKTestHost--iOS--Info.plist */,
 				947D58C6276A883C001A1D0B /* Packages */,
 				947D58A7276A87FF001A1D0B /* Shared */,
@@ -223,6 +230,7 @@
 			packageProductDependencies = (
 				945A9CD0276A887C001A00FD /* MetaWear */,
 				945A9CD2276A887C001A00FD /* MetaWearCpp */,
+				94A0CD7228443746007F63DB /* MetaWearFirmware */,
 			);
 			productName = "SwiftCombineSDKTestHost (iOS)";
 			productReference = 947D58AF276A8800001A1D0B /* SwiftCombineSDKTestHost.app */;
@@ -244,6 +252,7 @@
 			packageProductDependencies = (
 				945A9CD4276A8887001A00FD /* MetaWear */,
 				945A9CD6276A8887001A00FD /* MetaWearCpp */,
+				94A0CD7428443753007F63DB /* MetaWearFirmware */,
 			);
 			productName = "SwiftCombineSDKTestHost (macOS)";
 			productReference = 947D58B5276A8800001A1D0B /* SwiftCombineSDKTestHost.app */;
@@ -333,6 +342,7 @@
 				94A45B54276A9A2F00B3075D /* LogTests.swift in Sources */,
 				94A45B59276A9A2F00B3075D /* CommandTests.swift in Sources */,
 				94A45B58276A9A2F00B3075D /* DeviceTests.swift in Sources */,
+				94A0CD7728443783007F63DB /* FirmwareTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -720,6 +730,14 @@
 		945A9CD6276A8887001A00FD /* MetaWearCpp */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MetaWearCpp;
+		};
+		94A0CD7228443746007F63DB /* MetaWearFirmware */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MetaWearFirmware;
+		};
+		94A0CD7428443753007F63DB /* MetaWearFirmware */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MetaWearFirmware;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
