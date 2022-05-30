@@ -19,7 +19,7 @@ public extension MWFirmwareServer {
 
     /// Install the provided firmware (or latest if none provided)
     ///
-    func updateFirmware(on device: MetaWear, delegate: DFUProgressDelegate? = nil, build: MWFirmwareServer.Build? = nil) -> AnyPublisher<Void,Swift.Error> {
+    class func updateFirmware(on device: MetaWear, delegate: DFUProgressDelegate? = nil, build: MWFirmwareServer.Build? = nil) -> AnyPublisher<Void,Swift.Error> {
 
         // Proceed with a connection
         device
@@ -27,10 +27,7 @@ public extension MWFirmwareServer {
             .eraseErrorType()
 
         // Use provided or default to latest firmware
-            .flatMap { [weak self, weak device] _ -> AnyPublisher<MWFirmwareServer.Build, Swift.Error> in
-                guard let self = self, let device = device
-                else { return _Fail(.operationFailed("Self/device unavailable")) }
-
+            .flatMap { device -> AnyPublisher<MWFirmwareServer.Build, Swift.Error> in
                 if let build = build { return _Just(build) }
                 else { return self.fetchLatestFirmware(for: device) }
             }
@@ -65,8 +62,15 @@ public extension MWFirmwareServer {
 
     /// Get a pointer to the latest firmware for this device
     ///
-    func fetchLatestFirmware(for device: MetaWear) -> AnyPublisher<MWFirmwareServer.Build,Swift.Error> {
-        Publishers.Zip(device._read(.hardwareRevision), device._read(.modelNumber))
+  class func fetchLatestFirmware(for device: MetaWear) -> AnyPublisher<MWFirmwareServer.Build,Swift.Error> {
+    device
+      .publishWhenConnected()
+      .first()
+      .read(.deviceInformation)
+      .map { deviceInfo -> (String, String) in
+        print(deviceInfo)
+        return (deviceInfo.hardwareRevision, String(deviceInfo.model.modelID))
+      }
             .eraseErrorType()
             .flatMap(Self.getLatestFirmwareAsync)
             .eraseToAnyPublisher()
@@ -75,7 +79,7 @@ public extension MWFirmwareServer {
     /// Get the latest firmware to update (if any)
     /// - Returns: Nil if already on latest, otherwise the latest build
     ///
-    func fetchRelevantFirmwareUpdate(for device: MetaWear) -> AnyPublisher<MWFirmwareServer.Build?,Swift.Error> {
+  class func fetchRelevantFirmwareUpdate(for device: MetaWear) -> AnyPublisher<MWFirmwareServer.Build?,Swift.Error> {
         Publishers.Zip(self.fetchLatestFirmware(for: device), device._read(.firmwareRevision).eraseErrorType())
             .map { latestBuild, boardFirmware -> MWFirmwareServer.Build? in
                 boardFirmware.isMetaWearVersion(lessThan: latestBuild.firmwareRev) ? latestBuild : nil
@@ -97,6 +101,7 @@ public extension MWFirmwareServer {
             .tryMap(validateJSON)
             .map { _parseFirmwaresFromValidJSON($0, (hardwareRev, modelNumber, buildFlavor)) }
             .tryMap { allFirmwares in
+
                 guard allFirmwares.endIndex > 0
                 else { throw MWFirmwareServer.Error.noAvailableFirmware("No valid firmware releases found.  Please update your application and if problem persists, email developers@mbientlab.com") }
                 return allFirmwares
@@ -261,7 +266,7 @@ extension MWFirmwareServer {
         guard let potentialVersions = info[device.hardware]?[device.model]?[device.build]
         else { return [] }
 
-        let sdkVersion = Bundle(for: MetaWear.self).infoDictionary?["CFBundleShortVersionString"] as! String
+        let sdkVersion = Self.sdkVersion
         return potentialVersions
             .filter { sdkVersion.isMetaWearVersion(greaterThanOrEqualTo: $1["min-ios-version"]!) }
             .sorted { $0.key.isMetaWearVersion(lessThan: $1.key) }
