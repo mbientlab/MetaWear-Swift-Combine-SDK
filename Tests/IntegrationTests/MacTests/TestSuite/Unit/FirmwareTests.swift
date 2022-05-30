@@ -1,10 +1,52 @@
 //// Copyright 2021 MbientLab Inc. All rights reserved. See LICENSE.MD.
-//
-//import XCTest
-//@testable @testable import MetaWear
-//@testable @testable import MetaWearCpp
-//
-//class FirmwareTests: XCTestCase {
+import Combine
+import CoreBluetooth
+import XCTest
+import MetaWear
+import MetaWearCpp
+
+@testable import MetaWearFirmware
+@testable import SwiftCombineSDKTestHost
+
+class FirmwareTests: XCTestCase {
+
+  func testLive_FirmwareBuildFetch() {
+    let waitExp = XCTestExpectation()
+    var subs = Set<AnyCancellable>()
+    MWFirmwareServer
+      .getLatestFirmwareAsync(
+        hardwareRev: "0.1",
+        modelNumber: "8"
+      )
+      .sink(receiveCompletion: { completion in
+        switch completion {
+        case .failure(let error):
+          XCTFail(error.localizedDescription)
+          return
+        case .finished:
+          waitExp.fulfill()
+          return
+        }
+      }, receiveValue: { value in
+
+        print(value)
+      })
+      .store(in: &subs)
+    wait(for: [waitExp], timeout: 5)
+  }
+
+  func testLive_GetFirmware() {
+    connectNearbyMetaWear(timeout: .download) { metawear, exp, subs in
+      MWFirmwareServer
+        .fetchLatestFirmware(for: metawear)
+        ._sinkNoFailure(&subs, receiveValue: { firmware in
+          print(firmware)
+          XCTAssertEqual(firmware.firmwareRev, "1.7.2")
+          exp.fulfill()
+        })
+    }
+  }
+}
 //
 //    func testFirmwareUpdateManager() {
 //        let myExpectation = XCTestExpectation(description: "getting info1")
