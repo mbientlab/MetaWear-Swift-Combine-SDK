@@ -4,7 +4,6 @@ import XCTest
 import Combine
 import CoreBluetooth
 @testable import MetaWear
-@testable import MetaWearCpp
 @testable import SwiftCombineSDKTestHost
 
 extension XCTestCase {
@@ -183,7 +182,8 @@ extension XCTestCase {
 // MARK: - Print Helpers
 
 func _printProgress(_ percentComplete: Double) {
-    print(">>", String(mwPercent: percentComplete))
+    //print(">>", String(mwPercent: percentComplete))
+    print(">>", String(percentComplete))
 }
 
 fileprivate func announce(device: MetaWear) {

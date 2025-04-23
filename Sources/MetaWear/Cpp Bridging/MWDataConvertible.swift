@@ -2,7 +2,6 @@
 
 import Foundation
 import Combine
-import MetaWearCpp
 import simd
 
 // MARK: - Type Safe Data Conversions
@@ -59,7 +58,7 @@ public extension MWDataConvertible where RawDataType == DataType {
 }
 
 // MARK: - Internal (Accelerometer)
-
+/*
 public extension MWDataConvertible where
 RawDataType == MblMwSensorOrientation,
 DataType    == MWAccelerometer.Orientation {
@@ -160,7 +159,7 @@ DataType    == MWMotion.Activity.Classification {
         [datum.time.metaWearEpochMS, datum.value.label]
     }
 }
-
+*/
 public extension MWDataConvertible where
 RawDataType == UInt32,
 DataType    == MWChargingStatus.State {
@@ -176,7 +175,7 @@ DataType    == MWChargingStatus.State {
 
 public extension MWDataConvertible where
 RawDataType == UInt32,
-DataType    == MWMechanicalButton.State {
+DataType    == MWSwitch.State {
 
     func convert(from raw: Timestamped<RawDataType>) -> Timestamped<DataType> {
         (raw.time, .init(value: raw.value))
@@ -187,6 +186,7 @@ DataType    == MWMechanicalButton.State {
     }
 }
 
+/*
 public extension MWDataConvertible where
 RawDataType == MblMwLoggingTime,
 DataType    == (time: Date, resetID: UInt8) {
@@ -199,7 +199,7 @@ DataType    == (time: Date, resetID: UInt8) {
         [datum.time.metaWearEpochMS, String(datum.value.time.timeIntervalSinceReferenceDate)]
     }
 }
-
+*/
 public extension MWDataConvertible where
 RawDataType == UInt8,
 DataType    == Int {
@@ -227,6 +227,7 @@ DataType    == Int {
     }
 }
 
+/*
 public extension MWDataConvertible where
 RawDataType == MblMwBatteryState,
 DataType    == Int {
@@ -235,7 +236,7 @@ DataType    == Int {
         (raw.time, Int(raw.value.charge))
     }
 }
-
+*/
 // MARK: - Data Type Conversions
 
 public extension MWDataConvertible where DataType == Int {
@@ -275,7 +276,7 @@ public extension MWDataConvertible where DataType == String {
 }
 
 // MARK: - Vector Utilities
-
+/*
 public extension SIMD3 where Scalar == Float {
     init(cartesian c: MblMwCartesianFloat) {
         self.init(x: c.x, y: c.y, z: c.z)
@@ -297,10 +298,10 @@ public extension simd_quatf {
         self.init(ix: raw.x, iy: raw.y, iz: raw.z, r: raw.w)
     }
 }
-
+*/
 
 // MARK: - String Utilities
-
+/*
 public extension SIMD3 where Scalar == Float {
     func stringify() -> [String] {
         self.indices.reduce(into: [String]()) { string, index in
@@ -323,8 +324,8 @@ public extension simd_quatf {
         return vector.indices.map { String(mwDecimals: vector[$0]) }
     }
 }
-
-
+*/
+/*
 public extension String {
     init(mwDecimals: CVarArg) {
         self.init(format: "%1.\(MWDataTable.stringDecimalDigits)f", mwDecimals)
@@ -338,7 +339,7 @@ public extension String {
         self = "\(Int(mwPercent * 100))%"
     }
 }
-
+*/
 public extension Date {
 
     /// Time interval since 1970 (ms)

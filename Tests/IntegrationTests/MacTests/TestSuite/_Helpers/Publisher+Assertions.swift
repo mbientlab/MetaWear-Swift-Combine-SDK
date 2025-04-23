@@ -4,7 +4,6 @@ import XCTest
 import Combine
 import CoreBluetooth
 @testable import MetaWear
-@testable import MetaWearCpp
 @testable import SwiftCombineSDKTestHost
 
 // MARK: - Assert Async
@@ -71,7 +70,7 @@ extension Publisher {
 
 extension Publisher {
 
-    func _assertLoggers(_ loggers: [MWNamedSignal],
+    /*func _assertLoggers(_ loggers: [MWNamedSignal],
                         metawear: MetaWear,
                         _ file: StaticString = #file,
                         _ line: UInt = #line
@@ -90,5 +89,5 @@ extension Publisher {
                     .eraseToAnyPublisher()
             }
             .eraseToAnyPublisher()
-    }
+    }*/
 }

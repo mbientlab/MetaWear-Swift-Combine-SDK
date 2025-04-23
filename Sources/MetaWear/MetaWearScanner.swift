@@ -78,7 +78,7 @@ open class MetaWearScanner: NSObject {
 
         _makeCentralManager(with: restoreIdentifier, showPowerAlert: showPoweredOffAlert)
         setupPublishers()
-        _retrieveSavedMetaWears()
+        //_retrieveSavedMetaWears()
     }
 
     func setupPublishers() {
@@ -149,7 +149,7 @@ public extension MetaWearScanner {
     func retrieveConnectedMetaWears() -> AnyPublisher<[MetaWear],Never> {
         _runWhenPoweredOn { [weak self] promise in
             guard let self = self else { return }
-            let remembered = UserDefaults.MetaWear.loadLocalDevices()
+            //let remembered = UserDefaults.MetaWear.loadLocalDevices()
             let services = [CBUUID.metaWearService, .metaWearDfuService]
             let devices = self.central.retrieveConnectedPeripherals(withServices: services)
                 .map { peripheral -> MetaWear in
@@ -157,7 +157,7 @@ public extension MetaWearScanner {
                     MetaWear(
                         peripheral: peripheral,
                         scanner: self,
-                        mac: remembered[peripheral.identifier]
+                        mac: nil //remembered[peripheral.identifier]
                     )
                     self.discoveredDevices[peripheral.identifier] = device
                     return device
@@ -268,7 +268,7 @@ private extension MetaWearScanner {
     /// stored via ``MetaWear/MetaWear/remember()``.
     /// Runs after `CBCentralManager` is `.poweredOn`.
     ///
-    func _retrieveSavedMetaWears() {
+    /*func _retrieveSavedMetaWears() {
         _runWhenPoweredOn { [weak self] in
             guard let self = self else { return }
             let remembered = UserDefaults.MetaWear.loadLocalDevices()
@@ -284,7 +284,7 @@ private extension MetaWearScanner {
                     self.discoveredDevices[peripheral.identifier] = device
                 }
         }
-    }
+    }*/
 
     func _makeCentralManager(with restoreIdentifier: String?, showPowerAlert: Bool) {
         var options: [String:Any] = [:]

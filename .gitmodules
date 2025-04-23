@@ -1,4 +1,0 @@
-[submodule "Sources/MetaWearCpp"]
-	path = Sources/MetaWearCpp
-	url = https://github.com/mbientlab/MetaWear-SDK-Cpp
-	fetchrecursesubmodules = true

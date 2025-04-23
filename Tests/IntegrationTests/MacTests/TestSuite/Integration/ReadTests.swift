@@ -4,7 +4,6 @@ import XCTest
 import Combine
 import CoreBluetooth
 @testable import MetaWear
-@testable import MetaWearCpp
 @testable import SwiftCombineSDKTestHost
 
 class ReadTests: XCTestCase {
@@ -21,11 +20,25 @@ class ReadTests: XCTestCase {
         }
     }
 
+    func test_Read_Button() {
+        connectNearbyMetaWear(timeout: .download, useLogger: false) { metawear, exp, subs in
+            metawear
+                .publish()
+                .read(.mechanicalButton)
+                ._sinkNoFailure(&subs, receiveValue: { value in
+                    // Log the value
+                    print("Read", value)
+                    // Fulfill the expectation to complete the test
+                    exp.fulfill()
+                })
+        }
+    }
+    
     func test_Read_BatteryLevel() throws {
         _testRead { _ in .batteryLevel }
     }
 
-    func test_Read_LastResetTime() throws {
+    /*func test_Read_LastResetTime() throws {
         _testRead { _ in .lastResetTime }
     }
 
@@ -35,7 +48,7 @@ class ReadTests: XCTestCase {
 
     func test_Read_Humidity() throws {
         _testRead { _ in .humidity() }
-    }
+    }*/
 
     func test_Read_MACAddress() {
         _testRead { _ in .macAddress }
@@ -93,8 +106,10 @@ extension XCTestCase {
                         }
 
                         if R.DataType.self == Float.self {
+                            print("Read \(Int(value as! Float))")
                             Swift.print("Read", Int(value as! Float))
                         } else {
+                            print("Read \(value)")
                             Swift.print("Read", value)
                         }
                         // Did receive data, so move onto the next test scenario in the queue

@@ -4,7 +4,6 @@ import XCTest
 import Combine
 import CoreBluetooth
 @testable import MetaWear
-@testable import MetaWearCpp
 @testable import SwiftCombineSDKTestHost
 
 class DeviceConnectionTests: XCTestCase {

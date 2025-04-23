@@ -2,7 +2,6 @@
 
 import Foundation
 import Combine
-import MetaWearCpp
 
 // MARK: - Combine Aliases
 
@@ -15,33 +14,32 @@ import MetaWearCpp
 ///
 public typealias MWPublisher<Output>  = AnyPublisher<Output, MWError>
 
-
 // MARK: - Signal Aliases
 
 /// References the MetaWear's board
-public typealias MWBoard                = OpaquePointer
+//public typealias MWBoard                = OpaquePointer
 
 /// References a signal from a board
 /// module (e.g., accelerometer) for
 /// streaming, logging, or reading
 /// `MblMwDataSignal`
-public typealias MWDataSignal           = OpaquePointer
+//public typealias MWDataSignal           = OpaquePointer
 
 /// References a board or data signal
 /// (e.g., for a data processor)
-public typealias MWDataSignalOrBoard    = OpaquePointer
+//public typealias MWDataSignalOrBoard    = OpaquePointer
 
 /// References a data processor output,
 /// which can be read or fed back into
 /// other data processors
-public typealias MWDataProcessorSignal  = OpaquePointer
+//public typealias MWDataProcessorSignal  = OpaquePointer
 
 /// References a signal referring to a
 /// logger for a particular data signal
-public typealias MWLoggerSignal         = OpaquePointer
+//public typealias MWLoggerSignal         = OpaquePointer
 
 /// References a timer signal
-public typealias MWTimerSignal          = OpaquePointer
+//public typealias MWTimerSignal          = OpaquePointer
 
 // MARK: - Other Aliases
 

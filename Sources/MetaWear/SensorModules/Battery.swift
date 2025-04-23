@@ -1,9 +1,7 @@
 // Copyright 2021 MbientLab Inc. All rights reserved. See LICENSE.MD.
 
 import Foundation
-import MetaWearCpp
 import Combine
-
 
 // MARK: - Battery Life
 
@@ -16,13 +14,19 @@ extension MWReadable where Self == MWBatteryLevel {
 /// Battery life percentage 0 to 100
 public struct MWBatteryLevel: MWDataConvertible, MWReadable {
     public typealias DataType = Int
-    public typealias RawDataType = MblMwBatteryState
+    public typealias RawDataType = Int // Check its ok
+    
     public let columnHeadings = ["Epoch", "Battery Percentage"]
+    
     public func readableSignal(board: MWBoard) throws -> MWDataSignal? {
-        mbl_mw_settings_get_battery_state_data_signal(board)
+        //mbl_mw_settings_get_battery_state_data_signal(board)
+        // TO DO
+        let switchResponseHeader = ResponseHeader(moduleID: Module.button.byte, registerID: READ_REGISTER(Module.button.rawValue))
+        let dataSignal = MWDataSignal(header: switchResponseHeader, owner: board, interpreter: DataInterpreter.INT32)
+        board.moduleEvents[switchResponseHeader] = dataSignal
+        return dataSignal
     }
 }
-
 
 // MARK: - Charging State
 
@@ -48,7 +52,12 @@ public struct MWChargingStatus: MWDataConvertible, MWStreamable, MWLoggable {
 public extension MWChargingStatus {
 
     func streamSignal(board: MWBoard) throws -> MWDataSignal? {
-        mbl_mw_settings_get_charge_status_data_signal(board)
+        //mbl_mw_settings_get_charge_status_data_signal(board)
+        // TO DO
+        let switchResponseHeader = ResponseHeader(moduleID: Module.button.byte, registerID: READ_REGISTER(Module.button.rawValue))
+        let dataSignal = MWDataSignal(header: switchResponseHeader, owner: board, interpreter: DataInterpreter.INT32)
+        board.moduleEvents[switchResponseHeader] = dataSignal
+        return dataSignal
     }
 
     func streamConfigure(board: MWBoard) {}

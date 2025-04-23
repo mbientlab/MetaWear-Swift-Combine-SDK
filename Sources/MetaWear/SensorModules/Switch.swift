@@ -1,44 +1,72 @@
+//
+//  Switch.swift
 // Copyright 2021 MbientLab Inc. All rights reserved. See LICENSE.MD.
 
 import Foundation
-import MetaWearCpp
 import Combine
 
 
 // MARK: - Discoverable Presets
 
-public extension MWStreamable where Self == MWMechanicalButton {
+public extension MWStreamable where Self == MWSwitch {
     static var mechanicalButton: Self { Self() }
 }
-public extension MWLoggable where Self == MWMechanicalButton {
+
+public extension MWLoggable where Self == MWSwitch {
+    static var mechanicalButton: Self { Self() }
+}
+
+public extension MWReadable where Self == MWSwitch {
     static var mechanicalButton: Self { Self() }
 }
 
 // MARK: - Signals
 
 /// Controls the push button switch on the device
-public struct MWMechanicalButton: MWStreamable, MWLoggable {
+public struct MWSwitch: MWReadable, MWStreamable, MWLoggable {
+    
     public init() { }
-    public typealias DataType = MWMechanicalButton.State
+    
+    public typealias DataType = MWSwitch.State
     public typealias RawDataType = UInt32
+    
     public let signalName: MWNamedSignal = .mechanicalButton
+    
     public var columnHeadings = ["Epoch", "Switch State"]
+
 }
 
-public extension MWMechanicalButton {
+public extension MWSwitch {
 
+    func readableSignal(board: MWBoard) throws -> MWDataSignal? {
+        //mbl_mw_switch_get_state_data_signal(board)
+        let switchResponseHeader = ResponseHeader(moduleID: Module.button.byte, registerID: READ_REGISTER(Module.button.rawValue))
+        let dataSignal = MWDataSignal(header: switchResponseHeader, owner: board, interpreter: DataInterpreter.INT32)
+        board.moduleEvents[switchResponseHeader] = dataSignal
+        return dataSignal
+    }
+    
     func streamSignal(board: MWBoard) throws -> MWDataSignal? {
-        mbl_mw_switch_get_state_data_signal(board)
+        //mbl_mw_switch_get_state_data_signal(board)
+        let switchResponseHeader = ResponseHeader(moduleID: Module.button.byte, registerID: READ_REGISTER(Module.button.rawValue))
+        let dataSignal = MWDataSignal(header: switchResponseHeader, owner: board, interpreter: DataInterpreter.INT32)
+        board.moduleEvents[switchResponseHeader] = dataSignal
+        return dataSignal
     }
 
     func streamConfigure(board: MWBoard) {}
     func streamStart(board: MWBoard) {}
     func streamCleanup(board: MWBoard) {}
 
+    /*
     /// When the button is pressed
     ///
     func getDownEventSignal(board: MWBoard) -> MWPublisher<MWDataProcessorSignal> {
-        guard let stream = mbl_mw_switch_get_state_data_signal(board) else {
+        let switchResponseHeader = ResponseHeader(moduleID: Module.button.byte, registerID: READ_REGISTER(Module.button.rawValue))
+        let dataSignal = MWDataSignal(header: switchResponseHeader, owner: board, interpreter: DataInterpreter.INT32)
+        
+        //guard let stream = mbl_mw_switch_get_state_data_signal(board) else {
+        guard let stream = dataSignal else {
             return _Fail(mw: .operationFailed("Could not create button signal"))
         }
         return stream.filter(.equals, reference: 1)
@@ -47,21 +75,25 @@ public extension MWMechanicalButton {
     /// When the button is released
     ///
     func getUpEventSignal(board: MWBoard) -> MWPublisher<MWDataProcessorSignal> {
-        guard let stream = mbl_mw_switch_get_state_data_signal(board) else {
+        let switchResponseHeader = ResponseHeader(moduleID: Module.button.byte, registerID: READ_REGISTER(Module.button.rawValue))
+        let dataSignal = MWDataSignal(header: switchResponseHeader, owner: board, interpreter: DataInterpreter.INT32)
+        
+        //guard let stream = mbl_mw_switch_get_state_data_signal(board) else {
+        guard let stream = dataSignal else {
             return _Fail(mw: .operationFailed("Could not create button signal"))
         }
         return stream.filter(.equals, reference: 0)
     }
+    */
 
 }
 
 
 // MARK: - Signal Implementations
 
-public extension MWMechanicalButton {
+public extension MWSwitch {
 
     enum State: CaseIterable, IdentifiableByRawValue {
-
 
         case up
         case down
@@ -95,7 +127,7 @@ public extension MWMechanicalButton {
             }
         }
 
-        public static var allCases: [MWMechanicalButton.State] = [.up, .down]
+        public static var allCases: [MWSwitch.State] = [.up, .down]
 
     }
 }

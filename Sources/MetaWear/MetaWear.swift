@@ -1,9 +1,7 @@
 // Copyright 2021 MbientLab Inc. All rights reserved. See LICENSE.MD.
 
 import CoreBluetooth
-import MetaWearCpp
 import Combine
-
 
 /// Each MetaWear object corresponds a physical MetaWear board. This SDK
 /// wraps type-safe Swift methods and Combine publishers around C/C++ functions
@@ -94,7 +92,7 @@ public class MetaWear: NSObject {
     ///
     public weak var logDelegate: MWConsoleLoggerDelegate?
 
-    /// Pass to MetaWear C++ functions
+    /// A board with information about itself and its modules
     ///
     public private(set) var board: MWBoard!
 
@@ -199,23 +197,19 @@ public class MetaWear: NSObject {
     fileprivate var _connectionStateSubject = CurrentValueSubject<CBPeripheralState,Never>(.disconnected)
     fileprivate var _connectSubjects: [PassthroughSubject<MetaWear, MWError>] = []
     fileprivate var _disconnectSubjects: [PassthroughSubject<MetaWear, MWError>] = []
-    internal var _readCharacteristicSubjects: [CBCharacteristic: [PassthroughSubject<Data, MWError>]] = [:]
+    var _readCharacteristicSubjects: [CBCharacteristic: [PassthroughSubject<Data, MWError>]] = [:]
     fileprivate var _rssi: CurrentValueSubject<Int,Never> = .init(-100)
 
     // CBCharacteristics discovery + device setup
-    fileprivate var _gattCharMap: [MblMwGattChar: CBCharacteristic] = [:]
+    fileprivate var _gattCharMap: [CBUUID: CBCharacteristic] = [:]
     fileprivate var _serviceCount = 0
+    fileprivate var _characteristicCount = 0
     fileprivate var _subsDiscovery = Set<AnyCancellable>()
-
+    fileprivate var _isInitialized = false
+    
     // Writes
     fileprivate var _commandCount = 0
     fileprivate var _writeQueue: [(data: Data, characteristic: CBCharacteristic, type: CBCharacteristicWriteType)] = []
-
-    // MblMwBtleConnection callbacks for read/writeGattChar, _enableNotifications, and _onDisconnect functions
-    fileprivate var _onDisconnectCallback: MblMwFnVoidVoidPtrInt?
-    fileprivate var _onReadCallbacks: [CBCharacteristic: MblMwFnIntVoidPtrArray] = [:]
-    fileprivate var _onDataCallbacks: [CBCharacteristic: MblMwFnIntVoidPtrArray] = [:]
-    fileprivate var _subscribeCompleteCallbacks: [CBCharacteristic: MblMwFnVoidVoidPtrInt] = [:]
 
     /// Read/set from advertisement queue `Self.adQueue`
     fileprivate static let _adQueue = DispatchQueue(label: "com.mbientlab.adQueue")
@@ -253,18 +247,21 @@ public class MetaWear: NSObject {
             .eraseToAnyPublisher()
 
         // Populate MAC if known
-        self.info = .init(mac: mac ?? UserDefaults.MetaWear.getMAC(for: peripheral.identifier))
+        //self.info = .init(mac: mac ?? UserDefaults.MetaWear.getMAC(for: peripheral.identifier))
+        self.info = .init(mac: mac ?? nil)
 
         super.init()
         self.peripheral.delegate = self
-        var connection = MblMwBtleConnection(
-            context: bridge(obj: self),
-            write_gatt_char: _writeGattChar,
-            read_gatt_char: _readGattChar,
-            enable_notifications: _enableNotifications,
-            on_disconnect: _onDisconnect)
-        self.board = mbl_mw_metawearboard_create(&connection)
-        mbl_mw_metawearboard_set_time_for_response(self.board, 0)
+        //var connection = MblMwBtleConnection(
+        //    context: bridge(obj: self),
+        //    write_gatt_char: _writeGattChar,
+        //    read_gatt_char: _readGattChar,
+        //    enable_notifications: _enableNotifications,
+        //    on_disconnect: _onDisconnect)
+        //self.board = mbl_mw_metawearboard_create(&connection)
+        //mbl_mw_metawearboard_set_time_for_response(self.board, 0)
+        self.board = MWBoard(peripheral: self.peripheral, owner: self)
+        self.board.setTimeForResponse(0)
     }
 }
 
@@ -343,7 +340,7 @@ public extension MetaWear {
     /// Remove this device from the local persistent table loaded by ``MetaWearScanner``.
     ///
     func forget() {
-        UserDefaults.MetaWear.forgetLocalDevice(localBluetoothID)
+        //UserDefaults.MetaWear.forgetLocalDevice(localBluetoothID)
         if self.connectionState == .connected { disconnect() }
     }
 
@@ -355,12 +352,12 @@ public extension MetaWear {
             connect() // Stores itself
             return
         }
-        UserDefaults.MetaWear.rememberLocalDevice(localBluetoothID, info.mac)
+        //UserDefaults.MetaWear.rememberLocalDevice(localBluetoothID, info.mac)
     }
 }
 
 
-// MARK - Public API (Publishers to Kickoff Reads/Writes/Logs/Streams of Board Signals)
+// MARK: - Public API (Publishers to Kickoff Reads/Writes/Logs/Streams of Board Signals)
 
 public extension MetaWear {
 
@@ -437,18 +434,21 @@ public extension MetaWear {
     /// Dump all MetaWearC++ library state (prior to disconnection).
     ///
     func stateSerialize() -> [UInt8] {
-        var count: UInt32 = 0
-        let start = mbl_mw_metawearboard_serialize(board, &count)
-        let data = Array(UnsafeBufferPointer(start: start, count: Int(count)))
-        mbl_mw_memory_free(start)
-        return data
+        //var count: UInt32 = 0
+        // TO DO
+        //let start = mbl_mw_metawearboard_serialize(board, &count)
+        //let data = Array(UnsafeBufferPointer(start: start, count: Int(count)))
+        //mbl_mw_memory_free(start)
+        //return data
+        return [0]
     }
 
     /// Restore MetaWearC++ library state, must be called before `connectAndSetup()`.
     ///
     func stateDeserialize(_ _data: [UInt8]) {
-        var data = _data
-        mbl_mw_metawearboard_deserialize(board, &data, UInt32(data.count))
+        // TO DO
+        //var data = _data
+        //mbl_mw_metawearboard_deserialize(board, &data, UInt32(data.count))
     }
 
     /// Creates a file name unique to this device, based on its `CBPeripheral` identifier UUID. The returned URL is inside the user's Application Support directory, within a subfolder: `com.mbientlab.devices`.
@@ -473,6 +473,11 @@ extension MetaWear: CBPeripheralDelegate {
 
     // Device setup step 1
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        print("Did discover services")
+        for servicess in peripheral.services! {
+            print(servicess)
+        }
+        
         guard error == nil, let services = peripheral.services else {
             _invokeConnectionHandlers(error: error!, cancelled: false)
             disconnect()
@@ -488,6 +493,7 @@ extension MetaWear: CBPeripheralDelegate {
         _gattCharMap = [:]
         _serviceCount = 0
         for service in services {
+            print(service.uuid)
             switch service.uuid {
                 case .metaWearService:
                     isMetaBoot = false
@@ -526,27 +532,46 @@ extension MetaWear: CBPeripheralDelegate {
 
     // Device setup step 2
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        print("Did discover characteristics")
+        for charr in service.characteristics! {
+            print(charr)
+        }
+        
         guard error == nil else {
             _invokeConnectionHandlers(error: error!, cancelled: false)
             disconnect()
             return
         }
 
-        guard isMetaBoot == false else {
-            _didDiscoverCharacteristicsForMetaBoot()
-            return
-        }
+        //guard isMetaBoot == false else {
+        //    _didDiscoverCharacteristicsForMetaBoot()
+        //    return
+        //}
 
         guard _connectInterrupts == 0 else {
             _invokeConnectionHandlers(error: nil, cancelled: true)
             _invokeDisconnectionHandlers(error: nil)
             return
         }
+        
+        for char in service.characteristics ?? [] {
+            if service.uuid == .metaWearService, char.uuid == .metaWearNotification {
+                print("SET NOTIFY")
+                self.board.notificationCharacteristic = char
+                peripheral.setNotifyValue(true, for: char)
+            } else if service.uuid == .metaWearService, char.uuid == .metaWearCommand {
+                print("SET COMMAND")
+                self.board.commandCharacteristic = char
+            } else if service.uuid == .disService {
+                if disCharacteristicUUIDs.contains(char.uuid) {
+                    print("READ VALUE FOR CHAR")
+                    peripheral.readValue(for: char)
+                }
+            }
+        }
 
         _serviceCount += 1
         guard _serviceCount == 3 else { return }
-
-        _setupCppSDK_start()
     }
 
     // Responses to RSSI requests
@@ -556,46 +581,85 @@ extension MetaWear: CBPeripheralDelegate {
 
     // Responses to readValue requests.
     public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-
+        print("Did update value for characteristic: \(characteristic.uuid)")
+        for val in characteristic.value! {
+            print(" \(val) | 0x\(String(val, radix: 16, uppercase: true)) | 0x\(String(val, radix: 2)) ")
+        }
+        print(characteristic.value!)
+        
         logDelegate?._didUpdateValueFor(characteristic: characteristic, error: error)
         guard error == nil, let data = characteristic.value, data.count > 0 else { return }
-
-        if let onRead = _onReadCallbacks[characteristic] {
-            data.withUnsafeBytes { rawBufferPointer -> Void in
-                let unsafeBufferPointer = rawBufferPointer.bindMemory(to: UInt8.self)
-                let unsafePointer = unsafeBufferPointer.baseAddress!
-                let _ = onRead(UnsafeRawPointer(board), unsafePointer, UInt8(data.count))
-            }
-            _onReadCallbacks.removeValue(forKey: characteristic)
+        
+        // First time setup
+        switch characteristic.uuid {
+        case .disManufacturerName:
+            self.info.manufacturer = String(data: data, encoding: .utf8) ?? ""
+            print(self.info.manufacturer)
+        case .disSerialNumber:
+            self.info.serialNumber = String(data: data, encoding: .utf8) ?? ""
+            print(self.info.serialNumber)
+        case .disHardwareRev:
+            self.info.hardwareRevision = String(data: data, encoding: .utf8) ?? ""
+            print(self.info.hardwareRevision)
+        case .disFirmwareRev:
+            self.info.firmwareRevision = String(data: data, encoding: .utf8) ?? ""
+            print(self.info.firmwareRevision)
+        case .disModelNumber:
+            self.info.model = Model(modelNumber: String(data: data, encoding: .utf8)!)
+            print(self.info.model)
+        default: break
+        }
+                
+        // One time read
+        if let onRead = self.board._onReadCallbacks[characteristic] {
+            print("ON READ")
+            onRead(data)
         }
 
-        if let onData = _onDataCallbacks[characteristic] {
-            data.withUnsafeBytes { rawBufferPointer -> Void in
-                let unsafeBufferPointer = rawBufferPointer.bindMemory(to: UInt8.self)
-                let unsafePointer = unsafeBufferPointer.baseAddress!
-                let _ = onData(UnsafeRawPointer(board), unsafePointer, UInt8(data.count))
-            }
+        // Long term read - multiple packets
+        if let onData = self.board._onDataCallbacks[characteristic] {
+            print("ON DATA")
+            onData(data)
         }
-
+        
         if let promises = _readCharacteristicSubjects.removeValue(forKey: characteristic) {
-            promises.forEach {
-                $0.send(data)
-                $0.send(completion: .finished)
+            print("READ CHAR SUBJECTS")
+            promises.forEach { promise in
+                print("Data: \(data)") // Print the data
+                promise.send(data)
+                promise.send(completion: .finished)
             }
+        }
+        
+        _characteristicCount += 1
+        print(_characteristicCount)
+        if (_characteristicCount == 5 && !_isInitialized) {
+            print("START SDK")
+            _isInitialized = true
+            self._setupCppSDK_start()
         }
     }
 
     public func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
-
         logDelegate?.logWith(.info, message: "didUpdateNotificationStateFor \(characteristic)")
-        _subscribeCompleteCallbacks[characteristic]?(UnsafeRawPointer(board), error == nil ? 0 : 1)
+        
+        print("did update notification for \(characteristic)")
+        
+        self.board._subscribeCompleteCallbacks[characteristic]?(self.board, error == nil)
     }
 
     public func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
+        print("Peripheral \(peripheral.identifier) is ready to send write without response")
         _writeIfNeeded()
     }
 
-    public func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {}
+    public func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+        if let error = error {
+            print("Failed to write value for characteristic \(characteristic.uuid): \(error.localizedDescription)")
+        } else {
+            print("Successfully wrote value for characteristic \(characteristic.uuid)")
+        }
+    }
 
 }
 
@@ -607,6 +671,7 @@ internal extension MetaWear {
     /// Kicks off device setup by discovering services when the `MetaWearScanner`, as `CBCentralManagerDelegate`, receives `didConnect`.
     ///
     func _scannerDidConnect() {
+        print("scanner connected")
         peripheral.discoverServices([
             .metaWearService,
             .metaWearDfuService,
@@ -659,19 +724,18 @@ internal extension MetaWear {
 private extension MetaWear {
 
     func _setupCppSDK_start() {
-        mbl_mw_metawearboard_initialize(board, bridge(obj: self)) { (context, board, errorCode) in
-            let device: MetaWear = bridge(ptr: context!)
-
-            let initializedCorrectly = errorCode == 0
-            guard initializedCorrectly else {
-                device._setupCppSDK_didFail("Board initialization failed: \(errorCode)")
-                return
+        print("START")
+        self.board.moduleDiscoveryIndex = 0
+        self.board.detectModules()
+            .sink { _ in
+                logger.info("Module detection completed.")
+                self._setupCppSDK_finalize()
             }
-            device._setupCppSDK_finalize()
-        }
+            .store(in: &self._subsDiscovery)
     }
 
     func _setupCppSDK_finalize() {
+        print("finalize")
         _setupMacToken?.cancel()
         _setupMacToken = self
             .publish()
@@ -685,13 +749,14 @@ private extension MetaWear {
             } receiveValue: { [weak self] info in
                 guard let self = self else { return }
                 self.info = info
-                UserDefaults.MetaWear.rememberLocalDevice(self.peripheral.identifier, info.mac)
+                //UserDefaults.MetaWear.rememberLocalDevice(self.peripheral.identifier, info.mac)
                 self._setupCppSDK_didSucceed()
             }
     }
 
     func _setupCppSDK_didSucceed() {
         bleQueue.async { [weak self] in
+            print("success")
             let didInterrupt = (self?._connectInterrupts ?? 1) > 0
             self?._invokeConnectionHandlers(error: nil, cancelled: didInterrupt)
         }
@@ -699,23 +764,24 @@ private extension MetaWear {
 
     func _setupCppSDK_didFail(_ msg: String) {
         bleQueue.async { [weak self] in
+            print("fail")
             let error = MWError.operationFailed(msg)
             self?._invokeConnectionHandlers(error: error, cancelled: false)
             self?.disconnect()
         }
     }
 
-    func _didDiscoverCharacteristicsForMetaBoot() {
-        // Setup for MetaBoot
-        self.publish().read(.deviceInformation)
-            .sink { completion in
-                guard case let .failure(error) = completion else { return }
-                self._invokeConnectionHandlers(error: error, cancelled: false)
-            } receiveValue: { info in
-                self.info = info
-            }
-            .store(in: &_subsDiscovery)
-    }
+//    func _didDiscoverCharacteristicsForMetaBoot() {
+//        // Setup for MetaBoot
+//        self.publish().read(.deviceInformation)
+//            .sink { completion in
+//                guard case let .failure(error) = completion else { return }
+//                self._invokeConnectionHandlers(error: error, cancelled: false)
+//            } receiveValue: { info in
+//                self.info = info
+//            }
+//            .store(in: &_subsDiscovery)
+//    }
 
     /// Complete connection-related pipelines upon a cancel request or an error during device setup methods (e.g., in `CBCharacteristic` discovery). If connection is successful, move the pipelines into the disconnect promise queue.
     ///
@@ -750,9 +816,8 @@ private extension MetaWear {
 
         _connectionStateSubject.send(.disconnected)
 
-        // Inform the C++ SDK
-        _onDisconnectCallback?(UnsafeRawPointer(board), 0)
-        _onDisconnectCallback = nil
+        self.board._onDisconnectCallback?(self.board, 0)
+        self.board._onDisconnectCallback = nil
 
         let isUnexpected = (error != nil) && (error as? CBError)?.code != .peripheralDisconnected
         _disconnectSubjects.forEach {
@@ -763,9 +828,9 @@ private extension MetaWear {
         _disconnectSubjects.removeAll(keepingCapacity: true)
 
         _gattCharMap = [:]
-        _subscribeCompleteCallbacks = [:]
-        _onDataCallbacks = [:]
-        _onReadCallbacks = [:]
+        self.board._subscribeCompleteCallbacks = [:]
+        self.board._onDataCallbacks = [:]
+        self.board._onReadCallbacks = [:]
 
         _readCharacteristicSubjects.forEach { $0.value.forEach {
             isUnexpected
@@ -835,102 +900,59 @@ private extension MetaWear {
 // MARK: - Internals (GattChar / write / non-self closures for `MblMwBtleConnection` initialization)
 
 private extension MetaWear {
-
+    
     func _writeIfNeeded() {
-        guard !_writeQueue.isEmpty else { return }
-        var canSendWriteWithoutResponse = true
-        // Starting from iOS 11 and MacOS 10.13 we have a robust way to check
-        // if we can send a message without response and not loose it, so no longer
-        // need to arbitrary send every 10th message with response
-        if #available(iOS 11.0, macOS 10.13, tvOS 11.0, watchOS 4.0, *) {
-            // The peripheral.canSendWriteWithoutResponse often returns false before
-            // even we start sending, so always send the first
-            if _commandCount != 0 {
-                guard peripheral.canSendWriteWithoutResponse else { return }
-            }
-        } else {
-            // Throttle by having every Nth request wait for response
-            canSendWriteWithoutResponse = !(_commandCount % 10 == 0)
+        while !_writeQueue.isEmpty {
+            let (data, charToWrite, type) = _writeQueue.removeFirst()
+            peripheral.writeValue(data, for: charToWrite, type: type)
         }
-        _commandCount += 1
-        let (data, charToWrite, requestedType) = _writeQueue.removeFirst()
-        let type: CBCharacteristicWriteType = canSendWriteWithoutResponse ? requestedType : .withResponse
-        logDelegate?.logWith(.info, message: "Writing \(type == .withoutResponse ? "NO-RSP" : "   RSP"): \(charToWrite.uuid) \(data.hexEncodedString())")
-        peripheral.writeValue(data, for: charToWrite, type: type)
-        _writeIfNeeded()
     }
-
-    func _getCBCharacteristic(_ characteristicPtr: UnsafePointer<MblMwGattChar>?) -> CBCharacteristic? {
-        guard let characteristicPtr = characteristicPtr else { return nil }
-
-        if let characteristic = _gattCharMap[characteristicPtr.pointee] {
-            return characteristic
-        }
-
-        let serviceUUID = characteristicPtr.pointee.serviceUUID
+    
+    func _getCBCharacteristic(serviceUUID: CBUUID, characteristicUUID: CBUUID) -> CBCharacteristic? {
+        let serviceUUID = CBUUID(string: "326A9000-85CB-9195-D9DD-464CFBBAE75A")
+        let characteristicUUID = CBUUID(string: "326A9006-85CB-9195-D9DD-464CFBBAE75A")
+        
         guard let service = peripheral.services?.first(where: { $0.uuid == serviceUUID }) else { return nil }
-
-        let characteristicUUID = characteristicPtr.pointee.characteristicUUID
         guard let characteristic = service.characteristics?.first(where: { $0.uuid == characteristicUUID }) else { return nil }
-
-        _gattCharMap[characteristicPtr.pointee] = characteristic
+        
+        _gattCharMap[characteristicUUID] = characteristic
         return characteristic
     }
-}
-
-fileprivate func _writeGattChar(context: UnsafeMutableRawPointer?,
-                                caller: UnsafeRawPointer?,
-                                writeType: MblMwGattCharWriteType,
-                                characteristicPtr: UnsafePointer<MblMwGattChar>?,
-                                valuePtr: UnsafePointer<UInt8>?,
-                                length: UInt8) {
-    let device: MetaWear = bridge(ptr: context!)
-    if let charToWrite = device._getCBCharacteristic(characteristicPtr) {
-        let data = Data(bytes: valuePtr!, count: Int(length))
-        let type: CBCharacteristicWriteType = writeType == MBL_MW_GATT_CHAR_WRITE_WITH_RESPONSE ? .withResponse : .withoutResponse
-        DispatchQueue.onBleQueue(device.bleQueue) {
-            device._writeQueue.append((data: data, characteristic: charToWrite, type: type))
-            device._writeIfNeeded()
+    
+    func writeGattChar(serviceUUID: CBUUID, characteristicUUID: CBUUID, data: Data, writeType: CBCharacteristicWriteType) {
+        guard let charToWrite = _getCBCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID) else {
+            print("Error: Characteristic not found")
+            return
+        }
+        
+        // Add to queue and process
+        DispatchQueue.onBleQueue(bleQueue) {
+            self._writeQueue.append((data: data, characteristic: charToWrite, type: writeType))
+            self._writeIfNeeded()
         }
     }
-}
-
-
-fileprivate func _readGattChar(context: UnsafeMutableRawPointer?,
-                               caller: UnsafeRawPointer?,
-                               characteristicPtr: UnsafePointer<MblMwGattChar>?,
-                               callback: MblMwFnIntVoidPtrArray?) {
-    let device: MetaWear = bridge(ptr: context!)
-    if let charToRead = device._getCBCharacteristic(characteristicPtr) {
-        // Save the callback
-        device._onReadCallbacks[charToRead] = callback
-        // Request the read
-        device.peripheral.readValue(for: charToRead)
+    
+    func readGattChar(serviceUUID: CBUUID, characteristicUUID: CBUUID, callback: @escaping (Data?) -> Void) {
+        guard let charToRead = _getCBCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID) else {
+            print("Error: Characteristic not found")
+            callback(nil)
+            return
+        }
+        
+        self.board._onReadCallbacks[charToRead] = callback
+        peripheral.readValue(for: charToRead)
     }
-}
-
-fileprivate func _enableNotifications(context: UnsafeMutableRawPointer?,
-                                      caller: UnsafeRawPointer?,
-                                      characteristicPtr: UnsafePointer<MblMwGattChar>?,
-                                      onData: MblMwFnIntVoidPtrArray?,
-                                      subscribeComplete: MblMwFnVoidVoidPtrInt?) {
-    let device: MetaWear = bridge(ptr: context!)
-    if let charToNotify = device._getCBCharacteristic(characteristicPtr) {
-        // Save the callbacks
-        device._onDataCallbacks[charToNotify] = onData
-        device._subscribeCompleteCallbacks[charToNotify] = subscribeComplete
-        // Turn on the notification stream
-        device.peripheral.setNotifyValue(true, for: charToNotify)
-    } else {
-        subscribeComplete?(caller, 1)
+    
+    func enableNotifications(serviceUUID: CBUUID, characteristicUUID: CBUUID, onData: @escaping (Data) -> Void, subscribeComplete: @escaping (Bool) -> Void) {
+        guard let charToNotify = _getCBCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID) else {
+            subscribeComplete(false)
+            return
+        }
+        
+        self.board._onDataCallbacks[charToNotify] = onData
+        peripheral.setNotifyValue(true, for: charToNotify)
+        subscribeComplete(true)
     }
-}
-
-fileprivate func _onDisconnect(context: UnsafeMutableRawPointer?,
-                               caller: UnsafeRawPointer?,
-                               handler: MblMwFnVoidVoidPtrInt?) {
-    let device: MetaWear = bridge(ptr: context!)
-    device._onDisconnectCallback = handler
 }
 
 

@@ -4,14 +4,13 @@ import XCTest
 import Combine
 import CoreBluetooth
 @testable import MetaWear
-@testable import MetaWearCpp
 @testable import SwiftCombineSDKTestHost
 
 /// Not true tests, just quickly reset w/o assertions to escape bad state.
 ///
 final class QuickResetUtilityTests: XCTestCase {
 
-    func test_FactoryReset_RL() {
+    /*func test_FactoryReset_RL() {
         TestDevices.useOnly(.metamotionRL)
         connectNearbyMetaWear(timeout: .read) { metawear, exp, subs in
             metawear
@@ -55,5 +54,5 @@ final class ResetActivitiesTests: XCTestCase {
                 .command(.resetActivities)
                 ._sinkNoFailure(&subs, receiveValue: { _ in exp.fulfill() })
         }
-    }
+    }*/
 }

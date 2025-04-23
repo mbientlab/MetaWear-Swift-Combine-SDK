@@ -82,14 +82,14 @@ class DiscoveredDeviceRowVM: ObservableObject {
     }
 
     func reset() {
-        device
-            .publishWhenConnected()
-            .first()
-            .command(.resetFactoryDefaults)
-            .sink { _ in } receiveValue: { _ in }
-            .store(in: &subs)
+        //device
+        //    .publishWhenConnected()
+        //    .first()
+        //    .command(.resetFactoryDefaults)
+        //    .sink { _ in } receiveValue: { _ in }
+        //    .store(in: &subs)
 
-        device.connect()
+        //device.connect()
     }
 
     private unowned let device: MetaWear

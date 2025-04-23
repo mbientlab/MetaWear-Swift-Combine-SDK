@@ -1,7 +1,6 @@
 // Copyright 2021 MbientLab Inc. All rights reserved. See LICENSE.MD.
 
 import Foundation
-import MetaWearCpp
 import Combine
 
 // MARK: - Signals
@@ -14,7 +13,7 @@ public struct MWThermometer: MWReadable, MWPollable {
     public typealias RawDataType = Float
     public let columnHeadings = ["Epoch", "Temperature (C)"]
     public let type: Source
-    public var pollingRate: MWFrequency
+    //public var pollingRate: Int
     public let signalName: MWNamedSignal
 
     public var channel: Int
@@ -25,26 +24,26 @@ public struct MWThermometer: MWReadable, MWPollable {
 
     /// Verifies channel and source alignment before streaming or logging.
     ///
-    public init(rate: MWFrequency = .init(hz: 1), type: Source, channel: Int, board: MWBoard) throws {
+    public init(type: Source, channel: Int, board: MWBoard) throws {
         guard Source(board: board, atChannel: channel) == type else {
             throw MWError.operationFailed("\(type.displayName) unavailable at the specified channel.")
         }
         self.type = type
         self.channel = channel
-        self.pollingRate = rate
+        //self.pollingRate = rate
         self.signalName = .temperature
     }
 
     /// Verifies channel and source alignment before streaming or logging.
     ///
-    public init(rate: MWFrequency = .init(hz: 1), type: Source, board: MWBoard) throws {
+    public init(type: Source, board: MWBoard) throws {
         let available = MWThermometer.Source.availableChannels(on: board)
         guard let i = available.firstIndex(of: type) else {
             throw MWError.operationFailed("\(type.displayName) is not available.")
         }
         self.type = type
         self.channel = i
-        self.pollingRate = rate
+        //self.pollingRate = rate
         self.signalName = .temperature
     }
 
@@ -52,10 +51,10 @@ public struct MWThermometer: MWReadable, MWPollable {
     /// exposing possible faults when attempting to log or stream.
     /// Useful when using the Metadata package and channels are known.
     ///
-    public init(rate: MWFrequency, type: Source, channel: Int) {
+    public init(type: Source, channel: Int) {
         self.type = type
         self.channel = channel
-        self.pollingRate = rate
+        //self.pollingRate = rate
         self.signalName = .temperature
     }
 }
@@ -63,21 +62,21 @@ public struct MWThermometer: MWReadable, MWPollable {
 public extension MWThermometer {
 
     func readableSignal(board: MWBoard) throws -> MWDataSignal? {
-        return mbl_mw_multi_chnl_temp_get_temperature_data_signal(board, UInt8(channel))
+        return board.getTemperatureDataSignal(channel: channel)
     }
 
     func readConfigure(board: MWBoard) {
-        if type == .external {
-            mbl_mw_multi_chnl_temp_configure_ext_thermistor(board, UInt8(channel), dataPin, pulldownPin, UInt8(1))
-        } else if type == .bmp280 {
-            mbl_mw_baro_bosch_start(board)
-        }
+        //if type == .external {
+            //mbl_mw_multi_chnl_temp_configure_ext_thermistor(board, UInt8(channel), dataPin, pulldownPin, UInt8(1))
+        //} else if type == .bmp280 {
+            //mbl_mw_baro_bosch_start(board)
+        //}
     }
 
     func readCleanup(board: MWBoard) {
-        if type == .bmp280 {
-            mbl_mw_baro_bosch_stop(board)
-        }
+        //if type == .bmp280 {
+            //mbl_mw_baro_bosch_stop(board)
+        //}
     }
 }
 
@@ -92,7 +91,7 @@ public extension MWReadable where Self == MWThermometer {
         guard let i = available.firstIndex(of: type) else {
             throw MWError.operationFailed("\(type.displayName) is not available.")
         }
-        return try Self(rate: .init(hz: 1), type: type, channel: i, board: board)
+        return try Self(type: type, channel: i, board: board)
     }
 }
 
@@ -100,12 +99,12 @@ public extension MWPollable where Self == MWThermometer {
 
     /// Thermistor reports degrees Celsius.
     ///
-    static func thermometer(rate: MWFrequency, type: MWThermometer.Source = .onboard, board: MWBoard) throws -> Self {
+    static func thermometer(type: MWThermometer.Source = .onboard, board: MWBoard) throws -> Self {
         let available = MWThermometer.Source.availableChannels(on: board)
         guard let i = available.firstIndex(of: type) else {
             throw MWError.operationFailed("\(type.displayName) is not available.")
         }
-        return try Self(rate: rate,  type: type, channel: i, board: board)
+        return try Self(type: type, channel: i, board: board)
     }
 }
 
@@ -127,7 +126,7 @@ public extension MWThermometer {
         /// Thermometer sources. Indexes correspond to channel number.
         public static func availableChannels(on board: MWBoard) -> [Source] {
             var channels = [Source]()
-            let maxChannels = mbl_mw_multi_chnl_temp_get_num_channels(board)
+            let maxChannels = board.getNumChannels()
             for i in 0..<maxChannels {
                 channels.append(Self.init(board: board, atChannel: Int(i)))
             }
@@ -135,20 +134,20 @@ public extension MWThermometer {
         }
 
         public init(board: MWBoard, atChannel: Int) {
-            let source = mbl_mw_multi_chnl_temp_get_source(board, UInt8(atChannel))
+            let source = board.tempGetSource(channel: atChannel)
             self.init(cpp: source)
         }
 
-        public init(cpp: MblMwTemperatureSource) {
+        public init(cpp: Int) {
             self = Self.allCases.first(where: { $0.cppValue == cpp }) ?? .custom
         }
 
-        public var cppValue: MblMwTemperatureSource? {
+        public var cppValue: Int? {
             switch self {
-                case .onDie: return MBL_MW_TEMPERATURE_SOURCE_NRF_DIE
-                case .external: return MBL_MW_TEMPERATURE_SOURCE_EXT_THERM
-                case .bmp280: return MBL_MW_TEMPERATURE_SOURCE_BMP280
-                case .onboard: return MBL_MW_TEMPERATURE_SOURCE_PRESET_THERM
+                case .onDie: return 0
+                case .external: return 1
+                case .bmp280: return 2
+                case .onboard: return 3
                 case .custom: return nil
             }
         }

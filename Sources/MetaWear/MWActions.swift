@@ -1,7 +1,6 @@
 // Copyright 2021 MbientLab Inc. All rights reserved. See LICENSE.MD.
 
 import Foundation
-import MetaWearCpp
 
 // These contracts interact with
 // MetaWear modules with type safety and
@@ -191,7 +190,7 @@ public protocol MWPollable: MWReadable {
     /// Identifier for downloadable signal when exporting an ``MWDataTable``.
     var signalName: MWNamedSignal { get }
     /// Rate at which an event fires to read the sensor's signal.
-    var pollingRate: MWFrequency { get }
+    //var pollingRate: MWFrequency { get }
 
 }
 

@@ -2,7 +2,6 @@
 
 import Foundation
 import Combine
-import MetaWearCpp
 
 /// Status codes returned by certain C++ functions
 ///

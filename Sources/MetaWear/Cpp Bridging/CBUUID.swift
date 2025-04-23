@@ -2,8 +2,6 @@
 
 import CoreBluetooth
 import Combine
-import MetaWearCpp
-
 
 // MARK: - CBUUID
 
@@ -85,7 +83,11 @@ public extension MetaWear {
     /// Requests refreshed information about this MetaWear, such as its battery percentage, serial number, model, manufacturer, and hardware and firmware versions.
     func _read<T>(_ characteristic: MetaWear._ServiceCharacteristic<T>) -> MWPublisher<T> {
         _read(service: characteristic.service.cbuuid, characteristic: characteristic.characteristic.cbuuid)
-            .map { characteristic.parse($0) }
+            .map { data in
+                print("Received data for characteristic: \(characteristic.characteristic.cbuuid) - \(data)")
+                return characteristic.parse(data)
+            }
+            //.map { characteristic.parse($0) }
             .eraseToAnyPublisher()
     }
 
@@ -94,6 +96,7 @@ public extension MetaWear {
         _getCharacteristic(service, characteristic)
             .publisher
             .flatMap { [weak self] characteristic -> AnyPublisher<Data,MWError> in
+                print("Preparing to read value for characteristic: \(characteristic.uuid)")
                 let subject = PassthroughSubject<Data, MWError>()
                 self?._readCharacteristicSubjects[characteristic, default: []].append(subject)
                 self?.peripheral.readValue(for: characteristic)

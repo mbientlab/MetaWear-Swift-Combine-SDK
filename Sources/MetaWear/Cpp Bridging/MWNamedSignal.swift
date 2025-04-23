@@ -10,65 +10,65 @@ import Foundation
 /// into Swift types during a download or stream.
 ///
 public enum MWNamedSignal: Equatable, Hashable, Identifiable {
-    case acceleration
-    case altitude
-    case ambientLight
+    //case acceleration
+    //case altitude
+    //case ambientLight
     case chargingStatus
-    case eulerAngles
-    case gravity
-    case gyroscope
-    case humidity
-    case linearAcceleration
-    case magnetometer
+    //case eulerAngles
+    //case gravity
+    //case gyroscope
+    //case humidity
+    //case linearAcceleration
+    //case magnetometer
     case mechanicalButton
-    case motion
-    case orientation
-    case pressure
-    case quaternion
-    case steps
+    //case motion
+    //case orientation
+    //case pressure
+    //case quaternion
+    //case steps
     case temperature
-    case custom(String)
+    //case custom(String)
 
     public var name: String {
         switch self {
-            case .acceleration:             return "acceleration"
-            case .altitude:                 return "altitude"
-            case .ambientLight:             return "illuminance"
+            //case .acceleration:             return "acceleration"
+            //case .altitude:                 return "altitude"
+            //case .ambientLight:             return "illuminance"
             case .chargingStatus:           return "charge-status"
-            case .eulerAngles:              return "euler-angles"
-            case .gravity:                  return "gravity"
-            case .gyroscope:                return "angular-velocity"
-            case .humidity:                 return "relative-humidity"
-            case .linearAcceleration:       return "linear-acceleration"
-            case .magnetometer:             return "magnetic-field"
+            //case .eulerAngles:              return "euler-angles"
+            //case .gravity:                  return "gravity"
+            //case .gyroscope:                return "angular-velocity"
+            //case .humidity:                 return "relative-humidity"
+            //case .linearAcceleration:       return "linear-acceleration"
+            //case .magnetometer:             return "magnetic-field"
             case .mechanicalButton:         return "switch"
-            case .motion:                   return "bosch-motion"
-            case .pressure:                 return "pressure"
-            case .quaternion:               return "quaternion"
-            case .orientation:              return "orientation"
+            //case .motion:                   return "bosch-motion"
+            //case .pressure:                 return "pressure"
+            //case .quaternion:               return "quaternion"
+            //case .orientation:              return "orientation"
             case .temperature:              return "temperature"
-            case .steps:                    return "steps"
-            case .custom(let string):       return string
+            //case .steps:                    return "steps"
+            //case .custom(let string):       return string
         }
     }
 
     public static let allCases: [MWNamedSignal] = [
-        .acceleration,
-        .altitude,
-        .ambientLight,
+        //.acceleration,
+        //.altitude,
+        //.ambientLight,
         .chargingStatus,
-        .eulerAngles,
-        .gravity,
-        .gyroscope,
-        .humidity,
-        .linearAcceleration,
-        .magnetometer,
+        //.eulerAngles,
+        //.gravity,
+        //.gyroscope,
+        //.humidity,
+        //.linearAcceleration,
+        //.magnetometer,
         .mechanicalButton,
-        .motion,
-        .orientation,
-        .pressure,
-        .quaternion,
-        .steps,
+        //.motion,
+        //.orientation,
+        //.pressure,
+        //.quaternion,
+        //.steps,
         .temperature
     ]
 
@@ -85,8 +85,8 @@ public enum MWNamedSignal: Equatable, Hashable, Identifiable {
         if (isolatedName.endIndex == identifier.endIndex || isolatedName == "temperature") && identifier.isEmpty == false {
             signal = Self.allCases.first(where: { $0.name == isolatedName })
 
-        } else if Self.customDownloads.keys.contains(identifier) {
-            signal = .custom(identifier)
+        //} else if Self.customDownloads.keys.contains(identifier) {
+        //    signal = .custom(identifier)
 
         } else if let rescue = Self.rescueDataProcessedLogger(isolatedName) {
             signal = rescue
@@ -112,31 +112,14 @@ public enum MWNamedSignal: Equatable, Hashable, Identifiable {
 public extension MWNamedSignal {
 
     /// Registry of custom loggables and functions to stop their logging and convert their raw data download into CSV-ready columns. For example, if you define a data processor chain, the `download` publisher will check here to correctly process its data according to your specifications.
-    static var customDownloads: [String: MWNamedSignal.DownloadUtilities] = [:]
+    /*static var customDownloads: [String: MWNamedSignal.DownloadUtilities] = [:]
 
     var downloadUtilities: MWNamedSignal.DownloadUtilities {
         switch self {
-            case .acceleration:       return .init(loggable: .accelerometer(rate: .hz100, gravity: .g16))
-            case .altitude:           return .init(loggable: .absoluteAltitude(standby: .ms10, iir: .off, oversampling: .standard))
-            case .ambientLight:       return .init(loggable: .ambientLight(rate: .ms1000, gain: .x1, integrationTime: .ms100))
-            case .chargingStatus:     return .init(loggable: .chargingStatus)
-            case .eulerAngles:        return .init(loggable: .sensorFusionEulerAngles(mode: .compass))
-            case .gravity:            return .init(loggable: .sensorFusionGravity(mode: .compass))
-            case .gyroscope:          return .init(loggable: .gyroscope(rate: .hz100, range: .dps1000))
-            case .humidity:           return .init(pollable: .humidity())
-            case .linearAcceleration: return .init(loggable: .sensorFusionLinearAcceleration(mode: .compass))
-            case .magnetometer:       return .init(loggable: .magnetometer(rate: .hz10))
-            case .mechanicalButton:   return .init(loggable: .mechanicalButton)
-            case .motion: fatalError("C++ library is being rewritten to support logging.")
-//                return .init(loggable: .motionActivityClassification)
-            case .orientation:        return .init(loggable: .orientation)
-            case .pressure:           return .init(loggable: .relativePressure(standby: .ms10, iir: .off, oversampling: .standard))
-            case .quaternion:         return .init(loggable: .sensorFusionQuaternion(mode: .compass))
-            case .steps:              return .init(loggable: .stepDetector(sensitivity: .normal))
-            case .temperature:        return .init(pollable: MWThermometer(rate: .hz1, type: .onboard, channel: 0))
-            case .custom(let id):     return Self.customDownloads[id]!
+            case .temperature:
+            return .init(MWThermometer(type: .onboard, channel: 0))
         }
-    }
+    }*/
 
 }
 
@@ -174,21 +157,21 @@ public extension MWNamedSignal {
 
 public extension MWNamedSignal {
 
-    var isSensorFusion: Bool { Self.allSensorFusion.contains(self) }
+    //var isSensorFusion: Bool { Self.allSensorFusion.contains(self) }
 
-    static let allSensorFusion: [MWNamedSignal] = [.eulerAngles, .gravity, .quaternion, .linearAcceleration]
+    //static let allSensorFusion: [MWNamedSignal] = [.eulerAngles, .gravity, .quaternion, .linearAcceleration]
 
     /// Cannot be streamed or logged at the same time.
-    var conflictsWithSensorFusion: Bool { Self.allSensorFusionConflicts.contains(self) }
+    //var conflictsWithSensorFusion: Bool { Self.allSensorFusionConflicts.contains(self) }
 
     /// Cannot be streamed or logged at the same time as these sensors' outputs are being fused together.
-    static let allSensorFusionConflicts: [MWNamedSignal] = [.gyroscope, .acceleration, .magnetometer]
+    //static let allSensorFusionConflicts: [MWNamedSignal] = [.gyroscope, .acceleration, .magnetometer]
 
 }
 
 public extension Set where Element == MWNamedSignal {
 
-    mutating func removeConflicts(for sensor: MWNamedSignal) {
+    /*(mutating func removeConflicts(for sensor: MWNamedSignal) {
         if sensor.isSensorFusion {
             removeAllSensorFusion()
             removeAllConflictsWithSensorFusion()
@@ -207,5 +190,5 @@ public extension Set where Element == MWNamedSignal {
         MWNamedSignal.allSensorFusion.forEach {
             self.remove($0)
         }
-    }
+    }*/
 }
