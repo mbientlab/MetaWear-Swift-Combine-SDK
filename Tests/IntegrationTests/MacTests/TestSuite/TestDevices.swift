@@ -11,7 +11,7 @@ import CoreBluetooth
 extension TestDevices {
 
     /// Designate a stable of known devices to use
-    static var machine: HostMachine = .RyanMacBook
+    static var machine: HostMachine = .Laura
 
 }
 
@@ -62,7 +62,10 @@ enum TestDevices {
                     s:  "62ED70A8-0BEC-DB6B-D720-D825FEEFCDF1", // E2:ED:DF:1A:1A:A4 // No Orientation, Steps (BMI 270)
                     rl: "208541A1-4094-8729-D138-E74B6F43CEC6"  // FF:9F:C6:B8:89:BE // No Ambient, Baro (BMI 160)
                 )
-                case .Laura: fatalError("Setup yours")
+                case .Laura: return LocalDevices(
+                    s: "62ED70A8-0BEC-DB6B-D720-D825FEEFCDF1",
+                    rl: "4F05D9FD-0EFD-EE96-C978-DA013F99D46E"
+                )
             }
         }
     }
