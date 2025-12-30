@@ -12,6 +12,22 @@ public struct BoardState: Equatable, Sendable {
             self.implementation = implementation
             self.revision = revision
             self.extra = extra
+#if DEBUG
+            print("[BoardState] ModuleInfo init -> present: \(present), impl: \(implementation), rev: \(revision), extraBytes: \(extra.count)")
+#endif
+        }
+    }
+
+    public struct LoggingTimeRef: Equatable, Sendable {
+        public var resetUID: UInt32
+        public var epochMs: Int64
+
+        public init(resetUID: UInt32, epochMs: Int64) {
+            self.resetUID = resetUID
+            self.epochMs = epochMs
+#if DEBUG
+            print("[BoardState] LoggingTimeRef init -> resetUID: \(resetUID), epochMs: \(epochMs)")
+#endif
         }
     }
 
@@ -28,6 +44,9 @@ public struct BoardState: Equatable, Sendable {
     // Module info keyed by module id (UInt8)
     public var moduleInfo: [UInt8: ModuleInfo]
 
+    // Optional logging reference time
+    public var loggingTime: LoggingTimeRef?
+
     public init(
         isMetaBoot: Bool,
         firmwareRevision: String? = nil,
@@ -35,7 +54,8 @@ public struct BoardState: Equatable, Sendable {
         modelNumber: String? = nil,
         manufacturerName: String? = nil,
         serialNumber: String? = nil,
-        moduleInfo: [UInt8: ModuleInfo] = [:]
+        moduleInfo: [UInt8: ModuleInfo] = [:],
+        loggingTime: LoggingTimeRef? = nil
     ) {
         self.isMetaBoot = isMetaBoot
         self.firmwareRevision = firmwareRevision
@@ -44,5 +64,9 @@ public struct BoardState: Equatable, Sendable {
         self.manufacturerName = manufacturerName
         self.serialNumber = serialNumber
         self.moduleInfo = moduleInfo
+        self.loggingTime = loggingTime
+        #if DEBUG
+        print("[BoardState] init -> metaBoot: \(isMetaBoot), fw: \(String(describing: firmwareRevision)), hw: \(String(describing: hardwareRevision)), model: \(String(describing: modelNumber)), mfr: \(String(describing: manufacturerName)), serial: \(String(describing: serialNumber)), modules: \(moduleInfo.count), loggingTime: \(String(describing: loggingTime))")
+        #endif
     }
 }
